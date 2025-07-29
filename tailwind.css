@@ -86,6 +86,11 @@
 }
 
 @layer base {
+  html {
+    /* Ensure consistent scrollbar behavior to prevent layout shifts */
+    overflow-y: scroll;
+  }
+  
   * {
     @apply border-border;
   }

@@ -4,7 +4,7 @@ import { Header } from "../../components/Header";
 
 export const Home = (): JSX.Element => {
   return (
-    <div className="bg-white w-full h-screen overflow-hidden">
+    <div className="bg-white w-full min-h-screen">
       <Header />
 
       {/* Main content area */}
@@ -15,7 +15,7 @@ export const Home = (): JSX.Element => {
               <img 
                 src="/images/home.jpg" 
                 alt="Home" 
-                className="w-full max-h-[60vh] aspect-video lg:aspect-[1826/693] bg-[#c4c4c4]  object-cover"
+                className="w-full max-h-[60vh] aspect-video lg:aspect-[1826/693] bg-[#c4c4c4] object-cover"
               />
             </CardContent>
           </Card>
@@ -23,12 +23,7 @@ export const Home = (): JSX.Element => {
           {/* Description text */}
           <div className="max-w-none">
             <p className="font-inter font-bold text-black text-lg sm:text-xl lg:text-2xl xl:text-[32px] leading-relaxed lg:leading-normal">
-              This platform preserves and shares our cultural heritage through
-              storytelling, interactive artifacts, and immersive digital experiences
-              that connect the past with the present. This platform preserves and
-              shares our cultural heritage through storytelling, interactive
-              artifacts, and immersive digital experiences that connect the past
-              with the present.
+              This platform preserves and shares our cultural heritage through storytelling, interactive artifacts, and immersive digital experiences that connect the past with the present. This platform preserves and shares our cultural heritage through storytelling, interactive artifacts, and immersive digital experiences that connect the past with the present.
             </p>
           </div>
         </main>
