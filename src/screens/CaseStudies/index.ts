@@ -1,1 +1,3 @@
-export { CaseStudies } from "./CaseStudies";
+export * from "./CaseStudies";
+export * from "./ArtifactDetails";
+export * from "./Artifacts";

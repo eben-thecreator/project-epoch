@@ -10,10 +10,6 @@ export const About = (): JSX.Element => {
       {/* Main content area */}
       <div className="mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col">
         <main className="flex-grow flex flex-col justify-center space-y-4 lg:space-y-4">
-          {/* Section label */}
-          <p className="text-[12px] font-bold tracking-[0.5px] text-grey">
-            About
-          </p>
 
           {/* Main description */}
           <p className="font-inter font-bold text-black text-lg sm:text-xl lg:text-2xl xl:text-[32px] leading-relaxed lg:leading-normal">

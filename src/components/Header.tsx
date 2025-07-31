@@ -62,7 +62,7 @@ export const Header = (): JSX.Element => {
       <header className="flex items-start justify-between py-6 lg:py-8">
         {/* Logo */}
         <div className="flex items-center">
-          <div className="w-8 h-8 lg:w-[30px] lg:h-[30px] grid grid-cols-2 gap-0.1">
+          <div className="w-8 h-8 lg:w-[30px] lg:h-[30px] grid grid-cols-2 gap-0.8">
             <div className="bg-black rounded-full" />
             <div className="bg-black rounded-full" />
             <div className="bg-black rounded-full" />
@@ -77,7 +77,7 @@ export const Header = (): JSX.Element => {
               {navigationItems.map((column, columnIndex) => (
                 <div
                   key={`column-${columnIndex}`}
-                  className="flex flex-col items-start lg:items-start gap-2"
+                  className="flex flex-col items-start lg:items-start gap-4"
                 >
                   {column.items.map((item, itemIndex) => (
                     <Link
