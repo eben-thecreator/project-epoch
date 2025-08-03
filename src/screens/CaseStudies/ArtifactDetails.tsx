@@ -13,8 +13,8 @@ export const ArtifactDetails = (): JSX.Element => {
     return (
       <div className="bg-white w-full min-h-screen">
         <Header />
-        <div className="mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col">
-          <main className="flex-grow flex flex-col justify-center py-12">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col ">
+          <main className="flex-grow flex flex-col justify-center py-12 ">
             <div className="max-w-6xl mx-auto">
               <div className="text-center py-12">
                 <h1 className="text-2xl font-bold text-black mb-4">
@@ -36,11 +36,14 @@ export const ArtifactDetails = (): JSX.Element => {
     <div className="bg-white w-full min-h-screen">
       <Header />
 
-      <div className="mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col pt-32">
         <main className="flex-grow flex flex-col justify-center py-12">
           <div className="flex flex-col md:flex-row gap-10">
-            {/* Left: Main Image (4:3 ratio) */}
-            <div className="w-full md:w-1/2">
+            {/* Left: Main Image (4:3 ratio) - Fixed position */}
+            <div className="w-full md:w-1/2 md:fixed pt-32" style={{ 
+              top: "8rem",
+              maxWidth: "calc(50% - 40px)"
+            }}>
               <Card className="w-full border-none shadow-none">
                 <CardContent className="p-0">
                   <div className="relative w-full" style={{ paddingBottom: "75%" }}>
@@ -55,7 +58,7 @@ export const ArtifactDetails = (): JSX.Element => {
             </div>
 
             {/* Right: Metadata */}
-            <div className="w-full md:w-1/2 flex flex-col justify-between">
+            <div className="w-full md:w-1/2 md:ml-[calc(50%+20px)] flex flex-col justify-between">
               {/* Back button */}
               <div className="mb-6">
                 <button
@@ -115,7 +118,7 @@ export const ArtifactDetails = (): JSX.Element => {
                     <img
                       src={artifact.imageUrl}
                       alt="Supporting visual"
-                      className="w-full h-full object-cover opacity-70"
+                      className="w-full h-full object-cover"
                     />
                   </div>
                 </CardContent>

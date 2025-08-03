@@ -1,5 +1,5 @@
-import React from "react";
-import { NavigationMenu, NavigationMenuList } from "../components/ui/navigation-menu";
+// components/Header.tsx
+import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 export interface NavigationItem {
@@ -15,7 +15,6 @@ export interface NavigationColumn {
 export const Header = (): JSX.Element => {
   const location = useLocation();
 
-  // Navigation menu items organized by columns
   const navigationItems: NavigationColumn[] = [
     {
       column: 1,
@@ -44,60 +43,100 @@ export const Header = (): JSX.Element => {
     },
   ];
 
-  // Function to check if a path is active
-  const isActive = (path: string) => {
-    // Special case for home path
-    if (path === "/" && location.pathname === "/") {
-      return true;
-    }
-    // For other paths, check if they match or are part of the current path
-    if (path !== "/" && location.pathname.includes(path)) {
-      return true;
-    }
-    return false;
+  const isActive = (path: string) =>
+    location.pathname === path || (path !== "/" && location.pathname.includes(path));
+
+  const Dropdown = ({
+    title,
+    items,
+  }: {
+    title: string;
+    items: NavigationItem[];
+  }) => {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+    const timeoutRef = useRef<number | null>(null);
+
+    const anyActive = items.some((i) => isActive(i.path));
+
+    const handleMouseEnter = () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      setOpen(true);
+    };
+
+    const handleMouseLeave = () => {
+      timeoutRef.current = setTimeout(() => {
+        setOpen(false);
+      }, 150);
+    };
+
+    const handleClick = () => {
+      setOpen((prev) => !prev);
+    };
+
+    return (
+      <div
+        className="relative"
+        ref={ref}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <button
+          className={`font-inter font-bold text-sm lg:text-base transition-all duration-300 focus:outline-none px-2 py-1 text-white hover:rotate-2 mix-blend-difference`}
+          onClick={handleClick}
+        >
+          {title}
+        </button>
+
+        {open && (
+          <div className="absolute top-full left-0 mt-1 w-auto z-50 animate-fadeIn mix-blend-difference">
+            <ul className="flex flex-col items-start">
+              {items.map((item) => (
+                <li key={item.path} className="w-full animate-slideDown">
+                  <Link
+                    to={item.path}
+                    className={`block w-full font-inter font-bold text-sm lg:text-base px-2 py-1 transition-colors duration-150 focus:outline-none text-white mix-blend-difference`}
+                    onClick={() => setOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 w-full">
-      <header className="flex items-start justify-between py-6 lg:py-8">
+    <header className="w-full sticky top-0 z-50 mix-blend-difference pointer-events-auto">
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-4 lg:py-6">
         {/* Logo */}
-        <div className="flex items-center">
-          <div className="w-8 h-8 lg:w-[30px] lg:h-[30px] grid grid-cols-2 gap-0.8">
-            <div className="bg-black rounded-full" />
-            <div className="bg-black rounded-full" />
-            <div className="bg-black rounded-full" />
-            <div className="bg-black rounded-full" />
-          </div>
-        </div>
-
-        {/* Navigation Menu */}
-        <nav className="flex-1 flex items-start justify-center">
-          <NavigationMenu className="w-full lg:w-auto">
-            <NavigationMenuList className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-24">
-              {navigationItems.map((column, columnIndex) => (
-                <div
-                  key={`column-${columnIndex}`}
-                  className="flex flex-col items-start lg:items-start gap-4"
-                >
-                  {column.items.map((item, itemIndex) => (
-                    <Link
-                      to={item.path}
-                      key={`item-${columnIndex}-${itemIndex}`}
-                      className={`font-inter font-bold text-sm lg:text-base transition-colors ${
-                        isActive(item.path)
-                          ? "text-black"
-                          : "text-[#7d7d7d] hover:text-black"
-                      }`}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                </div>
+        <Link
+          to="/"
+          aria-label="Home"
+          className="flex items-center gap-8 focus:outline-none mix-blend-difference"
+        >
+          <div className="w-8 h-8 lg:w-[30px] lg:h-[30px] grid grid-cols-2 gap-0.5">
+            {Array(4)
+              .fill(null)
+              .map((_, i) => (
+                <div key={i} className="bg-white rounded-full mix-blend-difference" />
               ))}
-            </NavigationMenuList>
-          </NavigationMenu>
+          </div>
+          <span className="sr-only">Epoch Project Logo</span>
+        </Link>
+
+        {/* Navigation */}
+        <nav className="flex-1 flex justify-center">
+          <div className="inline-flex items-center gap-12 md:pl-[calc(1/4*100%-0.5rem)]">
+            <Dropdown title="Menu" items={navigationItems[0].items} />
+            <Dropdown title="Projects" items={navigationItems[1].items} />
+            <Dropdown title="Resources" items={navigationItems[2].items} />
+          </div>
         </nav>
-      </header>
-    </div>
+      </div>
+    </header>
   );
 };

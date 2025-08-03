@@ -12,11 +12,11 @@ export const Artifacts = (): JSX.Element => {
   };
 
   return (
-    <div className="bg-white w-full min-h-screen font-inter">
+    <div className="bg-white w-full min-h-screen font-inter ">
       <Header />
       
       {/* Main content area */}
-      <main className="px-4 sm:px-6 lg:px-8 py-12">
+      <main className="px-4 sm:px-6 lg:px-8 pt-32 py-12 pt-32">
         {/* Artifacts Section */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Left Text */}

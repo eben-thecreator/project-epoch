@@ -33,7 +33,7 @@ export const CaseStudies = (): JSX.Element => {
     <div className="bg-white w-full min-h-screen font-inter">
       <Header />
 
-      <main className="px-4 sm:px-6 lg:px-8 py-12 space-y-24">
+      <main className="px-4 sm:px-6 lg:px-8 py-12 pt-32 space-y-24">
         {/* Artifacts Section */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start relative">
           {/* Left Text */}
@@ -59,7 +59,7 @@ export const CaseStudies = (): JSX.Element => {
             {artifactItems.map((item, i) => (
               <div 
                 key={i} 
-                className="aspect-[7/6] w-full cursor-pointer hover:opacity-90 transition-opacity"
+                className="aspect-[7/6] w-full cursor-pointer group"
                 onClick={() => handleArtifactClick(item.id)}
               >
                 <img 
@@ -68,7 +68,13 @@ export const CaseStudies = (): JSX.Element => {
                   className="w-full h-full object-cover"
                 />
                 <div className="pt-2 text-xs">
-                  <h3 className="font-bold text-black">{item.title}</h3>
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-bold text-black">{item.title}</h3>
+                    {/* View text that appears on hover, aligned with the title */}
+                    <div className="text-black font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      View
+                    </div>
+                  </div>
                   <div className="flex space-x-2 mt-1">
                     <span>{item.date}</span>
                     <span>•</span>
@@ -100,14 +106,20 @@ export const CaseStudies = (): JSX.Element => {
               Navigate Spaces
             </div>
             {museumItems.map((item, i) => (
-              <div key={i} className="aspect-[480/270] w-full">
+              <div key={i} className="aspect-[480/270] w-full cursor-pointer group">
                 <img 
                   src={item.image} 
                   alt={item.title} 
                   className="w-full h-full object-cover"
                 />
                 <div className="pt-2 text-xs">
-                  <h3 className="font-bold text-black">{item.title}</h3>
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-bold text-black">{item.title}</h3>
+                    {/* View text that appears on hover, aligned with the title */}
+                    <div className="text-black font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      View
+                    </div>
+                  </div>
                   <div className="flex space-x-2 mt-1">
                     <span>{item.location}</span>
                     <span>•</span>

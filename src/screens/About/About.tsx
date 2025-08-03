@@ -8,7 +8,7 @@ export const About = (): JSX.Element => {
       <Header />
 
       {/* Main content area */}
-      <div className="mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col pt-32">
         <main className="flex-grow flex flex-col justify-center space-y-4 lg:space-y-4">
 
           {/* Main description */}
