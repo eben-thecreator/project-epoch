@@ -22,12 +22,12 @@ export const allArtifacts: Artifact[] = [
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
     imageUrl: "/images/caseStudies/artifact1.jpg",
-    modelUrl: "/models/artifact1.glb",
+    modelUrl: "/models/art1.glb",
     weight: "135.75 oz",
     height: "17.53 cm",
   },
   {
-    id: "Skull 233",
+    id: "skull-233",
     title: "Rocket Launcher",
     date: "15th Century",
     location: "Bawku",
@@ -61,7 +61,7 @@ export const allArtifacts: Artifact[] = [
     description:
       "Intricately carved wooden stool symbolizing status and craftsmanship in traditional societies. This exceptional piece represents the sophisticated woodworking traditions of East African communities.",
     imageUrl: "/images/caseStudies/artifact4.jpg",
-    modelUrl: "/models/artifact4.glb",
+    modelUrl: "/models/aa12.glb",
     weight: "85.20 oz",
     height: "15.30 cm",
   },
@@ -74,12 +74,12 @@ export const allArtifacts: Artifact[] = [
     description:
       "Beautiful collection of beads showcasing traditional jewelry-making techniques. These beads were used not only for adornment but also as a form of communication and currency.",
     imageUrl: "/images/caseStudies/artifact5.jpg",
-    modelUrl: "/models/artifact5.glb",
+    modelUrl: "/models/artifact123.gltf",
     weight: "42.75 oz",
     height: "8.25 cm",
   },
   {
-    id: "textile-art",
+    id: "textile-art-1",
     title: "Me Ne Wo Sre Kwa",
     date: "1750s",
     location: "West Africa",
@@ -92,7 +92,7 @@ export const allArtifacts: Artifact[] = [
     currentLocation: "Kumasi, Cultural Institute",
   },
   {
-    id: "textile-art",
+    id: "textile-art-2",
     title: "Nyatepe",
     date: "1750s",
     location: "West Africa",
@@ -105,20 +105,7 @@ export const allArtifacts: Artifact[] = [
     currentLocation: "Kumasi, Cultural Institute",
   },
   {
-    id: "textile-art",
-    title: "Kente Pot",
-    date: "1750s",
-    location: "West Africa",
-    description:
-      "Colorful textile artwork representing cultural stories and traditional weaving methods. Each pattern in Kente cloth has a specific meaning and significance in West African culture.",
-    imageUrl: "/images/caseStudies/artifact8.jpg",
-    modelUrl: "/models/artifact6.glb",
-    weight: "68.40 oz",
-    height: "25.10 cm",
-    currentLocation: "Kumasi, Cultural Institute",
-  },
-  {
-    id: "textile-art",
+    id: "textile-art-3",
     title: "Kente Pot",
     date: "1750s",
     location: "West Africa",

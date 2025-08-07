@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@radix-ui/react-navigation-menu": "^1.2.1",
-    "@types/three": "^0.178.1",
+    "@react-three/drei": "^9.114.3",
+    "@react-three/fiber": "^8.17.10",
     "class-variance-authority": "^0.7.0",
     "clsx": "2.1.1",
     "framer-motion": "^12.23.12",
@@ -20,11 +21,12 @@
     "react-router-dom": "^6.8.1",
     "tailwind-merge": "2.5.4",
     "tailwindcss-animate": "1.0.7",
-    "three": "^0.178.0"
+    "three": "^0.169.0"
   },
   "devDependencies": {
     "@types/react": "18.2.0",
     "@types/react-dom": "18.2.0",
+    "@types/three": "^0.169.0",
     "@vitejs/plugin-react": "4.3.4",
     "esbuild": "0.24.0",
     "globals": "15.12.0",
