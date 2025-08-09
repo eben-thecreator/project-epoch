@@ -29,7 +29,7 @@ export const Artifacts = (): JSX.Element => {
       // Artifacts Section
       React.createElement("section", { className: "grid grid-cols-1 md:grid-cols-4 gap-8" },
         // Left Text
-        React.createElement("div", { className: "col-span-1 md:sticky md:top-12 self-start" },
+        React.createElement("div", { className: "col-span-1 md:sticky md:top-52 self-start" },
           React.createElement("div", { className: "space-y-4" },
             React.createElement("h2", { className: "text-sm font-bold text-black" }, `Artifacts (${allArtifacts.length})`),
             React.createElement("p", { className: "text-sm font-bold text-black leading-snug max-w-xs" },

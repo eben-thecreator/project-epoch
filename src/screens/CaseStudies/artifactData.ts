@@ -22,7 +22,7 @@ export const allArtifacts: Artifact[] = [
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
     imageUrl: "/images/caseStudies/artifact1.jpg",
-    modelUrl: "/models/art1.glb",
+    modelUrl: "/models/a101.glb",
     weight: "135.75 oz",
     height: "17.53 cm",
   },
@@ -35,7 +35,7 @@ export const allArtifacts: Artifact[] = [
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
     imageUrl: "/images/caseStudies/artifact2.jpg",
-    modelUrl: "/models/artifact2.glb",
+    modelUrl: "/models/skele.glb",
     weight: "92.45 oz",
     height: "22.10 cm",
   },
@@ -86,7 +86,7 @@ export const allArtifacts: Artifact[] = [
     description:
       "Colorful textile artwork representing cultural stories and traditional weaving methods. Each pattern in Kente cloth has a specific meaning and significance in West African culture.",
     imageUrl: "/images/caseStudies/artifact6.jpg",
-    modelUrl: "/models/artifact6.glb",
+    modelUrl: "/models/skele.glb",
     weight: "68.40 oz",
     height: "25.10 cm",
     currentLocation: "Kumasi, Cultural Institute",

@@ -59,13 +59,13 @@ export const ArtifactDetails = (): JSX.Element => {
   return React.createElement(ArtifactErrorBoundary, { children: null },
     React.createElement("div", { className: "bg-white w-full min-h-screen" },
       React.createElement(Header, {}),
-      React.createElement("div", { className: "mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col pt-32" },
+      React.createElement("div", { className: "mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col pt-24" },
         React.createElement("main", { className: "flex-grow flex flex-col justify-center py-12" },
           React.createElement("div", { className: "flex flex-col md:flex-row gap-10" },
 
             // Left: Model or Image
             React.createElement("div", {
-              className: "w-full md:w-1/2 md:fixed pt-32",
+              className: "w-full md:w-1/2 md:fixed pt-24",
               style: {
                 top: "8rem",
                 maxWidth: "calc(50% - 40px)"
