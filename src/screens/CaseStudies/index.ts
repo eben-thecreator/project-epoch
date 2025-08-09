@@ -1,3 +1,4 @@
 export * from "./CaseStudies";
-export * from "./ArtifactDetails";
-export * from "./Artifacts";
+export * from "./artifacts/ArtifactDetails";
+export * from "./artifacts/Artifacts";
+export * from "./museums/Museum";

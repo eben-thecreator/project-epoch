@@ -1,7 +1,7 @@
 import React from "react";
 import { Header } from "../../components/Header";
 import { useNavigate } from "react-router-dom";
-import { allArtifacts } from "./artifactData";
+import { allArtifacts } from "./artifacts/artifactData";
 
 export const CaseStudies = (): JSX.Element => {
   const navigate = useNavigate();
@@ -12,13 +12,13 @@ export const CaseStudies = (): JSX.Element => {
   // Define images for museum section
   const museumItems = [
     {
-      image: "/images/caseStudies/museum1.jpg",
+      image: "/images/caseStudies/museum/museum2.jpg",
       title: "National Museum",
       location: "Accra, Ghana",
       type: "Historical"
     },
     {
-      image: "/images/caseStudies/museum2.jpg",
+      image: "/images/caseStudies/museum/museum 5.jpg",
       title: "Heritage Center",
       location: "Lagos, Nigeria",
       type: "Cultural"
@@ -37,7 +37,7 @@ export const CaseStudies = (): JSX.Element => {
         {/* Artifacts Section */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start relative">
           {/* Left Text */}
-          <div className="col-span-1 flex flex-col justify-center h-full">
+          <div className="col-span-1 md:top-52 self-start">
             <div className="space-y-4">
               <h2 className="text-sm font-bold text-black">Artifacts ({allArtifacts.length})</h2>
               <p className="text-sm font-bold text-black leading-snug max-w-xs">
@@ -89,7 +89,7 @@ export const CaseStudies = (): JSX.Element => {
         {/* Museum Section */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start relative">
           {/* Left Text */}
-          <div className="col-span-1 flex flex-col justify-center h-full">
+          <div className="col-span-1 md:top-52 self-start">
             <div className="space-y-4">
               <h2 className="text-sm font-bold text-black">Museum (17)</h2>
               <p className="text-sm font-bold text-black leading-snug max-w-xs">
@@ -102,7 +102,10 @@ export const CaseStudies = (): JSX.Element => {
 
           {/* Right Grid */}
           <div className="col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4 relative">
-            <div className="absolute top-0 right-0 -mt-8 pr-1 text-sm font-bold text-black">
+            <div 
+              className="absolute top-0 right-0 -mt-8 pr-1 text-sm font-bold text-black cursor-pointer hover:underline"
+              onClick={() => navigate('/case-studies/museums')}
+            >
               Navigate Spaces
             </div>
             {museumItems.map((item, i) => (

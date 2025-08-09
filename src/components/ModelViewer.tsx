@@ -1,11 +1,7 @@
 import React, { Suspense, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Preload, useGLTF, Bounds, useBounds } from "@react-three/drei";
+import { OrbitControls, Preload, useGLTF, Bounds, useBounds, Environment } from "@react-three/drei";
 import * as THREE from "three";
-import { Environment } from '@react-three/drei'
-
-<Environment preset="studio" background={false} />
-
 
 interface ModelViewerProps {
   modelUrl: string;
@@ -151,56 +147,59 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
           shadows
           key={modelKey}
         >
-          <ambientLight intensity={0.3} />
+          <ambientLight intensity={0.5} />
 
-<directionalLight
-  castShadow
-  position={[5, 5, 5]}
-  intensity={1.2}
-  shadow-mapSize-width={2048}
-  shadow-mapSize-height={2048}
-  shadow-camera-near={0.5}
-  shadow-camera-far={20}
-  shadow-camera-left={-10}
-  shadow-camera-right={10}
-  shadow-camera-top={10}
-  shadow-camera-bottom={-10}
-/>
+          <directionalLight
+            castShadow
+            position={[5, 10, 5]}
+            intensity={1.5}
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
+            shadow-camera-near={0.5}
+            shadow-camera-far={50}
+            shadow-camera-left={-20}
+            shadow-camera-right={20}
+            shadow-camera-top={20}
+            shadow-camera-bottom={-20}
+          />
 
-<directionalLight
-  position={[-3, 2, 2]}
-  intensity={0.6}
-/>
+          <directionalLight
+            position={[-5, 5, -5]}
+            intensity={1}
+          />
 
-<directionalLight
-  position={[0, 5, -5]}
-  intensity={0.4}
-/>
+          <directionalLight
+            position={[0, -5, -5]}
+            intensity={0.5}
+          />
 
+          <pointLight position={[0, 15, -15]} intensity={0.8} />
 
-<pointLight position={[0, 10, -10]} intensity={0.6} />
+          <spotLight
+            position={[0, 20, 0]}
+            intensity={0.7}
+            angle={0.3}
+            penumbra={1}
+            castShadow
+          />
 
-{/* Optional: subtle rim light for depth */}
-<directionalLight position={[0, -5, -5]} intensity={0.3} />
+          <Suspense fallback={<div className="text-center w-full h-full flex items-center justify-center">Loading model...</div>}>
+            <Bounds fit observe margin={1}>
+              <Model modelUrl={modelUrl} autoRotate={autoRotate} key={modelKey} />
+            </Bounds>
+          </Suspense>
 
-<Suspense fallback={<div className="text-center w-full h-full flex items-center justify-center">Loading model...</div>}>
-  <Bounds fit observe margin={1}>
-    <Model modelUrl={modelUrl} autoRotate={autoRotate} key={modelKey} />
-  </Bounds>
-</Suspense>
-
-<OrbitControls
-  enableZoom
-  enablePan
-  enableRotate
-  minDistance={0.5}
-  maxDistance={100}
-  autoRotate={autoRotate}
-  autoRotateSpeed={20}
-  makeDefault
-  up={[0, 1, 0]}
-/>
-
+          <OrbitControls
+            enableZoom
+            enablePan
+            enableRotate
+            minDistance={0.5}
+            maxDistance={100}
+            autoRotate={autoRotate}
+            autoRotateSpeed={20}
+            makeDefault
+            up={[0, 1, 0]}
+          />
 
           <Preload all />
         </Canvas>

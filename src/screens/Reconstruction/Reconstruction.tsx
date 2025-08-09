@@ -1,16 +1,17 @@
 import React from "react";
 import { Header } from "../../components/Header";
+import { MuseumModelViewer } from "../../components/MuseumModelViewer";
 
-export const Reconstruction = (): JSX.Element => {
+export const Reconstruction: React.FC = () => {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="bg-white w-full min-h-screen">
       <Header />
-      
-      {/* Main content */}
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Reconstruction Page</h1>
-        <p className="mb-4">This is the Reconstruction page content.</p>
-      </main>
+      <div className="pt-20 w-full h-[calc(100vh-80px)]">
+        <MuseumModelViewer 
+          modelUrl="/models/museumModels/museum1.glb"
+          backgroundColor="#333333"
+        />
+      </div>
     </div>
   );
 };
