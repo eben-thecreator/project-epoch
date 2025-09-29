@@ -5,7 +5,7 @@ Originally built with **React + Next.js + Three.js**, this project is now evolvi
 
 
 
-designed to **bridge heritage, technology, and art** by creating an interactive digital hub that:
+designed to **bridge heritage, technology, and art**
 
 1. **Architectural Exhibition Space**  
    Designed 3D environments to showcase monuments and artifacts from each region.    
