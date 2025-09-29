@@ -1,23 +1,37 @@
-i'll be diverting soon, it was a react+next js+ 3js project. now Im trying to further in unreal engine. entire project is to create a centralised system to handle national museums and monuments. 
-1. a designed architectural space to showcase monuments, each region in concern.
-2. an exhibition space for both local and international artists (fine arts, digital arts, ...)
-3. detailed catalogue of scanned monuments and museum spaces for complete interaction for platform users. (more of like a repo)
-4. a glimpse into some reconstruction processes, some technical breakdowns as well.
+# National Museums & Monuments Platform
 
---------------------------------------------------------------------------------
+A centralized digital system for managing and showcasing **national museums and monuments**.  
+Originally built with **React + Next.js + Three.js**, this project is now evolving into **Unreal Engine**
 
 
-the above listed features would be the main purpose of the platform or site.
 
---------------------------------------------------------------------------------
+designed to **bridge heritage, technology, and art** by creating an interactive digital hub that:
 
-im a geomatic engineer by the way
+1. **Architectural Exhibition Space**  
+   Designed 3D environments to showcase monuments and artifacts from each region.    
 
-***********************************************************************************
-some carreers that would be engaged include
-    programming
-    architecture
-    geomatics
-    3d design
-    material sciences
-***********************************************************************************
+2. **Artistic Showcase**  
+   Dedicated exhibition space for **local and international artists** (fine art, digital art, new media).   
+
+3. **Digital Catalogue & Repository**  
+   **detailed archive** of scanned monuments and museum spaces.  (fully interactive exploration)
+
+4. **Reconstruction & Technical Insights**  
+   Glimpses into **restoration processes** and **digital/physical reconstruction workflows**.  
+   Educational breakdowns of technical methods.  
+
+---
+
+**Carreers I'd be engaging** 
+- Programming
+- Geomatics
+- Architecture  
+- 3D Design & Visualization  
+- Material Sciences  
+
+
+
+## 👤 About the Author
+Hi, I’m **Ebenezer Ankudey**, a **geomatic engineer** with a passion for **media & entertainment design, architectural design, programming and geomatic engineering**.  
+
+---
