@@ -15,9 +15,9 @@ im a geomatic engineer by the way
 
 ***********************************************************************************
 some carreers that would be engaged include
+    programming
     architecture
     geomatics
     3d design
     material sciences
-    programming
 ***********************************************************************************
