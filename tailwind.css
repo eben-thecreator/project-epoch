@@ -2,22 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap");
-
-@layer components {
-  .all-\[unset\] {
-    all: unset;
-  }
-}
-
+/* Custom Animations */
 @layer utilities {
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+  .animate-roll {
+    display: inline-block;
+    animation: roll 15s linear infinite;
+    animation-delay: 0s;
   }
   
-  .animate-fadeIn {
-    animation: fadeIn 0.2s ease-in-out forwards;
+  @keyframes roll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
   }
 }
 
@@ -88,53 +87,6 @@
     --radius: 0.5rem;
   }
   
-  body {
-    position: relative;
-    background-color: #fff;
-  }
-}
-
-/* Removed grid texture
-body::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    linear-gradient(rgba(190, 170, 140, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(190, 170, 140, 0.1) 1px, transparent 1px),
-    radial-gradient(circle at center, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
-  background-size: 
-    50px 50px,
-    50px 50px,
-    5px 5px;
-  background-position: 
-    -1px -1px,
-    -1px -1px,
-    0 0;
-  opacity: 0.8;
-  z-index: -1;
-  animation: noiseAnimation 0.2s infinite;
-}
-
-@keyframes noiseAnimation {
-  0% { transform: translate(0, 0); }
-  10% { transform: translate(-1px, 1px); }
-  20% { transform: translate(1px, -1px); }
-  30% { transform: translate(-1px, -1px); }
-  40% { transform: translate(1px, 1px); }
-  50% { transform: translate(-1px, 0); }
-  60% { transform: translate(1px, -1px); }
-  70% { transform: translate(-1px, 1px); }
-  80% { transform: translate(1px, 0); }
-  90% { transform: translate(-1px, -1px); }
-  100% { transform: translate(0, 0); }
-}
-*/
-
-@layer base {
   html {
     /* Ensure consistent scrollbar behavior to prevent layout shifts */
     overflow-y: scroll;
@@ -147,5 +99,39 @@ body::before {
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    position: relative;
+    background-color: #fff;
+    font-family: Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* Ensure consistent scrollbar behavior to prevent layout shifts */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Custom styles for UI components */
+.bg-dotted-pattern {
+  background-image: radial-gradient(circle, #000 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+@layer components {
+  .all-unset {
+    all: unset;
+  }
+}
+
+@layer utilities {
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .animate-fadeIn {
+    animation: fadeIn 0.2s ease-in-out forwards;
   }
 }

@@ -30,10 +30,10 @@ export const CaseStudies = (): JSX.Element => {
   };
 
   return (
-    <div className="bg-white w-full min-h-screen font-inter">
+    <div className="bg-white w-full min-h-screen ">
       <Header />
 
-      <main className="px-4 sm:px-6 lg:px-8 py-12 pt-32 space-y-24">
+      <main className="px-4 sm:px-6 lg:px-8 py-12 space-y-24">
         {/* Artifacts Section */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start relative">
           {/* Left Text */}

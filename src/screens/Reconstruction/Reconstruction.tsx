@@ -6,7 +6,7 @@ export const Reconstruction: React.FC = () => {
   return (
     <div className="bg-white w-full min-h-screen">
       <Header />
-      <div className="pt-20 w-full h-[calc(100vh-80px)]">
+      <div className="w-full h-screen">
         <MuseumModelViewer 
           modelUrl="/models/museumModels/museum1.glb"
           backgroundColor="#333333"

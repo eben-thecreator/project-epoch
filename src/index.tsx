@@ -14,9 +14,8 @@ import { Artifacts } from "./screens/CaseStudies/artifacts/Artifacts";
 import { Museum, MuseumDetails } from "./screens/CaseStudies/museums";
 import { Reconstruction } from "./screens/Reconstruction";
 import { Gallery } from "./screens/Gallery";
-import { Map } from "./screens/Map";
 import { Research } from "./screens/Research";
-import { Partners } from "./screens/Partners";
+
 
 const router = createBrowserRouter([
   {
@@ -64,16 +63,8 @@ const router = createBrowserRouter([
     element: <Gallery />,
   },
   {
-    path: "/map",
-    element: <Map />,
-  },
-  {
     path: "/research",
     element: <Research />,
-  },
-  {
-    path: "/partners",
-    element: <Partners />,
   },
 ]);
 
