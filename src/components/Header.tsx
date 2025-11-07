@@ -9,16 +9,9 @@ export const Header = (): JSX.Element => {
   const navigation = [
     { name: "About", path: "/about" },
     { name: "Projects", path: "/case-studies" },
-    { name: "Restoration", path: "/reconstruction" },
-    { name: "Gallery", path: "/gallery" },
     { name: "Exhibition", path: "/exhibition" },
-  ];
-
-  const mobileNavigation = [
-    { name: "Map", path: "#" },
-    { name: "Research", path: "/research" },
-    { name: "Blog", path: "/news" },
-    ...navigation,
+    { name: "Gallery", path: "/gallery" },
+    { name: "Restoration", path: "/restoration" },
   ];
 
   const isActive = (path: string) =>
@@ -78,31 +71,12 @@ export const Header = (): JSX.Element => {
             ></span>
           </button>
         </div>
-
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden absolute w-full bg-[#E33C30] text-white py-5 px-6 shadow-lg">
-            <div className="grid grid-cols-1 gap-3">
-              {mobileNavigation.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`block py-2 text-sm tracking-wide uppercase ${
-                    isActive(item.path)
-                      ? "text-white font-semibold"
-                      : "text-stone-300 hover:text-white"
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
       </header>
-      {/* Spacer to prevent content from being covered by fixed header */}
       <div className="h-36"></div>
     </>
+    
+
+
+
   );
 };
