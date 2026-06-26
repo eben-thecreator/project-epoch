@@ -33,10 +33,7 @@ export const MuseumDetails: React.FC = () => {
 
   return (
     <div className="bg-white w-full min-h-screen">
-      {/* Absolute positioned header so it overlays hero */}
-      <div className="absolute top-0 left-0 right-0 z-20">
-        <Header />
-      </div>
+      <Header />
 
       {/* Full-Screen Hero with 3D Model */}
       <div className="relative w-full h-screen z-10">

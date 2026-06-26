@@ -7,7 +7,6 @@ import {
 import { Home } from "./screens/Home";
 import { About } from "./screens/About";
 import { Contact } from "./screens/Contact";
-import { News } from "./screens/News";
 import { CaseStudies } from "./screens/CaseStudies";
 import { ArtifactDetails } from "./screens/CaseStudies/artifacts/ArtifactDetails";
 import { Artifacts } from "./screens/CaseStudies/artifacts/Artifacts";
@@ -15,7 +14,7 @@ import { Museum, MuseumDetails } from "./screens/CaseStudies/museums";
 import { Reconstruction } from "./screens/Reconstruction";
 import { Gallery } from "./screens/Gallery";
 import { Research } from "./screens/Research";
-
+import { Blog } from "./screens/Blog";
 
 const router = createBrowserRouter([
   {
@@ -29,10 +28,6 @@ const router = createBrowserRouter([
   {
     path: "/contact",
     element: <Contact />,
-  },
-  {
-    path: "/news",
-    element: <News />,
   },
   {
     path: "/case-studies",
@@ -65,6 +60,10 @@ const router = createBrowserRouter([
   {
     path: "/research",
     element: <Research />,
+  },
+  {
+    path: "/blog",
+    element: <Blog />,
   },
 ]);
 

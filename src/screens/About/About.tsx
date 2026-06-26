@@ -7,7 +7,7 @@ export const About = (): JSX.Element => {
     <div className="bg-white w-full min-h-screen">
       <Header />
 
-      <main className="px-4 sm:px-6 lg:px-8 py-12">
+      <main className="px-4 sm:px-6 lg:px-8 py-12 pt-20">
         <section className="max-w-4xl mx-auto">
           <div className="space-y-8">
             <div className="space-y-4">

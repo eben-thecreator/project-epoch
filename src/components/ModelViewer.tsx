@@ -60,7 +60,8 @@ const Model: React.FC<{ modelUrl: string; autoRotate?: boolean }> = ({ modelUrl,
   const { scene } = useGLTF(modelUrl);
   const bounds = useBounds();
 
-  const model = scene.clone(true);
+  const model = React.useMemo(() => scene.clone(true), [scene]);
+
 
   model.traverse((child) => {
     if ((child as THREE.Mesh).isMesh) {

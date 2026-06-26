@@ -25,7 +25,7 @@ export const Artifacts = (): JSX.Element => {
     React.createElement(Header, null),
     
     // Main content area
-    React.createElement("main", { className: "px-4 sm:px-6 lg:px-8 py-12" },
+    React.createElement("main", { className: "px-4 sm:px-6 lg:px-8 py-12 pt-20 md:pt-28" },
       // Artifacts Section
       React.createElement("section", { className: "grid grid-cols-1 md:grid-cols-4 gap-8" },
         // Left Text
