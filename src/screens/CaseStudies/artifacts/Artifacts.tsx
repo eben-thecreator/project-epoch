@@ -25,11 +25,11 @@ export const Artifacts = (): JSX.Element => {
     React.createElement(Header, null),
     
     // Main content area
-    React.createElement("main", { className: "px-4 sm:px-6 lg:px-8 py-12 pt-20 md:pt-28" },
+    React.createElement("main", { className: "px-4 sm:px-6 lg:px-8 py-12 pt-28 md:pt-40" },
       // Artifacts Section
-      React.createElement("section", { className: "grid grid-cols-1 md:grid-cols-4 gap-8" },
+      React.createElement("section", { className: "grid grid-cols-1 md:grid-cols-12 gap-8 items-start" },
         // Left Text
-        React.createElement("div", { className: "col-span-1 md:sticky md:top-52 self-start" },
+        React.createElement("div", { className: "col-span-1 md:col-span-3 md:sticky md:top-52 self-start" },
           React.createElement("div", { className: "space-y-4" },
             React.createElement("h2", { className: "text-sm font-bold text-black" }, `Artifacts (${allArtifacts.length})`),
             React.createElement("p", { className: "text-sm font-bold text-black leading-snug max-w-xs" },
@@ -43,7 +43,7 @@ export const Artifacts = (): JSX.Element => {
         ),
 
         // Right Grid
-        React.createElement("div", { className: "col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" },
+        React.createElement("div", { className: "col-span-1 md:col-span-8 md:col-start-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" },
           allArtifacts.map((artifact) => 
             React.createElement("div", {
               key: artifact.id,

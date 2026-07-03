@@ -33,7 +33,7 @@ export const CaseStudies = (): JSX.Element => {
     <div className="bg-white w-full min-h-screen ">
       <Header />
 
-      <main className="px-4 sm:px-6 lg:px-8 py-12 pt-20 md:pt-28 space-y-24">
+      <main className="px-4 sm:px-6 lg:px-8 py-12 pt-28 md:pt-40 space-y-24">
         {/* Artifacts Section */}
         <section className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start relative">
           {/* Left Text */}
@@ -51,10 +51,10 @@ export const CaseStudies = (): JSX.Element => {
           {/* Right Grid */}
           <div className="col-span-1 md:col-span-8 md:col-start-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 relative">
             <div
-              className="group absolute top-0 right-0 -mt-8 text-black font-bold flex items-center justify-center overflow-hidden text-[10px] uppercase tracking-widest cursor-pointer select-none pl-3 pr-8"
+              className="group absolute top-0 right-0 -mt-8 text-black font-bold flex items-center text-[10px] uppercase tracking-widest cursor-pointer select-none"
               onClick={() => navigate('/case-studies/artifacts')}
             >
-              <span className="transition-transform duration-300 whitespace-nowrap group-hover:-translate-x-3">
+              <span className="transition-transform duration-300 whitespace-nowrap group-hover:-translate-x-5">
                 Explore Collection
               </span>
               <svg
@@ -63,7 +63,7 @@ export const CaseStudies = (): JSX.Element => {
                 viewBox="0 0 24 24"
                 strokeWidth="2.5"
                 stroke="currentColor"
-                className="absolute right-2 w-3.5 h-3.5 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"
+                className="absolute right-0 w-3.5 h-3.5 translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
@@ -115,10 +115,10 @@ export const CaseStudies = (): JSX.Element => {
           {/* Right Grid */}
           <div className="col-span-1 md:col-span-8 md:col-start-5 grid grid-cols-1 sm:grid-cols-2 gap-4 relative">
             <div
-              className="group absolute top-0 right-0 -mt-8 text-black font-bold flex items-center justify-center overflow-hidden text-[10px] uppercase tracking-widest cursor-pointer select-none pl-3 pr-8"
+              className="group absolute top-0 right-0 -mt-8 text-black font-bold flex items-center text-[10px] uppercase tracking-widest cursor-pointer select-none"
               onClick={() => navigate('/case-studies/museums')}
             >
-              <span className="transition-transform duration-300 whitespace-nowrap group-hover:-translate-x-3">
+              <span className="transition-transform duration-300 whitespace-nowrap group-hover:-translate-x-5">
                 Navigate Spaces
               </span>
               <svg
@@ -127,7 +127,7 @@ export const CaseStudies = (): JSX.Element => {
                 viewBox="0 0 24 24"
                 strokeWidth="2.5"
                 stroke="currentColor"
-                className="absolute right-2 w-3.5 h-3.5 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"
+                className="absolute right-0 w-3.5 h-3.5 translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>

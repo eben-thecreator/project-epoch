@@ -58,22 +58,19 @@ export const Header = (): JSX.Element => {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 w-full z-50 grid grid-cols-1 md:grid-cols-12 gap-8 items-center px-4 sm:px-6 lg:px-8 transition-all duration-300 ${
-          isScrolled ? "bg-white shadow-sm border-b border-gray-100" : "bg-transparent"
-        }`}
+        className={`fixed top-0 left-0 w-full z-50 grid grid-cols-1 md:grid-cols-12 gap-8 items-center px-4 sm:px-6 lg:px-8 transition-all duration-300 ${isScrolled ? "bg-white shadow-sm border-b border-gray-100" : "bg-transparent"
+          }`}
         style={{ height: "48px" }}
       >
         {/* Left column(s) — Logo only */}
         <div className="col-span-1 md:col-span-4 flex items-center">
           <Link to="/" aria-label="Home" className="flex items-center gap-3 shrink-0">
-            <span className={`font-black text-xl tracking-tighter transition-colors duration-300 ${
-              showWhiteText ? "text-white" : "text-black"
-            }`}>
+            <span className={`font-black text-xl tracking-tighter transition-colors duration-300 ${showWhiteText ? "text-white" : "text-black"
+              }`}>
               SCHIS
             </span>
-            <span className={`text-[9px] uppercase tracking-widest font-medium hidden lg:inline-block transition-colors duration-300 ${
-              showWhiteText ? "text-white/80" : "text-black/60"
-            }`}>
+            <span className={`text-[9px] uppercase tracking-widest font-medium hidden lg:inline-block transition-colors duration-300 ${showWhiteText ? "text-white/80" : "text-black/60"
+              }`}>
               Spatial Cultural Heritage Information System
             </span>
           </Link>
@@ -90,9 +87,8 @@ export const Header = (): JSX.Element => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`text-[10px] tracking-widest uppercase font-bold text-black ${
-                  isActive(item.path) ? "underline" : "hover:underline"
-                }`}
+                className={`text-[10px] tracking-widest uppercase font-bold text-black ${isActive(item.path) ? "underline" : "hover:underline"
+                  }`}
               >
                 {item.name}
               </Link>
@@ -119,7 +115,7 @@ export const Header = (): JSX.Element => {
             </button>
 
             {isMenuDropdownOpen && (
-              <div className="absolute right-0 mt-8 w-32 bg-white border border-gray-100 shadow-xl py-1 rounded-sm z-50">
+              <div className="absolute right-0 mt-8 w-32 bg-white py-1">
                 {[
                   { label: "Research", to: "/research" },
                   { label: "Blog", to: "/blog" },
@@ -155,9 +151,8 @@ export const Header = (): JSX.Element => {
 
       {/* Mobile Menu Overlay */}
       <div
-        className={`md:hidden fixed inset-x-0 z-40 bg-white border-b border-gray-200 transition-transform duration-300 ${
-          isMenuOpen ? "translate-y-0" : "-translate-y-full"
-        }`}
+        className={`md:hidden fixed inset-x-0 z-40 bg-white border-b border-gray-200 transition-transform duration-300 ${isMenuOpen ? "translate-y-0" : "-translate-y-full"
+          }`}
         style={{ top: "72px" }}
       >
         <nav className="flex flex-col px-6 py-6 gap-5">
@@ -165,9 +160,8 @@ export const Header = (): JSX.Element => {
             <Link
               key={item.path}
               to={item.path}
-              className={`text-xs font-bold uppercase tracking-widest text-black ${
-                isActive(item.path) ? "underline" : "hover:underline"
-              }`}
+              className={`text-xs font-bold uppercase tracking-widest text-black ${isActive(item.path) ? "underline" : "hover:underline"
+                }`}
             >
               {item.name}
             </Link>
