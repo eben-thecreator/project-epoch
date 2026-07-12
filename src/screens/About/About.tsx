@@ -1,4 +1,3 @@
-import React from "react";
 import { Header } from "../../components/Header";
 import { Card, CardContent } from "../../components/ui/card";
 
@@ -22,7 +21,7 @@ export const About = (): JSX.Element => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
               <div>
                 <img 
-                  src="/images/about/hero.jpg" 
+                  src="/images/home_about/museum.jpg" 
                   alt="Museum interior with digital displays" 
                   className="rounded-lg w-full object-cover"
                 />

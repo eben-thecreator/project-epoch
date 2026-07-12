@@ -1,6 +1,6 @@
 import React, { Suspense, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Preload, useGLTF, Bounds, useBounds, Environment } from "@react-three/drei";
+import { OrbitControls, Preload, useGLTF, Bounds } from "@react-three/drei";
 import * as THREE from "three";
 
 interface ModelViewerProps {
@@ -27,14 +27,12 @@ class ModelErrorBoundary extends React.Component<{ children: React.ReactNode }, 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="w-full h-full flex items-center justify-center bg-gray-100">
-          <div className="text-center text-gray-500">
-            <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 011.414-0.586H14l2 2v2a2 2 0 01-2 2h-4.172a2 2 0 00-1.414 0.586L4 16z" />
-              <circle cx="18" cy="18" r="2" />
-              <path d="M8.586 4H4a2 2 0 00-2 2v4l2.586-2.586a1 1 0 011.414 0L10 9.414l2-2a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414l5.414-5.414a2 2 0 001.414-1.414L16 8h4a2 2 0 002-2V4a2 2 0 00-2-2h-4.586a1 1 0 00-.707.293l-6 6a1 1 0 000 1.414l6 6a1 1 0 00.707.293z" />
+        <div className="w-full h-full flex items-center justify-center bg-black/5">
+          <div className="text-center text-black/50">
+            <svg className="w-12 h-12 mx-auto text-black/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <p className="mt-2">Error loading 3D model</p>
+            <p className="mt-2 text-xs uppercase tracking-wider font-bold">Error loading 3D model</p>
           </div>
         </div>
       );
@@ -58,10 +56,8 @@ const RotatingModel: React.FC<{ object: THREE.Object3D; autoRotate: boolean }> =
 
 const Model: React.FC<{ modelUrl: string; autoRotate?: boolean }> = ({ modelUrl, autoRotate = false }) => {
   const { scene } = useGLTF(modelUrl);
-  const bounds = useBounds();
 
   const model = React.useMemo(() => scene.clone(true), [scene]);
-
 
   model.traverse((child) => {
     if ((child as THREE.Mesh).isMesh) {
@@ -89,29 +85,8 @@ const Model: React.FC<{ modelUrl: string; autoRotate?: boolean }> = ({ modelUrl,
     }
   });
 
-  const groupRef = useRef<THREE.Group>(null);
-
-  React.useLayoutEffect(() => {
-    if (!groupRef.current) return;
-
-    const bbox = new THREE.Box3().setFromObject(groupRef.current);
-    const size = new THREE.Vector3();
-    const center = new THREE.Vector3();
-    bbox.getSize(size);
-    bbox.getCenter(center);
-
-    groupRef.current.position.sub(center);
-
-    const isWiderThanDeep = size.x > size.z;
-    if (isWiderThanDeep) {
-      groupRef.current.rotation.y = Math.PI / 2;
-    }
-
-    bounds.refresh(groupRef.current).fit();
-  }, [bounds]);
-
   return (
-    <group ref={groupRef}>
+    <group>
       <RotatingModel object={model} autoRotate={autoRotate} />
     </group>
   );
@@ -125,13 +100,11 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
   if (!modelUrl) {
     return (
       <div className="w-full h-full flex items-center justify-center" style={{ background: backgroundColor }}>
-        <div className="text-center text-gray-500">
-          <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 011.414-0.586H14l2 2v2a2 2 0 01-2 2h-4.172a2 2 0 00-1.414 0.586L4 16z" />
-            <circle cx="18" cy="18" r="2" />
-            <path d="M8.586 4H4a2 2 0 00-2 2v4l2.586-2.586a1 1 0 011.414 0L10 9.414l2-2a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414l5.414-5.414a2 2 0 001.414-1.414L16 8h4a2 2 0 002-2V4a2 2 0 00-2-2h-4.586a1 1 0 00-.707.293l-6 6a1 1 0 000 1.414l6 6a1 1 0 00.707.293z" />
+        <div className="text-center text-black/50">
+          <svg className="w-12 h-12 mx-auto text-black/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <p className="mt-2">No model available</p>
+          <p className="mt-2 text-xs uppercase tracking-wider font-bold">No model available</p>
         </div>
       </div>
     );
@@ -140,7 +113,7 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
   const modelKey = React.useMemo(() => modelUrl, [modelUrl]);
 
   return (
-    <div className="w-full h-full relative" style={{ background: backgroundColor, zIndex: 50 }}>
+    <div className="w-full h-full relative" style={{ background: backgroundColor }}>
       <ModelErrorBoundary>
         <Canvas
           camera={{ position: [0, 0, 5], fov: 50}}
@@ -184,7 +157,7 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
             castShadow
           />
 
-          <Suspense fallback={<div className="text-center w-full h-full flex items-center justify-center">Loading model...</div>}>
+          <Suspense fallback={<div className="text-center w-full h-full flex items-center justify-center text-black/40 text-xs uppercase tracking-wider font-bold">Loading model...</div>}>
             <Bounds fit observe margin={1}>
               <Model modelUrl={modelUrl} autoRotate={autoRotate} key={modelKey} />
             </Bounds>

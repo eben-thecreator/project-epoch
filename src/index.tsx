@@ -7,14 +7,22 @@ import {
 import { Home } from "./screens/Home";
 import { About } from "./screens/About";
 import { Contact } from "./screens/Contact";
-import { CaseStudies } from "./screens/CaseStudies";
-import { ArtifactDetails } from "./screens/CaseStudies/artifacts/ArtifactDetails";
-import { Artifacts } from "./screens/CaseStudies/artifacts/Artifacts";
-import { Museum, MuseumDetails } from "./screens/CaseStudies/museums";
+import {
+  CaseStudies,
+  ArtifactDetails,
+  Artifacts,
+  Museum,
+  MuseumDetails,
+  Textiles,
+  Documents,
+  Review
+} from "./screens/CaseStudies";
 import { Reconstruction } from "./screens/Reconstruction";
 import { Gallery } from "./screens/Gallery";
 import { Research } from "./screens/Research";
 import { Blog } from "./screens/Blog";
+import { MediaAdmin } from "./screens/MediaAdmin";
+import { MapScreen } from "./screens/Map/Map";
 
 const router = createBrowserRouter([
   {
@@ -46,8 +54,24 @@ const router = createBrowserRouter([
     element: <MuseumDetails />,
   },
   {
+    path: "/case-studies/textiles",
+    element: <Textiles />,
+  },
+  {
+    path: "/case-studies/documents",
+    element: <Documents />,
+  },
+  {
+    path: "/case-studies/review",
+    element: <Review />,
+  },
+  {
     path: "/case-studies/:id",
     element: <ArtifactDetails />,
+  },
+  {
+    path: "/admin/media",
+    element: <MediaAdmin />,
   },
   {
     path: "/reconstruction",
@@ -64,6 +88,10 @@ const router = createBrowserRouter([
   {
     path: "/blog",
     element: <Blog />,
+  },
+  {
+    path: "/map",
+    element: <MapScreen />,
   },
 ]);
 

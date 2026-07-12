@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import { Header } from "../../components/Header";
 
@@ -49,7 +48,7 @@ export const Home = (): JSX.Element => {
           {/* Research team credits */}
           <div className="absolute bottom-6 left-4 sm:left-6 lg:left-8 text-white z-10 max-w-[90%] md:max-w-[85%]">
             <p className="text-[9px] md:text-[10px] leading-relaxed text-white font-semibold tracking-wider uppercase">
-              Research Team: Amoah Yeboah Abena Pokua • Ankudey Ebenezer • Elorm Dei-Zanga <br />
+              Research Team: Amoah-Yeboah Abena Pokua • Ankudey Ebenezer • Elorm Dei-Zanga Aku<br />
               Academic Supervisor: Professor Quaye Ballard
             </p>
           </div>
