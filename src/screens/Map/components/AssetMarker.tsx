@@ -50,22 +50,40 @@ const darkDefaultStyle = { color: "#E4002B", shape: "circle" };
 function buildSvg(shape: string, color: string, size: number, label: string, showLabel: boolean, labelColor: string): string {
   const s = size;
   const half = s / 2;
-  const strokeColor = "#ffffff";
-  const inner = `fill="${color}" stroke="${strokeColor}" stroke-width="1.5"`;
 
   const pathD = paths[shape] || paths.circle;
+  // No stroke — clean icon with just fill
   const shapeSvg = `<g transform="scale(${s / 24})">
-    <path d="${pathD}" ${inner} opacity="0.9"/>
+    <path d="${pathD}" fill="${color}" stroke="none" opacity="1"/>
   </g>`;
 
-  const labelSvg = showLabel && label
-    ? `<text x="${half}" y="${s + 10}" text-anchor="middle" fill="${labelColor}" font-size="8" font-weight="700" font-family="Helvetica, Arial, sans-serif" letter-spacing="0.08em" opacity="0.7">${escapeXml(label.substring(0, 22))}</text>`
-    : "";
+  let labelSvg = "";
+  let labelBlockHeight = 0;
+  const maxLabelWidth = 120;
 
-  const totalHeight = showLabel && label ? s + 18 : s;
+  if (showLabel && label) {
+    // Truncate long names sensibly
+    const displayLabel = label.length > 30 ? label.substring(0, 28) + "…" : label;
+    const escaped = escapeXml(displayLabel);
+    // Pill background behind the text for readability over any map style
+    const pillW = Math.min(maxLabelWidth, escaped.length * 5.5 + 12);
+    const pillH = 14;
+    const pillX = half - pillW / 2;
+    const pillY = s + 3;
+    labelBlockHeight = pillH + 4;
+    labelSvg = `
+      <rect x="${pillX}" y="${pillY}" width="${pillW}" height="${pillH}" rx="3" ry="3" fill="rgba(255,255,255,0.82)" stroke="none"/>
+      <text x="${half}" y="${pillY + 10}" text-anchor="middle" fill="${labelColor}" font-size="9" font-weight="700" font-family="Helvetica,Arial,sans-serif" letter-spacing="0.04em">${escaped}</text>`;
+  }
 
-  return `<svg width="${s}" height="${totalHeight}" xmlns="http://www.w3.org/2000/svg">
-    ${shapeSvg}
+  const totalWidth = Math.max(s, 120);
+  const totalHeight = s + labelBlockHeight;
+  const xOffset = (totalWidth - s) / 2;
+
+  return `<svg width="${totalWidth}" height="${totalHeight}" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(${xOffset},0)">
+      ${shapeSvg}
+    </g>
     ${labelSvg}
   </svg>`;
 }
@@ -88,17 +106,20 @@ export function createMarkerIcon(
   size = 24
 ) {
   const { color, shape } = getStyle(category, dark);
-  const labelColor = dark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)";
+  const labelColor = dark ? "rgba(20,20,20,0.9)" : "rgba(20,20,20,0.9)";
   const svg = buildSvg(shape, color, size, name || "", showLabel, labelColor);
-  const totalHeight = showLabel && name ? size + 18 : size;
+  const totalWidth = Math.max(size, 120);
+  const labelBlockHeight = showLabel && name ? 18 : 0;
+  const totalHeight = size + labelBlockHeight;
   return divIcon({
     html: svg,
     className: "",
-    iconSize: [size, totalHeight],
-    iconAnchor: [size / 2, size / 2],
+    iconSize: [totalWidth, totalHeight],
+    iconAnchor: [totalWidth / 2, size / 2],
     popupAnchor: [0, -size / 2],
   });
 }
+
 
 interface AssetMarkerProps {
   position: [number, number];

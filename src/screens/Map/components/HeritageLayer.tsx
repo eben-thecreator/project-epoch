@@ -165,6 +165,27 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
     [filteredAssets]
   );
 
+  // Compute centroid [lat, lng] for a polygon or multipolygon geometry
+  const getPolygonCentroid = (geometry: { type: string; coordinates: number[] | number[][] }): [number, number] | null => {
+    try {
+      let ring: number[][];
+      if (geometry.type === "Polygon") {
+        ring = (geometry.coordinates as number[][][])[0];
+      } else if (geometry.type === "MultiPolygon") {
+        // Use the first polygon's outer ring
+        ring = (geometry.coordinates as number[][][][])[0][0];
+      } else {
+        return null;
+      }
+      if (!ring || ring.length === 0) return null;
+      let lngSum = 0, latSum = 0;
+      ring.forEach((c) => { lngSum += c[0]; latSum += c[1]; });
+      return [latSum / ring.length, lngSum / ring.length];
+    } catch {
+      return null;
+    }
+  };
+
   useEffect(() => {
     const cats = new Set<string>();
     const counts: Record<string, number> = {};
@@ -202,16 +223,32 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
         );
       })}
 
-      {polygonAssets.map((asset) => (
-        <GeoJSON
-          key={`poly-${asset.id}`}
-          data={asset.geometry as any}
-          style={(feature) => getPolygonStyle(feature, darkMode)}
-          eventHandlers={{
-            click: () => onSelectAsset(asset),
-          }}
-        />
-      ))}
+      {polygonAssets.map((asset) => {
+        const centroid = getPolygonCentroid(asset.geometry!);
+        return (
+          <React.Fragment key={`poly-group-${asset.id}`}>
+            <GeoJSON
+              key={`poly-${asset.id}`}
+              data={asset.geometry as any}
+              style={(feature) => getPolygonStyle(feature, darkMode)}
+              eventHandlers={{
+                click: () => onSelectAsset(asset),
+              }}
+            />
+            {centroid && (
+              <AssetMarker
+                key={`poly-marker-${asset.id}`}
+                position={centroid}
+                category={asset.asset_category}
+                name={asset.name || asset.alternative_name || ""}
+                showLabel={showLabels}
+                darkMode={darkMode}
+                onClick={() => onSelectAsset(asset)}
+              />
+            )}
+          </React.Fragment>
+        );
+      })}
 
       {lineAssets.map((asset) => {
         const cat = asset.asset_category || "";

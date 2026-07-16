@@ -16,7 +16,7 @@
     "cors": "^2.8.6",
     "dotenv": "^16.4.7",
     "express": "^5.2.1",
-    "framer-motion": "^12.23.12",
+    "framer-motion": "^12.42.2",
     "leaflet": "^1.9.4",
     "multer": "^1.4.5-lts.1",
     "pg": "^8.22.0",

@@ -64,10 +64,8 @@ export const RollingBanner: React.FC = () => {
   const isHomePage = location.pathname === "/";
 
   return (
-    <div className={`fixed bottom-0 z-40 bg-[#000] py-3 overflow-hidden text-white transition-all duration-300 ${
-      isHomePage ? "left-0 md:left-[47%] w-full md:w-[53%]" : "left-0 w-full"
-    }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className={`fixed top-0 left-0 z-[1060] bg-[#000] h-[40px] flex items-center overflow-hidden text-white transition-all duration-300 w-full`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div
           ref={containerRef}
           className="flex"
@@ -79,16 +77,16 @@ export const RollingBanner: React.FC = () => {
           {EXHIBITIONS.map((exhibition) => (
             <div key={`${exhibition.id}-1`} className="flex items-center whitespace-nowrap mx-6 text-[10px] font-bold tracking-widest uppercase">
               <span>{exhibition.title} | {exhibition.location} | {exhibition.startDate} to {exhibition.endDate}</span>
-              <span className="mx-4 text-black/45">•</span>
-              <span className="text-black font-extrabold">EXHIBITION</span>
+              <span className="mx-4 text-white/45">•</span>
+              <span className="text-white font-extrabold">EXHIBITION</span>
             </div>
           ))}
           {/* Duplicate items for seamless looping */}
           {EXHIBITIONS.map((exhibition) => (
             <div key={`${exhibition.id}-2`} className="flex items-center whitespace-nowrap mx-6 text-[10px] font-bold tracking-widest uppercase">
               <span>{exhibition.title} | {exhibition.location} | {exhibition.startDate} to {exhibition.endDate}</span>
-              <span className="mx-4 text-black/45">•</span>
-              <span className="text-black font-extrabold">EXHIBITION</span>
+              <span className="mx-4 text-white/45">•</span>
+              <span className="text-white font-extrabold">EXHIBITION</span>
             </div>
           ))}
         </div>

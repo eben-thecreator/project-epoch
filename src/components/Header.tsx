@@ -41,9 +41,12 @@ export const Header = ({ hideRollingBanner = false }: HeaderProps): JSX.Element 
 
   return (
     <>
+      {/* Rolling banner — top of viewport on all pages except map */}
+      {!hideRollingBanner && <RollingBanner />}
+
       <header
-        className="fixed top-0 left-0 w-full z-[1050] grid grid-cols-1 md:grid-cols-12 gap-8 items-center px-4 sm:px-6 lg:px-8 transition-all duration-300 bg-[#E4002B]"
-        style={{ height: "64px" }}
+        className="fixed left-0 w-full z-[1050] grid grid-cols-1 md:grid-cols-12 gap-8 items-center px-4 sm:px-6 lg:px-8 transition-all duration-300 bg-[#E4002B]"
+        style={{ top: !hideRollingBanner ? "40px" : "0", height: "64px" }}
       >
         {/* Left column(s) — Logo only */}
         <div className="col-span-1 md:col-span-4 flex items-center">
@@ -58,12 +61,10 @@ export const Header = ({ hideRollingBanner = false }: HeaderProps): JSX.Element 
         </div>
 
         {/* Right column(s) — Nav and Hamburger */}
-        <div className="hidden md:grid md:grid-cols-3 gap-4 md:col-span-8 md:col-start-5 items-center w-full">
-          {/* Sub-col 1: Empty */}
-          <div></div>
+        <div className="hidden md:flex md:col-span-8 md:col-start-5 items-center w-full">
 
-          {/* Sub-col 2: Navigation Links */}
-          <nav className="flex items-center gap-6 whitespace-nowrap">
+          {/* Sub-col 2: Navigation Links — ml-[30%] aligns 'Catalogue' with Textiles card */}
+          <nav className="flex items-center gap-6 whitespace-nowrap ml-[30%]">
             {navigation.map((item) => (
               <Link
                 key={item.path}
@@ -76,8 +77,8 @@ export const Header = ({ hideRollingBanner = false }: HeaderProps): JSX.Element 
             ))}
           </nav>
 
-          {/* Sub-col 3: Hamburger */}
-          <div className="relative flex justify-end">
+          {/* Sub-col 3: Hamburger — pushed to the far right */}
+          <div className="relative flex justify-end ml-auto">
             <button
               onClick={() => setIsMenuDropdownOpen(!isMenuDropdownOpen)}
               className="relative p-1 -mr-1 text-white hover:text-white transition-colors flex items-center justify-center focus:outline-none"
@@ -135,7 +136,7 @@ export const Header = ({ hideRollingBanner = false }: HeaderProps): JSX.Element 
       <div
         className={`md:hidden fixed inset-x-0 z-[1001] bg-[#E4002B] transition-transform duration-300 ${isMenuOpen ? "translate-y-0" : "-translate-y-full"
           }`}
-        style={{ top: "80px" }}
+        style={{ top: !hideRollingBanner ? "104px" : "64px" }}
       >
         <nav className="flex flex-col px-6 py-6 gap-5">
           {navigation.map((item) => (
@@ -166,9 +167,6 @@ export const Header = ({ hideRollingBanner = false }: HeaderProps): JSX.Element 
           ))}
         </nav>
       </div>
-
-      {/* Rolling banner — bottom of viewport on all pages except map */}
-      {!hideRollingBanner && <RollingBanner />}
     </>
   );
 };
