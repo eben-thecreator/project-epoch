@@ -1,6 +1,5 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { HeritageAsset } from "./HeritageLayer";
 import { apiUrl } from "../../../lib/api";
 
@@ -19,7 +18,6 @@ function getPrimaryImage(asset: HeritageAsset): string | null {
 }
 
 export const SidePanel: React.FC<SidePanelProps> = ({ asset, onClose, darkMode = false }) => {
-  const navigate = useNavigate();
   const bg = darkMode ? "bg-[#0d0d0d]" : "bg-white";
   const border = darkMode ? "border-white/10" : "border-black/10";
   const text = darkMode ? "text-white/90" : "text-black";
@@ -125,15 +123,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ asset, onClose, darkMode =
                 </div>
               )}
 
-              <button
-                onClick={() => {
-                  const route = asset.asset_category === 'Museum' ? `/case-studies/museums/${asset.id}` : `/case-studies/${asset.id}`;
-                  navigate(route, { state: { from: "map" } });
-                }}
-                className={`w-full py-2.5 ${darkMode ? "bg-white text-black hover:bg-white/80" : "bg-black text-white hover:bg-black/80"} text-[10px] uppercase tracking-[0.2em] font-bold transition-colors`}
-              >
-                View Full Details
-              </button>
+
             </div>
           </div>
         </motion.div>

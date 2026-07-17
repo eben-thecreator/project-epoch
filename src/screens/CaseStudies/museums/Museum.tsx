@@ -1,29 +1,75 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "../../../components/Header";
-import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { ModelViewer } from "../../../components/ModelViewer";
 import { apiUrl } from "../../../lib/api";
 
+type MediaItem = {
+  id: string;
+  mediaType: string;
+  filePath: string;
+  fileName?: string | null;
+  caption?: string | null;
+  isPrimary?: boolean;
+};
+
+type Museum = {
+  id: string;
+  title: string;
+  location: string;
+  type: string;
+  description: string;
+  imageUrl: string;
+  modelUrl: string;
+  media: MediaItem[];
+};
+
+const stagger = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.04 },
+  },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+};
+
 export const Museum = (): JSX.Element => {
-  const navigate = useNavigate();
-  const [museums, setMuseums] = useState<any[]>([]);
+  const [museums, setMuseums] = useState<Museum[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const detailsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch(apiUrl("/api/heritage-assets?collection=museums"));
         const data = await response.json();
-        setMuseums(data.map(item => ({
-          id: item.id,
-          title: item.name,
-          location: item.current_location,
-          type: item.asset_category,
-          description: item.description,
-          imageUrl: item.media.find((m: any) => m.mediaType === 'image')?.filePath ? apiUrl(item.media.find((m: any) => m.mediaType === 'image').filePath) : '',
-          modelUrl: item.media.find((m: any) => m.mediaType === 'model')?.filePath
-            ? apiUrl(item.media.find((m: any) => m.mediaType === 'model').filePath)
-            : '',
-        })));
+        const mapped = data.map((item: any) => {
+          const media: MediaItem[] = Array.isArray(item.media) ? item.media : [];
+          return {
+            id: item.id,
+            title: item.name || item.alternative_name || item.id,
+            location:
+              item.current_location ||
+              [item.region, item.district, item.community].filter(Boolean).join(", ") ||
+              "Unknown",
+            type: item.asset_category || item.asset_type || "Site",
+            description: item.description || "No description recorded.",
+            imageUrl: media.find((m: MediaItem) => m.mediaType === "image")?.filePath
+              ? apiUrl(media.find((m: MediaItem) => m.mediaType === "image")!.filePath)
+              : "",
+            modelUrl: media.find((m: MediaItem) => m.mediaType === "model")?.filePath
+              ? apiUrl(media.find((m: MediaItem) => m.mediaType === "model")!.filePath)
+              : "",
+            media,
+          };
+        });
+        setMuseums(mapped);
+        if (mapped.length > 0) {
+          setSelectedId(mapped[0].id);
+        }
       } catch (error) {
         console.error("Error fetching museums:", error);
       }
@@ -31,71 +77,234 @@ export const Museum = (): JSX.Element => {
     fetchData();
   }, []);
 
-  const handleMuseumClick = (id: string) => {
-    navigate(`/case-studies/museums/${id}`);
+  const selected = museums.find((m) => m.id === selectedId) || null;
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [selectedId]);
+
+  const handleSelect = (id: string) => {
+    setSelectedId(id);
+    detailsRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Preload images when component mounts
-  React.useEffect(() => {
-    museums.forEach(museum => {
-      if (museum.imageUrl) {
-        const img = new Image();
-        img.src = museum.imageUrl;
-      }
-    });
-  }, [museums]);
+  const imageMedia = selected
+    ? selected.media.filter((m) => m.mediaType === "image")
+    : [];
 
   return (
-    <div className="bg-white w-full min-h-screen">
+    <div className="bg-white w-full h-screen pt-[120px] pb-[40px]">
       <Header />
 
-      <main className="px-4 sm:px-6 lg:px-8 py-12 pt-28 md:pt-40">
-        <section className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-          <div className="col-span-1 md:col-span-3 md:sticky md:top-28 self-start">
-            <div className="space-y-4">
-              <h2 className="text-sm font-bold text-black">Museums & Monuments ({museums.length})</h2>
-              <p className="text-sm font-bold text-black leading-snug max-w-xs">
-                Explore our curated collection of museums that preserve and showcase West African cultural heritage through immersive exhibitions and digital experiences.
-              </p>
-              <div className="mt-4">
-                {/* Video element would go here */}
-              </div>
-            </div>
-          </div>
-
-          <div className="col-span-1 md:col-span-8 md:col-start-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="h-full grid grid-cols-1 md:grid-cols-12 gap-6 min-h-0 px-4 sm:px-6 lg:px-8">
+        {/* Left: Museum gallery grid */}
+        <div className="col-span-1 md:col-span-7 h-full overflow-y-auto py-4 scrollbar-hide">
+          <motion.div
+            className="grid grid-cols-2 lg:grid-cols-3 gap-2"
+            variants={stagger}
+            initial="hidden"
+            animate="visible"
+          >
             {museums.map((museum) => (
-              <div
+              <motion.div
                 key={museum.id}
-                className="aspect-[480/270] w-full cursor-pointer group hover:opacity-90 transition-opacity"
-                onClick={() => handleMuseumClick(museum.id)}
+                variants={fadeUp}
+                onClick={() => handleSelect(museum.id)}
+                className={`cursor-pointer overflow-hidden transition-all duration-300 ${selectedId === museum.id
+                  ? "ring-1 ring-black scale-[0.98]"
+                  : "opacity-85 hover:opacity-100"
+                  }`}
               >
-                <img
-                  src={museum.imageUrl}
-                  alt={museum.title}
-                  className="w-full h-full object-cover"
-                  onError={(e: any) => {
-                    e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%239ca3af'%3ENo image available%3C/text%3E%3C/svg%3E";
-                  }}
-                />
-                <div className="pt-2 text-xs">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-bold text-black">{museum.title}</h3>
-                    <div className="text-black font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      View
+                <motion.div
+                  className="aspect-[3/2] w-full overflow-hidden bg-black/5"
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                >
+                  <img
+                    src={museum.imageUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    onError={(e: any) => {
+                      e.currentTarget.src =
+                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f5f5f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23ccc'%3E%3C/text%3E%3C/svg%3E";
+                    }}
+                  />
+                </motion.div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+
+        {/* Right: Model viewer + details + media gallery */}
+        <div
+          ref={detailsRef}
+          className="col-span-1 md:col-span-5 h-full overflow-y-auto py-4 space-y-5 scrollbar-hide"
+        >
+          <AnimatePresence mode="wait">
+            {selected ? (
+              <motion.div
+                key={selected.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="space-y-5"
+              >
+                {/* Model viewer */}
+                <div className="w-full aspect-[2/1] bg-black/5 overflow-hidden border border-black/5">
+                  {selected.modelUrl ? (
+                    <ModelViewer
+                      modelUrl={selected.modelUrl}
+                      autoRotate={false}
+                    />
+                  ) : selected.imageUrl ? (
+                    <img
+                      src={selected.imageUrl}
+                      alt=""
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-[10px] uppercase tracking-widest font-bold text-black/20">
+                        No media
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Museum details */}
+                <div className="space-y-4">
+                  <div>
+                    <h1 className="text-lg font-black uppercase leading-tight text-black">
+                      {selected.title}
+                    </h1>
+                    <p className="text-[10px] uppercase font-bold text-black/40 mt-1">
+                      {[selected.location, selected.type]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
+                        Location
+                      </p>
+                      <p className="text-xs font-bold text-black">
+                        {selected.location}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
+                        Type
+                      </p>
+                      <p className="text-xs font-bold text-black">
+                        {selected.type}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex space-x-2 mt-1">
-                    <span>{museum.location}</span>
-                    <span>•</span>
-                    <span>{museum.type}</span>
+
+                  <div>
+                    <p className="text-[9px] uppercase font-bold text-black/30 mb-2">
+                      Description
+                    </p>
+                    <p className="text-xs text-black/60 leading-relaxed">
+                      {selected.description}
+                    </p>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
+
+                {/* Scrollable media gallery -> Redesigned Cinematic Carousel */}
+                {imageMedia.length > 0 && (
+                  <div className="space-y-2.5 pt-2 border-t border-black/5">
+                    <p className="text-[9px] uppercase font-bold text-black/40">
+                      Media Gallery ({imageMedia.length})
+                    </p>
+                    <div className="relative aspect-[16/10] bg-black/5 overflow-hidden border border-black/5">
+                      <AnimatePresence mode="wait">
+                        {imageMedia[activeImageIndex] && (
+                          <motion.img
+                            key={imageMedia[activeImageIndex].id}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.35, ease: "easeInOut" }}
+                            src={apiUrl(imageMedia[activeImageIndex].filePath)}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </AnimatePresence>
+
+                      {/* Carousel Arrow Controls */}
+                      {imageMedia.length > 1 && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveImageIndex((prev) => (prev - 1 + imageMedia.length) % imageMedia.length);
+                            }}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/75 hover:bg-black text-white w-7 h-7 flex items-center justify-center transition-colors focus:outline-none"
+                            aria-label="Previous image"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveImageIndex((prev) => (prev + 1) % imageMedia.length);
+                            }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/75 hover:bg-black text-white w-7 h-7 flex items-center justify-center transition-colors focus:outline-none"
+                            aria-label="Next image"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                            </svg>
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Thumbnail Strip */}
+                    {imageMedia.length > 1 && (
+                      <div className="flex gap-2 overflow-x-auto py-1 scrollbar-hide">
+                        {imageMedia.map((m, idx) => (
+                          <button
+                            key={m.id}
+                            onClick={() => setActiveImageIndex(idx)}
+                            className={`w-14 h-9 flex-shrink-0 border bg-black/5 overflow-hidden transition-all duration-200 ${activeImageIndex === idx
+                              ? "border-black opacity-100"
+                              : "border-transparent opacity-50 hover:opacity-100"
+                              }`}
+                          >
+                            <img
+                              src={apiUrl(m.filePath)}
+                              className="w-full h-full object-cover"
+                              alt=""
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="h-full flex items-center justify-center"
+              >
+                <p className="text-[10px] uppercase font-bold text-black/30">
+                  Select a museum
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 };

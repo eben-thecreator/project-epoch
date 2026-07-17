@@ -9,10 +9,8 @@ import { About } from "./screens/About";
 import { Contact } from "./screens/Contact";
 import {
   CaseStudies,
-  ArtifactDetails,
   Artifacts,
   Museum,
-  MuseumDetails,
   Textiles,
   Documents,
   Review
@@ -49,10 +47,7 @@ const router = createBrowserRouter([
     path: "/case-studies/museums",
     element: <Museum />,
   },
-  {
-    path: "/case-studies/museums/:id",
-    element: <MuseumDetails />,
-  },
+
   {
     path: "/case-studies/textiles",
     element: <Textiles />,
@@ -65,10 +60,7 @@ const router = createBrowserRouter([
     path: "/case-studies/review",
     element: <Review />,
   },
-  {
-    path: "/case-studies/:id",
-    element: <ArtifactDetails />,
-  },
+
   {
     path: "/admin/media",
     element: <MediaAdmin />,

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Header } from "../../components/Header";
 import { apiUrl } from "../../lib/api";
 import { getCatalogueCollection, type CatalogueCollectionKey } from "./catalogueConfig";
@@ -52,7 +52,6 @@ const getPreviewMedia = (record: HeritageRecord) => {
 
 export const CollectionPage = ({ collectionKey }: CollectionPageProps): JSX.Element => {
   const config = getCatalogueCollection(collectionKey);
-  const navigate = useNavigate();
   const [records, setRecords] = useState<HeritageRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -145,8 +144,7 @@ export const CollectionPage = ({ collectionKey }: CollectionPageProps): JSX.Elem
                   return (
                     <article
                       key={record.id}
-                      className="border border-black/10 bg-[#fbfbfb] overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.03)] cursor-pointer group hover:border-black/25 transition-colors"
-                      onClick={() => navigate(`/case-studies/${record.id}`)}
+                      className="border border-black/10 bg-[#fbfbfb] overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.03)] group hover:border-black/25 transition-colors"
                     >
                       <div className="aspect-[4/3] bg-black/5 overflow-hidden flex items-center justify-center">
                         {previewMedia?.mediaType === "image" ? (
@@ -158,12 +156,9 @@ export const CollectionPage = ({ collectionKey }: CollectionPageProps): JSX.Elem
                         ) : previewMedia && isMediaModel(previewMedia) ? (
                           <div className="px-4 text-center space-y-2">
                             <div className="text-xs uppercase tracking-widest font-bold text-black/60">3D Model</div>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); navigate(`/case-studies/${record.id}`); }}
-                              className="inline-flex items-center justify-center border border-black px-3 py-2 text-[10px] uppercase tracking-[0.28em] font-bold hover:bg-black hover:text-white transition-colors"
-                            >
-                              View Record
-                            </button>
+                            <span className="inline-flex items-center justify-center border border-black/20 px-3 py-2 text-[10px] uppercase tracking-[0.28em] font-bold text-black/50">
+                              3D Model
+                            </span>
                           </div>
                         ) : previewMedia ? (
                           <div className="text-center px-4 space-y-2">
