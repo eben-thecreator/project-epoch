@@ -197,7 +197,7 @@ app.get("/api/status", async (req, res) => {
 app.get("/api/heritage-assets", async (req, res) => {
   try {
     const collection = typeof req.query.collection === "string" ? req.query.collection : "";
-    const conditions = [];
+    const conditions = ["ha.deleted_at IS NULL"];
     const values = [];
     let paramIndex = 1;
 
@@ -227,22 +227,9 @@ app.get("/api/heritage-assets", async (req, res) => {
 
     const addTextSearch = (param) => {
       if (isNonEmptyString(param)) {
-        const term = param.trim().toLowerCase();
-        conditions.push(`(
-          LOWER(ha.name) LIKE $${paramIndex}
-          OR LOWER(ha.alternative_name) LIKE $${paramIndex}
-          OR LOWER(ha.description) LIKE $${paramIndex}
-          OR LOWER(ha.region) LIKE $${paramIndex}
-          OR LOWER(ha.district) LIKE $${paramIndex}
-          OR LOWER(ha.community) LIKE $${paramIndex}
-          OR LOWER(ha.asset_category) LIKE $${paramIndex}
-          OR LOWER(ha.asset_type) LIKE $${paramIndex}
-          OR LOWER(ha.period) LIKE $${paramIndex}
-          OR LOWER(ha.cultural_group) LIKE $${paramIndex}
-          OR LOWER(ha.material) LIKE $${paramIndex}
-          OR LOWER(ha.location_description) LIKE $${paramIndex}
-        )`);
-        values.push(`%${term}%`);
+        const term = param.trim();
+        conditions.push(`search_vector @@ plainto_tsquery('english', $${paramIndex})`);
+        values.push(term);
         paramIndex++;
       }
     };
@@ -261,6 +248,11 @@ app.get("/api/heritage-assets", async (req, res) => {
     addTextFilter("accessibility", req.query.accessibility);
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    const hasPagination = req.query.page !== undefined || req.query.limit !== undefined;
+    const pageNum = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 50));
+    const offset = (pageNum - 1) * pageSize;
 
     const result = await db.query(`
       SELECT
@@ -332,12 +324,30 @@ app.get("/api/heritage-assets", async (req, res) => {
       ) media ON TRUE
       ${whereClause}
       ORDER BY ha.created_at DESC
-    `, values);
+      ${hasPagination ? `LIMIT $${paramIndex} OFFSET $${paramIndex + 1}` : ""}
+    `, hasPagination ? [...values, pageSize, offset] : values);
     const assets = result.rows.map((row) => ({
       ...row,
       description: stripHtml(row.description),
     }));
-    res.json(assets);
+    if (hasPagination) {
+      const countResult = await db.query(`
+        SELECT COUNT(*)::int AS total
+        FROM heritage_assets ha
+        ${whereClause}
+      `, values);
+      res.json({
+        data: assets,
+        pagination: {
+          page: pageNum,
+          limit: pageSize,
+          total: countResult.rows[0].total,
+          totalPages: Math.ceil(countResult.rows[0].total / pageSize),
+        },
+      });
+    } else {
+      res.json(assets);
+    }
   } catch (err) {
     console.error("Error querying heritage_assets:", err.message);
     res.status(500).json({
@@ -484,7 +494,7 @@ app.get("/api/heritage-assets/:id", async (req, res) => {
         FROM heritage_asset_media m
         WHERE m.asset_id = ha.id
       ) media ON TRUE
-      WHERE ha.id = $1
+      WHERE ha.id = $1 AND ha.deleted_at IS NULL
     `, [id]);
 
     if (result.rows.length === 0) {
@@ -723,7 +733,7 @@ app.post("/api/heritage-assets/:id/media", async (req, res) => {
       await client.query("BEGIN");
 
       const assetExists = await client.query(
-        "SELECT id FROM heritage_assets WHERE id = $1",
+        "SELECT id FROM heritage_assets WHERE id = $1 AND deleted_at IS NULL",
         [id]
       );
 
@@ -788,7 +798,7 @@ app.post("/api/heritage-assets/:id/media/upload", uploadMediaFiles.array("files"
   const { id } = req.params;
 
   try {
-    const assetExists = await db.query("SELECT id FROM heritage_assets WHERE id = $1", [id]);
+    const assetExists = await db.query("SELECT id FROM heritage_assets WHERE id = $1 AND deleted_at IS NULL", [id]);
     if (assetExists.rowCount === 0) {
       if (req.files?.length) {
         await Promise.all(req.files.map((file) => fs.promises.unlink(file.path).catch(() => { })));
@@ -895,7 +905,7 @@ app.put("/api/heritage-assets/:id", async (req, res) => {
   } = req.body;
 
   try {
-    const existing = await db.query("SELECT id FROM heritage_assets WHERE id = $1", [id]);
+    const existing = await db.query("SELECT id FROM heritage_assets WHERE id = $1 AND deleted_at IS NULL", [id]);
     if (existing.rowCount === 0) {
       return res.status(404).json({ error: "Heritage asset not found." });
     }
@@ -959,42 +969,28 @@ app.put("/api/heritage-assets/:id", async (req, res) => {
   }
 });
 
-// DELETE /api/heritage-assets/:id - Delete a heritage asset and its media files
+// DELETE /api/heritage-assets/:id - Soft-delete a heritage asset
 app.delete("/api/heritage-assets/:id", async (req, res) => {
   const { id } = req.params;
-  const client = await db.pool.connect();
 
   try {
-    await client.query("BEGIN");
-
-    const existing = await client.query("SELECT id FROM heritage_assets WHERE id = $1", [id]);
+    const existing = await db.query(
+      "SELECT id FROM heritage_assets WHERE id = $1 AND deleted_at IS NULL",
+      [id]
+    );
     if (existing.rowCount === 0) {
-      await client.query("ROLLBACK");
       return res.status(404).json({ error: "Heritage asset not found." });
     }
 
-    const mediaFiles = await client.query(
-      "SELECT file_path FROM heritage_asset_media WHERE asset_id = $1",
+    await db.query(
+      "UPDATE heritage_assets SET deleted_at = NOW() WHERE id = $1",
       [id]
     );
 
-    await client.query("DELETE FROM heritage_asset_media WHERE asset_id = $1", [id]);
-    await client.query("DELETE FROM heritage_assets WHERE id = $1", [id]);
-
-    await client.query("COMMIT");
-
-    for (const row of mediaFiles.rows) {
-      const fullPath = path.join(uploadRoot, row.file_path.replace(/^\/uploads\//, ""));
-      await fs.promises.unlink(fullPath).catch(() => { });
-    }
-
     res.json({ success: true, message: "Heritage asset deleted." });
   } catch (err) {
-    await client.query("ROLLBACK").catch(() => { });
     console.error("Failed to delete heritage asset:", err.message);
     res.status(500).json({ error: "Failed to delete heritage asset." });
-  } finally {
-    client.release();
   }
 });
 
@@ -1003,6 +999,14 @@ app.delete("/api/heritage-assets/:id/media/:mediaId", async (req, res) => {
   const { id, mediaId } = req.params;
 
   try {
+    const assetCheck = await db.query(
+      "SELECT id FROM heritage_assets WHERE id = $1 AND deleted_at IS NULL",
+      [id]
+    );
+    if (assetCheck.rowCount === 0) {
+      return res.status(404).json({ error: "Heritage asset not found." });
+    }
+
     const existing = await db.query(
       "SELECT id, file_path FROM heritage_asset_media WHERE id = $1 AND asset_id = $2",
       [mediaId, id]
@@ -1031,6 +1035,14 @@ app.patch("/api/heritage-assets/:id/media/:mediaId", async (req, res) => {
   const { caption, isPrimary, sortOrder } = req.body;
 
   try {
+    const assetCheck = await db.query(
+      "SELECT id FROM heritage_assets WHERE id = $1 AND deleted_at IS NULL",
+      [id]
+    );
+    if (assetCheck.rowCount === 0) {
+      return res.status(404).json({ error: "Heritage asset not found." });
+    }
+
     const existing = await db.query(
       "SELECT id, media_type FROM heritage_asset_media WHERE id = $1 AND asset_id = $2",
       [mediaId, id]
@@ -1092,7 +1104,7 @@ app.patch("/api/heritage-assets/:id/media/:mediaId", async (req, res) => {
   }
 });
 
-// POST /api/heritage-assets/bulk-delete - Delete multiple heritage assets
+// POST /api/heritage-assets/bulk-delete - Soft-delete multiple heritage assets
 app.post("/api/heritage-assets/bulk-delete", async (req, res) => {
   const { ids } = req.body;
 
@@ -1100,18 +1112,61 @@ app.post("/api/heritage-assets/bulk-delete", async (req, res) => {
     return res.status(400).json({ error: "Provide an array of asset IDs to delete." });
   }
 
+  try {
+    const result = await db.query(
+      "UPDATE heritage_assets SET deleted_at = NOW() WHERE id = ANY($1::text[]) AND deleted_at IS NULL",
+      [ids]
+    );
+
+    res.json({ success: true, deleted: result.rowCount });
+  } catch (err) {
+    console.error("Failed to bulk delete heritage assets:", err.message);
+    res.status(500).json({ error: "Failed to delete assets." });
+  }
+});
+
+// POST /api/heritage-assets/:id/restore - Restore a soft-deleted heritage asset
+app.post("/api/heritage-assets/:id/restore", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await db.query(
+      "UPDATE heritage_assets SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL RETURNING id",
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Heritage asset not found or not deleted." });
+    }
+
+    res.json({ success: true, message: "Heritage asset restored." });
+  } catch (err) {
+    console.error("Failed to restore heritage asset:", err.message);
+    res.status(500).json({ error: "Failed to restore heritage asset." });
+  }
+});
+
+// DELETE /api/heritage-assets/:id/permanent - Permanently delete a heritage asset (admin only)
+app.delete("/api/heritage-assets/:id/permanent", async (req, res) => {
+  const { id } = req.params;
   const client = await db.pool.connect();
 
   try {
     await client.query("BEGIN");
 
+    const existing = await client.query("SELECT id FROM heritage_assets WHERE id = $1", [id]);
+    if (existing.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Heritage asset not found." });
+    }
+
     const mediaFiles = await client.query(
-      "SELECT file_path FROM heritage_asset_media WHERE asset_id = ANY($1::uuid[])",
-      [ids]
+      "SELECT file_path FROM heritage_asset_media WHERE asset_id = $1",
+      [id]
     );
 
-    await client.query("DELETE FROM heritage_asset_media WHERE asset_id = ANY($1::uuid[])", [ids]);
-    const result = await client.query("DELETE FROM heritage_assets WHERE id = ANY($1::uuid[])", [ids]);
+    await client.query("DELETE FROM heritage_asset_media WHERE asset_id = $1", [id]);
+    await client.query("DELETE FROM heritage_assets WHERE id = $1", [id]);
 
     await client.query("COMMIT");
 
@@ -1120,11 +1175,11 @@ app.post("/api/heritage-assets/bulk-delete", async (req, res) => {
       await fs.promises.unlink(fullPath).catch(() => { });
     }
 
-    res.json({ success: true, deleted: result.rowCount });
+    res.json({ success: true, message: "Heritage asset permanently deleted." });
   } catch (err) {
     await client.query("ROLLBACK").catch(() => { });
-    console.error("Failed to bulk delete heritage assets:", err.message);
-    res.status(500).json({ error: "Failed to delete assets." });
+    console.error("Failed to permanently delete heritage asset:", err.message);
+    res.status(500).json({ error: "Failed to permanently delete heritage asset." });
   } finally {
     client.release();
   }

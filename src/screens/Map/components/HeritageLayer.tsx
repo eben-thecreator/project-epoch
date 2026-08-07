@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { GeoJSON, Marker, useMap } from "react-leaflet";
+import { GeoJSON, Marker, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet.markercluster";
 import "leaflet.markercluster/dist/MarkerCluster.css";
@@ -80,12 +80,19 @@ const darkCategoryColors: Record<string, string> = {
   "Audio / Music": "#FFEAA7",
 };
 
-function getPolygonStyle(feature?: GeoJSON.Feature, dark = false) {
-  const cat = feature?.properties?.asset_category;
-  const color = cat
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function getPolygonStyle(category?: string, dark = false): L.PathOptions {
+  const color = category
     ? dark
-      ? darkCategoryColors[cat] || "#ffffff"
-      : categoryColors[cat] || "#000000"
+      ? darkCategoryColors[category] || "#ffffff"
+      : categoryColors[category] || "#000000"
     : dark
     ? "#ffffff"
     : "#000000";
@@ -95,7 +102,6 @@ function getPolygonStyle(feature?: GeoJSON.Feature, dark = false) {
     opacity: 0.9,
     fillColor: color,
     fillOpacity: dark ? 0.2 : 0.15,
-    dashArray: undefined as string | undefined,
   };
 }
 
@@ -139,18 +145,15 @@ function ClusteredPointLayer({
       chunkedLoading: true,
       iconCreateFunction: (cl) => {
         const count = cl.getChildCount();
-        let size = 36;
-        let cls = "marker-cluster marker-cluster-small";
+        let size = 32;
         if (count >= 50) {
-          size = 56;
-          cls = "marker-cluster marker-cluster-large";
+          size = 48;
         } else if (count >= 10) {
-          size = 44;
-          cls = "marker-cluster marker-cluster-medium";
+          size = 40;
         }
         return L.divIcon({
-          html: `<div><span>${count}</span></div>`,
-          className: cls,
+          html: `<span>${count}</span>`,
+          className: "custom-cluster",
           iconSize: L.point(size, size),
         });
       },
@@ -190,11 +193,29 @@ function ClusteredPointLayer({
         asset.name || "",
         false,
         darkMode,
-        24
+        26
       );
       const marker = L.marker([coords[1], coords[0]], { icon });
       (marker as any)._assetId = asset.id;
       marker.on("click", () => onSelectAsset(asset));
+
+      const catColor = darkMode
+        ? darkCategoryColors[asset.asset_category || ""] || "#FF6B6B"
+        : categoryColors[asset.asset_category || ""] || "#E4002B";
+
+      const tooltipContent = `
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="width:7px;height:7px;border-radius:50%;background-color:${catColor};display:inline-block;flex-shrink:0;"></span>
+          <span style="font-weight:700;font-size:11px;">${escapeHtml(asset.name || "")}</span>
+          ${asset.asset_category ? `<span style="font-size:10px;opacity:0.65;">(${escapeHtml(asset.asset_category)})</span>` : ""}
+        </div>
+      `;
+      marker.bindTooltip(tooltipContent, {
+        direction: "top",
+        offset: L.point(0, -14),
+        className: "custom-map-tooltip",
+      });
+
       cluster.addLayer(marker);
       renderedIdsRef.current.add(asset.id);
     });
@@ -403,14 +424,32 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
 
       {polygonAssets.map((asset) => {
         const centroid = getPolygonCentroid(asset.geometry!);
+        const catColor = darkMode
+          ? darkCategoryColors[asset.asset_category || ""] || "#FF6B6B"
+          : categoryColors[asset.asset_category || ""] || "#E4002B";
         return (
           <React.Fragment key={`poly-group-${asset.id}`}>
             <GeoJSON
               key={`poly-${asset.id}`}
-              data={asset.geometry as any}
-              style={(feature) => getPolygonStyle(feature, darkMode)}
+              data={{
+                type: "Feature" as const,
+                geometry: asset.geometry as any,
+                properties: { asset_category: asset.asset_category },
+              }}
+              style={() => getPolygonStyle(asset.asset_category, darkMode)}
               eventHandlers={{
                 click: () => onSelectAsset(asset),
+                mouseover: (e) => {
+                  const layer = e.target;
+                  layer.setStyle({
+                    fillOpacity: darkMode ? 0.45 : 0.35,
+                    weight: 3,
+                  });
+                },
+                mouseout: (e) => {
+                  const layer = e.target;
+                  layer.setStyle(getPolygonStyle(asset.asset_category, darkMode));
+                },
               }}
             />
             {centroid && (
@@ -422,12 +461,31 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
                   asset.name || "",
                   showLabels,
                   darkMode,
-                  24
+                  26
                 )}
                 eventHandlers={{
                   click: () => onSelectAsset(asset),
                 }}
-              />
+              >
+                <Tooltip
+                  direction="top"
+                  offset={[0, -14]}
+                  className="custom-map-tooltip"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: catColor }}
+                    />
+                    <span className="font-bold text-[11px]">{asset.name}</span>
+                    {asset.asset_category && (
+                      <span className="text-[10px] opacity-60">
+                        ({asset.asset_category})
+                      </span>
+                    )}
+                  </div>
+                </Tooltip>
+              </Marker>
             )}
           </React.Fragment>
         );
@@ -435,22 +493,40 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
 
       {lineAssets.map((asset) => {
         const midpoint = getLineMidpoint(asset.geometry!);
+        const catColor = darkMode
+          ? darkCategoryColors[asset.asset_category || ""] || "#FF6B6B"
+          : categoryColors[asset.asset_category || ""] || "#E4002B";
         return (
           <React.Fragment key={`line-group-${asset.id}`}>
             <GeoJSON
               key={`line-${asset.id}`}
-              data={asset.geometry as any}
+              data={{
+                type: "Feature" as const,
+                geometry: asset.geometry as any,
+                properties: { asset_category: asset.asset_category },
+              }}
               style={{
-                color: darkMode
-                  ? darkCategoryColors[asset.asset_category || ""] ||
-                    "#ffffff"
-                  : categoryColors[asset.asset_category || ""] ||
-                    "#000000",
-                weight: 2,
-                opacity: 0.8,
+                color: catColor,
+                weight: 2.5,
+                opacity: 0.85,
               }}
               eventHandlers={{
                 click: () => onSelectAsset(asset),
+                mouseover: (e) => {
+                  const layer = e.target;
+                  layer.setStyle({
+                    weight: 4.5,
+                    opacity: 1,
+                  });
+                },
+                mouseout: (e) => {
+                  const layer = e.target;
+                  layer.setStyle({
+                    color: catColor,
+                    weight: 2.5,
+                    opacity: 0.85,
+                  });
+                },
               }}
             />
             {midpoint && (
@@ -462,12 +538,31 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
                   asset.name || "",
                   showLabels,
                   darkMode,
-                  24
+                  26
                 )}
                 eventHandlers={{
                   click: () => onSelectAsset(asset),
                 }}
-              />
+              >
+                <Tooltip
+                  direction="top"
+                  offset={[0, -14]}
+                  className="custom-map-tooltip"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: catColor }}
+                    />
+                    <span className="font-bold text-[11px]">{asset.name}</span>
+                    {asset.asset_category && (
+                      <span className="text-[10px] opacity-60">
+                        ({asset.asset_category})
+                      </span>
+                    )}
+                  </div>
+                </Tooltip>
+              </Marker>
             )}
           </React.Fragment>
         );
@@ -477,3 +572,4 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
 };
 
 HeritageLayer.displayName = "HeritageLayer";
+

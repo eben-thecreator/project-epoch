@@ -8,11 +8,14 @@ import {
 } from "react-leaflet";
 import { CoordinateDisplay } from "./CoordinateDisplay";
 
+export type Basemap = "light" | "dark" | "satellite";
+
 interface MapViewProps {
   children?: React.ReactNode;
   center?: [number, number];
   zoom?: number;
   darkMode?: boolean;
+  basemap?: Basemap;
   flyTo?: { center: [number, number]; zoom: number } | null;
 }
 
@@ -38,20 +41,38 @@ function MapFlyTo({
   return null;
 }
 
+const TILE_LAYERS: Record<Basemap, { url: string; attribution: string; subdomains?: string }> = {
+  light: {
+    url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+    subdomains: "abcd",
+  },
+  dark: {
+    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+    subdomains: "abcd",
+  },
+  satellite: {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: '&copy; <a href="https://www.esri.com/">Esri</a> &mdash; Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+  },
+};
+
 export const MapView: React.FC<MapViewProps> = ({
   children,
   center = [7.9465, -1.0232],
   zoom = 7,
   darkMode = false,
+  basemap,
   flyTo = null,
 }) => {
-  const lightTiles =
-    "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
-  const darkTiles =
-    "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+  // If no explicit basemap, infer from darkMode
+  const activeBasemap: Basemap = basemap ?? (darkMode ? "dark" : "light");
+  const tile = TILE_LAYERS[activeBasemap];
 
   return (
     <LeafletMap
+      preferCanvas={true}
       center={center}
       zoom={zoom}
       zoomControl={false}
@@ -70,10 +91,10 @@ export const MapView: React.FC<MapViewProps> = ({
         zoomOutTitle="Zoom out"
       />
       <TileLayer
-        key={darkMode ? "dark" : "light"}
-        url={darkMode ? darkTiles : lightTiles}
-        attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-        subdomains="abcd"
+        key={activeBasemap}
+        url={tile.url}
+        attribution={tile.attribution}
+        subdomains={(tile.subdomains as any) ?? "abc"}
         maxZoom={20}
       />
       <ScaleControl imperial={false} position="bottomright" />
@@ -84,3 +105,4 @@ export const MapView: React.FC<MapViewProps> = ({
 };
 
 MapView.displayName = "MapView";
+

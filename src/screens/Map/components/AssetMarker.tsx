@@ -69,15 +69,35 @@ function buildSvg(
   size: number,
   label: string,
   showLabel: boolean,
-  labelColor: string
+  labelColor: string,
+  dark: boolean
 ): string {
   const s = size;
   const half = s / 2;
 
   const pathD = paths[shape] || paths.circle;
-  const shapeSvg = `<g transform="scale(${s / 24})">
-    <path d="${pathD}" fill="${color}" stroke="none" opacity="1"/>
-  </g>`;
+  const shadowOpacity = dark ? "0.6" : "0.22";
+  const strokeColor = dark ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.95)";
+
+  const defs = `
+    <defs>
+      <filter id="pin-shadow-${s}" x="-40%" y="-40%" width="180%" height="180%">
+        <feDropShadow dx="0" dy="2.5" stdDeviation="3" flood-color="#000000" flood-opacity="${shadowOpacity}" />
+      </filter>
+    </defs>
+  `;
+
+  const bgPin = `
+    <circle cx="${half}" cy="${half}" r="${half - 1.5}" fill="${color}" stroke="${strokeColor}" stroke-width="1.5" filter="url(#pin-shadow-${s})" />
+  `;
+
+  const iconScale = (s * 0.54) / 24;
+  const iconOffset = (s - s * 0.54) / 2;
+  const shapeSvg = `
+    <g transform="translate(${iconOffset},${iconOffset}) scale(${iconScale})">
+      <path d="${pathD}" fill="#ffffff" opacity="0.98"/>
+    </g>
+  `;
 
   let labelSvg = "";
   let labelBlockHeight = 0;
@@ -88,13 +108,17 @@ function buildSvg(
       label.length > 30 ? label.substring(0, 28) + "\u2026" : label;
     const escaped = escapeXml(displayLabel);
     const pillW = Math.min(maxLabelWidth, escaped.length * 5.5 + 12);
-    const pillH = 14;
+    const pillH = 15;
     const pillX = half - pillW / 2;
     const pillY = s + 3;
     labelBlockHeight = pillH + 4;
+    const pillBg = dark ? "rgba(20,20,20,0.88)" : "rgba(255,255,255,0.92)";
+    const pillBorder = dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)";
+    const textFill = dark ? "#f0f0f0" : labelColor;
+
     labelSvg = `
-      <rect x="${pillX}" y="${pillY}" width="${pillW}" height="${pillH}" rx="3" ry="3" fill="rgba(255,255,255,0.82)" stroke="none"/>
-      <text x="${half}" y="${pillY + 10}" text-anchor="middle" fill="${labelColor}" font-size="9" font-weight="700" font-family="Helvetica,Arial,sans-serif" letter-spacing="0.04em">${escaped}</text>`;
+      <rect x="${pillX}" y="${pillY}" width="${pillW}" height="${pillH}" rx="4" ry="4" fill="${pillBg}" stroke="${pillBorder}" stroke-width="0.75"/>
+      <text x="${half}" y="${pillY + 11}" text-anchor="middle" fill="${textFill}" font-size="9" font-weight="700" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" letter-spacing="0.03em">${escaped}</text>`;
   }
 
   const totalWidth = Math.max(s, 120);
@@ -102,7 +126,9 @@ function buildSvg(
   const xOffset = (totalWidth - s) / 2;
 
   return `<svg width="${totalWidth}" height="${totalHeight}" xmlns="http://www.w3.org/2000/svg">
+    ${defs}
     <g transform="translate(${xOffset},0)">
+      ${bgPin}
       ${shapeSvg}
     </g>
     ${labelSvg}
@@ -132,13 +158,13 @@ export function createMarkerIcon(
   name: string,
   showLabel: boolean,
   dark: boolean,
-  size = 24
+  size = 26
 ) {
   const { color, shape } = getStyle(category, dark);
   const labelColor = "rgba(20,20,20,0.9)";
-  const svg = buildSvg(shape, color, size, name || "", showLabel, labelColor);
+  const svg = buildSvg(shape, color, size, name || "", showLabel, labelColor, dark);
   const totalWidth = Math.max(size, 120);
-  const labelBlockHeight = showLabel && name ? 18 : 0;
+  const labelBlockHeight = showLabel && name ? 19 : 0;
   const totalHeight = size + labelBlockHeight;
   return divIcon({
     html: svg,

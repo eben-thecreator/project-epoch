@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { Header } from "../../components/Header";
-import { MapView } from "./components/MapView";
+import { MapView, Basemap } from "./components/MapView";
 import { HeritageLayer, HeritageAsset } from "./components/HeritageLayer";
 import { ReferenceLayers } from "./components/ReferenceLayers";
 import { LayerControl } from "./components/LayerControl";
@@ -9,6 +9,7 @@ import { SidePanel } from "./components/SidePanel";
 import { TimeSlider } from "./components/TimeSlider";
 import { Legend } from "./components/Legend";
 import { CompassControl } from "./components/CompassControl";
+import { CoordinateDisplay } from "./components/CoordinateDisplay";
 import { apiUrl } from "../../lib/api";
 import "./components/map.css";
 
@@ -33,27 +34,30 @@ const referenceLayerConfigs = [
 ];
 
 export const MapScreen: React.FC = () => {
-  const [selectedAsset, setSelectedAsset] =
-    useState<HeritageAsset | null>(null);
-  const [filters, setFilters] =
-    useState<Record<string, string>>(defaultFilters);
+  const [selectedAsset, setSelectedAsset] = useState<HeritageAsset | null>(null);
+  const [filters, setFilters] = useState<Record<string, string>>(defaultFilters);
   const [yearRange, setYearRange] = useState<[number, number]>([1100, 2026]);
-  const [activeRefLayers, setActiveRefLayers] = useState<string[]>([
-    "regions",
-  ]);
+  const [activeRefLayers, setActiveRefLayers] = useState<string[]>(["regions"]);
   const [heritageVisible, setHeritageVisible] = useState(true);
   const [visibleCategories, setVisibleCategories] = useState<string[]>([]);
-  const [categoryCounts, setCategoryCounts] = useState<
-    Record<string, number>
-  >({});
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("schis-map-theme") === "dark";
   });
+  const [basemap, setBasemap] = useState<Basemap>(() => {
+    const stored = localStorage.getItem("schis-map-basemap") as Basemap | null;
+    return stored ?? (localStorage.getItem("schis-map-theme") === "dark" ? "dark" : "light");
+  });
+
+  const handleBasemapChange = useCallback((bm: Basemap) => {
+    setBasemap(bm);
+    localStorage.setItem("schis-map-basemap", bm);
+    if (bm === "dark") setDarkMode(true);
+    if (bm === "light") setDarkMode(false);
+  }, []);
+
   const [periodRange, setPeriodRange] = useState({ min: 1100, max: 2026 });
-  const [flyTo, setFlyTo] = useState<{
-    center: [number, number];
-    zoom: number;
-  } | null>(null);
+  const [flyTo, setFlyTo] = useState<{ center: [number, number]; zoom: number } | null>(null);
   const [assetCount, setAssetCount] = useState(0);
 
   useEffect(() => {
@@ -74,17 +78,14 @@ export const MapScreen: React.FC = () => {
           setYearRange([data.min_year, data.max_year]);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleSelectAsset = useCallback((asset: HeritageAsset) => {
     setSelectedAsset(asset);
     if (asset.geometry?.coordinates) {
       const coords = asset.geometry.coordinates;
-      if (
-        asset.geometry.type === "Point" &&
-        coords.length >= 2
-      ) {
+      if (asset.geometry.type === "Point" && coords.length >= 2) {
         setFlyTo({
           center: [coords[1] as number, coords[0] as number],
           zoom: 14,
@@ -132,9 +133,7 @@ export const MapScreen: React.FC = () => {
 
   const handleToggleRefLayer = useCallback((key: string) => {
     setActiveRefLayers((prev) =>
-      prev.includes(key)
-        ? prev.filter((k) => k !== key)
-        : [...prev, key]
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     );
   }, []);
 
@@ -175,57 +174,51 @@ export const MapScreen: React.FC = () => {
     setFlyTo({ center: [7.9465, -1.0232], zoom: 7 });
   }, [periodRange]);
 
-  const handleZoomToAsset = useCallback(
-    (asset: HeritageAsset) => {
-      if (asset.geometry?.coordinates) {
-        const coords = asset.geometry.coordinates;
-        if (
-          asset.geometry.type === "Point" &&
-          coords.length >= 2
-        ) {
-          setFlyTo({
-            center: [coords[1] as number, coords[0] as number],
-            zoom: 14,
-          });
-        } else if (
-          (asset.geometry.type === "Polygon" ||
-            asset.geometry.type === "MultiPolygon") &&
-          Array.isArray(coords[0])
-        ) {
-          const ring = Array.isArray(coords[0][0])
-            ? (coords[0] as number[][][])[0][0]
-            : (coords[0] as number[][]);
-          let lngSum = 0,
-            latSum = 0;
-          ring.forEach((c: number[]) => {
-            lngSum += c[0];
-            latSum += c[1];
-          });
-          setFlyTo({
-            center: [latSum / ring.length, lngSum / ring.length],
-            zoom: 14,
-          });
-        }
+  const handleZoomToAsset = useCallback((asset: HeritageAsset) => {
+    if (asset.geometry?.coordinates) {
+      const coords = asset.geometry.coordinates;
+      if (asset.geometry.type === "Point" && coords.length >= 2) {
+        setFlyTo({
+          center: [coords[1] as number, coords[0] as number],
+          zoom: 14,
+        });
+      } else if (
+        (asset.geometry.type === "Polygon" || asset.geometry.type === "MultiPolygon") &&
+        Array.isArray(coords[0])
+      ) {
+        const ring = Array.isArray(coords[0][0])
+          ? (coords[0] as number[][][])[0][0]
+          : (coords[0] as number[][]);
+        let lngSum = 0,
+          latSum = 0;
+        ring.forEach((c: number[]) => {
+          lngSum += c[0];
+          latSum += c[1];
+        });
+        setFlyTo({
+          center: [latSum / ring.length, lngSum / ring.length],
+          zoom: 14,
+        });
       }
-    },
-    []
-  );
+    }
+  }, []);
 
   const hasActiveFilters = Object.values(filters).some(Boolean);
   const isYearRangeFiltered =
     yearRange[0] !== periodRange.min || yearRange[1] !== periodRange.max;
 
-  const bgColor = darkMode ? "bg-[#0a0a0a]" : "bg-white";
+  const bgColor = darkMode ? "bg-[#0a0a0a]" : "bg-[#f8f9fa]";
+  const border = darkMode ? "border-white/15" : "border-black/15";
+  const badgeBg = darkMode ? "bg-[#0d0d0d]" : "bg-white";
+  const badgeText = darkMode ? "text-white" : "text-black";
 
   return (
-    <div className={`${bgColor} w-full h-screen flex flex-col`}>
+    <div className={`${bgColor} w-full h-screen flex flex-col overflow-hidden`}>
       <Header hideRollingBanner />
 
-      <div
-        className="flex-1 relative"
-        style={{ marginTop: 48 }}
-      >
-        <MapView darkMode={darkMode} flyTo={flyTo}>
+      {/* Main Map Spatial Canvas — Positioned directly below 64px fixed header */}
+      <div className="flex-1 relative mt-[64px] w-full h-[calc(100vh-64px)]">
+        <MapView darkMode={darkMode} basemap={basemap} flyTo={flyTo}>
           <HeritageLayer
             onSelectAsset={handleSelectAsset}
             filters={filters}
@@ -236,20 +229,13 @@ export const MapScreen: React.FC = () => {
             onCategoryCountsChange={setCategoryCounts}
             onAssetCountChange={setAssetCount}
           />
-          <ReferenceLayers
-            activeLayers={activeRefLayers}
-            darkMode={darkMode}
-          />
+          <ReferenceLayers activeLayers={activeRefLayers} darkMode={darkMode} />
+          <CoordinateDisplay darkMode={darkMode} />
         </MapView>
 
-        <div
-          className="absolute top-4 left-4 sm:left-6 lg:left-8 z-[1000] flex flex-col items-start gap-2"
-          style={{ marginTop: 64 }}
-        >
-          <SearchBar
-            onSelectAsset={handleSelectAsset}
-            darkMode={darkMode}
-          />
+        {/* ZONE 1: TOP-LEFT COMMAND DOCK (SEARCH & FILTERS) */}
+        <div className="absolute top-4 left-4 sm:left-6 z-[1000] flex flex-col items-start gap-2.5 w-[240px]">
+          <SearchBar onSelectAsset={handleSelectAsset} darkMode={darkMode} />
           <LayerControl
             layers={layerItems}
             onToggle={handleToggleLayer}
@@ -259,36 +245,42 @@ export const MapScreen: React.FC = () => {
           />
         </div>
 
+        {/* ZONE 2: TOP-CENTER ACTIVE FILTER / COUNT READOUT */}
         {(hasActiveFilters || isYearRangeFiltered) && (
-          <div
-            className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]"
-            style={{ marginTop: 64 }}
-          >
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]">
             <div
-              className={`${darkMode ? "bg-[#0d0d0d]" : "bg-white"} border ${darkMode ? "border-white/10" : "border-black/10"} shadow-sm px-3 py-1.5 flex items-center gap-3`}
+              className={`${badgeBg} border ${border} shadow-md px-3.5 py-1.5 flex items-center gap-3 select-none`}
             >
-              <span
-                className={`text-[10px] uppercase tracking-wider font-bold ${darkMode ? "text-white/60" : "text-black/60"}`}
-              >
-                {assetCount} asset{assetCount !== 1 ? "s" : ""} shown
-              </span>
-              {(hasActiveFilters || isYearRangeFiltered) && (
-                <button
-                  onClick={handleResetMap}
-                  className={`text-[9px] uppercase tracking-wider font-bold ${darkMode ? "text-[#E4002B] hover:text-[#FF6B6B]" : "text-[#E4002B] hover:text-[#C0392B]"} transition-colors`}
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#E4002B]" />
+                <span
+                  className={`text-[10px] font-mono uppercase font-bold tracking-wider ${badgeText}`}
                 >
-                  Reset
-                </button>
-              )}
+                  {assetCount} ASSET{assetCount !== 1 ? "S" : ""} MATCHED
+                </span>
+              </div>
+              <button
+                onClick={handleResetMap}
+                className="text-[9px] uppercase font-mono font-bold tracking-wider text-[#E4002B] hover:text-[#FF4D4D] border-l border-white/10 pl-3 transition-colors"
+              >
+                RESET ALL
+              </button>
             </div>
           </div>
         )}
 
-        <CompassControl
-          darkMode={darkMode}
-          onToggleTheme={toggleTheme}
-          onReset={handleResetMap}
-        />
+        {/* ZONE 3: TOP-RIGHT SPATIAL TOOL STRIP */}
+        <div className="absolute top-4 right-4 sm:right-6 z-[1000]">
+          <CompassControl
+            darkMode={darkMode}
+            basemap={basemap}
+            onToggleTheme={toggleTheme}
+            onBasemapChange={handleBasemapChange}
+            onReset={handleResetMap}
+          />
+        </div>
+
+        {/* ZONE 4: BOTTOM-CENTER TIMELINE HORIZON DOCK */}
         <TimeSlider
           yearRange={yearRange}
           onChange={setYearRange}
@@ -296,11 +288,15 @@ export const MapScreen: React.FC = () => {
           dataMax={periodRange.max}
           darkMode={darkMode}
         />
+
+        {/* ZONE 5: BOTTOM-RIGHT LEGEND DOCK */}
         <Legend
           visibleCategories={visibleCategories}
           categoryCounts={categoryCounts}
           darkMode={darkMode}
         />
+
+        {/* ZONE 6: RIGHT INSPECTOR DRAWER */}
         <SidePanel
           asset={selectedAsset}
           onClose={handleClosePanel}

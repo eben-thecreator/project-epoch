@@ -5,10 +5,26 @@
   height: 100%;
   background: #f5f5f5;
   font-family: Helvetica, Arial, sans-serif;
+  position: relative;
 }
 
 .dark .leaflet-container {
-  background: #111;
+  background: #0d0d0d;
+}
+
+/* Subtle Vignette Overlay for Canvas Atmosphere */
+.leaflet-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 400;
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.12);
+  transition: box-shadow 0.3s ease;
+}
+
+.dark .leaflet-container::after {
+  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.65);
 }
 
 .leaflet-control-zoom {
@@ -21,6 +37,7 @@
   color: #999 !important;
   padding: 2px 6px !important;
   backdrop-filter: blur(4px);
+  border-radius: 4px;
 }
 
 .dark .leaflet-control-attribution {
@@ -57,9 +74,71 @@
 }
 
 .leaflet-interactive {
-  transition: opacity 0.15s ease;
+  transition: fill-opacity 0.2s ease, opacity 0.2s ease, stroke-width 0.2s ease;
 }
 
 .leaflet-interactive:hover {
-  opacity: 0.85;
+  cursor: pointer;
+}
+
+/* Solid Crisp Marker Clusters (No Glassmorphism) */
+.custom-cluster {
+  background: #ffffff !important;
+  border: 1.5px solid #E4002B !important;
+  border-radius: 50% !important;
+  color: #111111 !important;
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease !important;
+}
+
+.custom-cluster:hover {
+  transform: scale(1.12) !important;
+  box-shadow: 0 6px 18px rgba(228, 0, 43, 0.3) !important;
+}
+
+.dark .custom-cluster {
+  background: #0d0d0d !important;
+  border-color: #FF6B6B !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8) !important;
+}
+
+.dark .custom-cluster:hover {
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4) !important;
+}
+
+/* Solid Map Hover Tooltips */
+.custom-map-tooltip {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+  padding: 5px 10px !important;
+  color: #111111 !important;
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+}
+
+.custom-map-tooltip::before {
+  border-top-color: #ffffff !important;
+}
+
+.dark .custom-map-tooltip {
+  background: #0d0d0d !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7) !important;
+  color: #ffffff !important;
+}
+
+.dark .custom-map-tooltip::before {
+  border-top-color: #0d0d0d !important;
 }

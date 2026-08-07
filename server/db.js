@@ -14,6 +14,9 @@ if (!connectionString) {
 // Set up connection pooling
 const pool = new Pool({
   connectionString: connectionString,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 });
 
 // Capture unexpected errors on idle database connections
