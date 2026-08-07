@@ -2,8 +2,7 @@ export type CatalogueCollectionKey =
   | "artifacts"
   | "museums"
   | "textiles"
-  | "documents"
-  | "needs_review";
+  | "documents";
 
 export type CatalogueCollectionConfig = {
   key: CatalogueCollectionKey;
@@ -60,17 +59,6 @@ export const catalogueCollections: CatalogueCollectionConfig[] = [
     intro:
       "Documents and digital media kept as a separate catalogue bucket for practical archival use.",
     chips: ["Photographs", "Documents", "Archives", "Digital Media"],
-  },
-  {
-    key: "needs_review",
-    title: "Needs Review",
-    shortTitle: "Review",
-    route: "/case-studies/review",
-    apiCollection: "needs_review",
-    description: "Digitized records that still need classification in QGIS or the database.",
-    intro:
-      "Unclassified records are shown here so nothing digitized gets hidden from the catalogue.",
-    chips: ["Unclassified", "Pending Review", "Needs Typing"],
   },
 ];
 

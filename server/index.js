@@ -113,7 +113,8 @@ const collectionFilters = {
   artifacts: `(
     ha.asset_type = 'Object (Physical Artifact)'
     OR ha.asset_category IN ('Artifact', 'Jewelry / Beadwork')
-  )`,
+  )
+  AND ha.asset_category IS DISTINCT FROM 'Textile (Kente, etc.)'`,
   museums: `(
     ha.asset_type = 'Site (Geography / Ruins)'
     OR ha.asset_category IN ('Museum', 'Fort', 'Castle', 'Monument')

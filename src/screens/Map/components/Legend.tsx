@@ -67,7 +67,7 @@ export const Legend: React.FC<LegendProps> = ({ visibleCategories, categoryCount
   const textLabel = darkMode ? "text-white" : "text-black";
 
   return (
-    <div className={`absolute bottom-4 right-4 z-[1000] ${bg} border ${border} px-3 py-2.5`} style={{ maxWidth: 160 }}>
+    <div className={`absolute bottom-4 right-4 max-sm:bottom-16 z-[1000] ${bg} border ${border} px-3 py-2.5`} style={{ maxWidth: 160 }}>
       <p className={`text-[10px] uppercase font-bold ${textMuted} mb-2`}>Legend</p>
       <div className="space-y-1.5">
         {visibleCategories.map((cat) => {

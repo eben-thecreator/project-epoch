@@ -1,6 +1,6 @@
 import React from "react";
 import { divIcon } from "leaflet";
-import { Marker, useMap } from "react-leaflet";
+import { Marker } from "react-leaflet";
 
 const paths: Record<string, string> = {
   museum: "M4 10v10h2V10H4zm6 0v10h2V10h-2zm6 0v10h2V10h-2zM2 22h20v-2H2v2zm11-18L3 8h18L13 4z",
@@ -22,37 +22,59 @@ const paths: Record<string, string> = {
 
 const categoryStyles: Record<string, { color: string; shape: string }> = {
   Museum: { color: "#E4002B", shape: "museum" },
-  Fort: { color: "#E4002B", shape: "castle" },
-  Castle: { color: "#E4002B", shape: "castle" },
-  Monument: { color: "#E4002B", shape: "monument" },
-  Shrine: { color: "#E4002B", shape: "shrine" },
-  Palace: { color: "#E4002B", shape: "palace" },
-  "Traditional Palace": { color: "#E4002B", shape: "palace" },
-  Artifact: { color: "#E4002B", shape: "artifact" },
-  "Jewelry / Beadwork": { color: "#E4002B", shape: "jewelry" },
-  "Archaeological Site": { color: "#E4002B", shape: "site" },
-  "Sacred Grove": { color: "#E4002B", shape: "grove" },
-  "Historic Building": { color: "#E4002B", shape: "building" },
-  Festival: { color: "#E4002B", shape: "festival" },
-  Textile: { color: "#E4002B", shape: "textile" },
-  "Textile (Kente, etc.)": { color: "#E4002B", shape: "textile" },
-  "Photograph / Digital Media": { color: "#E4002B", shape: "media" },
-  "Audio / Music": { color: "#E4002B", shape: "audio" },
+  Fort: { color: "#D35400", shape: "castle" },
+  Castle: { color: "#C0392B", shape: "castle" },
+  Monument: { color: "#8E44AD", shape: "monument" },
+  Shrine: { color: "#27AE60", shape: "shrine" },
+  Palace: { color: "#F39C12", shape: "palace" },
+  "Traditional Palace": { color: "#E67E22", shape: "palace" },
+  Artifact: { color: "#2980B9", shape: "artifact" },
+  "Jewelry / Beadwork": { color: "#1ABC9C", shape: "jewelry" },
+  "Archaeological Site": { color: "#7F8C8D", shape: "site" },
+  "Sacred Grove": { color: "#2ECC71", shape: "grove" },
+  "Historic Building": { color: "#9B59B6", shape: "building" },
+  Festival: { color: "#E74C3C", shape: "festival" },
+  Textile: { color: "#3498DB", shape: "textile" },
+  "Textile (Kente, etc.)": { color: "#2980B9", shape: "textile" },
+  "Photograph / Digital Media": { color: "#16A085", shape: "media" },
+  "Audio / Music": { color: "#D4AC0D", shape: "audio" },
 };
 
 const darkCategoryStyles: Record<string, { color: string; shape: string }> = {
-  ...categoryStyles
+  Museum: { color: "#FF6B6B", shape: "museum" },
+  Fort: { color: "#FFA071", shape: "castle" },
+  Castle: { color: "#FF7675", shape: "castle" },
+  Monument: { color: "#A29BFE", shape: "monument" },
+  Shrine: { color: "#55EFC4", shape: "shrine" },
+  Palace: { color: "#FFEAA7", shape: "palace" },
+  "Traditional Palace": { color: "#FDCB6E", shape: "palace" },
+  Artifact: { color: "#74B9FF", shape: "artifact" },
+  "Jewelry / Beadwork": { color: "#00CEC9", shape: "jewelry" },
+  "Archaeological Site": { color: "#B2BEC3", shape: "site" },
+  "Sacred Grove": { color: "#00B894", shape: "grove" },
+  "Historic Building": { color: "#A29BFE", shape: "building" },
+  Festival: { color: "#FF7675", shape: "festival" },
+  Textile: { color: "#81ECEC", shape: "textile" },
+  "Textile (Kente, etc.)": { color: "#74B9FF", shape: "textile" },
+  "Photograph / Digital Media": { color: "#55EFC4", shape: "media" },
+  "Audio / Music": { color: "#FFEAA7", shape: "audio" },
 };
 
 const defaultStyle = { color: "#E4002B", shape: "circle" };
-const darkDefaultStyle = { color: "#E4002B", shape: "circle" };
+const darkDefaultStyle = { color: "#FF6B6B", shape: "circle" };
 
-function buildSvg(shape: string, color: string, size: number, label: string, showLabel: boolean, labelColor: string): string {
+function buildSvg(
+  shape: string,
+  color: string,
+  size: number,
+  label: string,
+  showLabel: boolean,
+  labelColor: string
+): string {
   const s = size;
   const half = s / 2;
 
   const pathD = paths[shape] || paths.circle;
-  // No stroke — clean icon with just fill
   const shapeSvg = `<g transform="scale(${s / 24})">
     <path d="${pathD}" fill="${color}" stroke="none" opacity="1"/>
   </g>`;
@@ -62,10 +84,9 @@ function buildSvg(shape: string, color: string, size: number, label: string, sho
   const maxLabelWidth = 120;
 
   if (showLabel && label) {
-    // Truncate long names sensibly
-    const displayLabel = label.length > 30 ? label.substring(0, 28) + "…" : label;
+    const displayLabel =
+      label.length > 30 ? label.substring(0, 28) + "\u2026" : label;
     const escaped = escapeXml(displayLabel);
-    // Pill background behind the text for readability over any map style
     const pillW = Math.min(maxLabelWidth, escaped.length * 5.5 + 12);
     const pillH = 14;
     const pillX = half - pillW / 2;
@@ -89,10 +110,18 @@ function buildSvg(shape: string, color: string, size: number, label: string, sho
 }
 
 function escapeXml(str: string): string {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }
 
-function getStyle(category: string | null | undefined, dark: boolean) {
+function getStyle(
+  category: string | null | undefined,
+  dark: boolean
+) {
   const styles = dark ? darkCategoryStyles : categoryStyles;
   if (!category) return dark ? darkDefaultStyle : defaultStyle;
   return styles[category] || (dark ? darkDefaultStyle : defaultStyle);
@@ -106,7 +135,7 @@ export function createMarkerIcon(
   size = 24
 ) {
   const { color, shape } = getStyle(category, dark);
-  const labelColor = dark ? "rgba(20,20,20,0.9)" : "rgba(20,20,20,0.9)";
+  const labelColor = "rgba(20,20,20,0.9)";
   const svg = buildSvg(shape, color, size, name || "", showLabel, labelColor);
   const totalWidth = Math.max(size, 120);
   const labelBlockHeight = showLabel && name ? 18 : 0;
@@ -120,7 +149,6 @@ export function createMarkerIcon(
   });
 }
 
-
 interface AssetMarkerProps {
   position: [number, number];
   category: string | null | undefined;
@@ -131,12 +159,29 @@ interface AssetMarkerProps {
 }
 
 export const AssetMarker: React.FC<AssetMarkerProps> = React.memo(
-  ({ position, category, name = "", showLabel = false, darkMode = false, onClick }) => {
+  ({
+    position,
+    category,
+    name = "",
+    showLabel = false,
+    darkMode = false,
+    onClick,
+  }) => {
     const icon = React.useMemo(
       () => createMarkerIcon(category, name, showLabel, darkMode),
       [category, name, showLabel, darkMode]
     );
-    return <Marker position={position} icon={icon} eventHandlers={{ click: onClick }} />;
+    return (
+      <Marker
+        position={position}
+        icon={icon}
+        eventHandlers={{ click: onClick }}
+      >
+        {name && (
+          <title>{`${name}${category ? ` (${category})` : ""}`}</title>
+        )}
+      </Marker>
+    );
   }
 );
 

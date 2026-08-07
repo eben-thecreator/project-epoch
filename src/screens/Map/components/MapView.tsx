@@ -1,5 +1,11 @@
 import React from "react";
-import { MapContainer as LeafletMap, TileLayer, ScaleControl, useMap } from "react-leaflet";
+import {
+  MapContainer as LeafletMap,
+  TileLayer,
+  ScaleControl,
+  ZoomControl,
+  useMap,
+} from "react-leaflet";
 import { CoordinateDisplay } from "./CoordinateDisplay";
 
 interface MapViewProps {
@@ -18,7 +24,11 @@ function MapController() {
   return null;
 }
 
-function MapFlyTo({ target }: { target: { center: [number, number]; zoom: number } | null }) {
+function MapFlyTo({
+  target,
+}: {
+  target: { center: [number, number]; zoom: number } | null;
+}) {
   const map = useMap();
   React.useEffect(() => {
     if (target) {
@@ -35,8 +45,10 @@ export const MapView: React.FC<MapViewProps> = ({
   darkMode = false,
   flyTo = null,
 }) => {
-  const lightTiles = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
-  const darkTiles = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+  const lightTiles =
+    "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+  const darkTiles =
+    "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
 
   return (
     <LeafletMap
@@ -52,6 +64,11 @@ export const MapView: React.FC<MapViewProps> = ({
     >
       <MapController />
       <MapFlyTo target={flyTo} />
+      <ZoomControl
+        position="topleft"
+        zoomInTitle="Zoom in"
+        zoomOutTitle="Zoom out"
+      />
       <TileLayer
         key={darkMode ? "dark" : "light"}
         url={darkMode ? darkTiles : lightTiles}

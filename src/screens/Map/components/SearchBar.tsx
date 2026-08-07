@@ -7,7 +7,10 @@ interface SearchBarProps {
   darkMode?: boolean;
 }
 
-export const SearchBar: React.FC<SearchBarProps> = ({ onSelectAsset, darkMode = false }) => {
+export const SearchBar: React.FC<SearchBarProps> = ({
+  onSelectAsset,
+  darkMode = false,
+}) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<HeritageAsset[]>([]);
@@ -24,7 +27,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSelectAsset, darkMode = 
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
         setQuery("");
         setResults([]);
@@ -37,6 +43,18 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSelectAsset, darkMode = 
     };
   }, []);
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        setQuery("");
+        setResults([]);
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, []);
+
   const search = useCallback((term: string) => {
     clearTimeout(timerRef.current);
     if (term.trim().length < 2) {
@@ -45,7 +63,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSelectAsset, darkMode = 
     }
     timerRef.current = setTimeout(() => {
       setLoading(true);
-      fetch(apiUrl(`/api/heritage-assets?search=${encodeURIComponent(term.trim())}`))
+      fetch(
+        apiUrl(
+          `/api/heritage-assets?search=${encodeURIComponent(
+            term.trim()
+          )}`
+        )
+      )
         .then((r) => r.json())
         .then((data: HeritageAsset[]) => {
           setResults(data.slice(0, 12));
@@ -68,81 +92,121 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSelectAsset, darkMode = 
     setResults([]);
   };
 
+  const bg = darkMode ? "bg-[#0d0d0d]" : "bg-white";
+  const border = darkMode ? "border-white/10" : "border-black/10";
+  const text = darkMode ? "text-white" : "text-black";
+  const muted = darkMode ? "text-white/40" : "text-black/40";
+  const hoverBg = darkMode
+    ? "hover:bg-white/[0.03]"
+    : "hover:bg-black/[0.03]";
+  const divider = darkMode ? "border-white/5" : "border-black/5";
+
   return (
     <div ref={wrapperRef} className="w-full relative">
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="group relative bg-black text-white font-bold px-10 py-4 flex items-center justify-center overflow-hidden text-[10px] uppercase tracking-widest w-full"
+          className={`group relative ${bg} border ${border} shadow-sm font-bold px-4 py-3 flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest w-full transition-colors ${darkMode ? "hover:bg-white/5" : "hover:bg-black/[0.02]"}`}
         >
-          <span className="transition-transform duration-300 group-hover:-translate-x-3">
-            Search Assets
-          </span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth="2.5"
             stroke="currentColor"
-            className="absolute right-8 w-3.5 h-3.5 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"
+            className={`w-3.5 h-3.5 shrink-0 ${text}`}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
           </svg>
+          <span className={text}>Search Assets</span>
         </button>
       )}
 
       {open && (
-        <div className="relative bg-black px-10 py-4">
+        <div
+          className={`relative ${bg} border ${border} shadow-sm px-4 py-3 flex items-center gap-2 w-full`}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="2.5"
+            stroke="currentColor"
+            className={`w-3.5 h-3.5 shrink-0 ${muted} pointer-events-none`}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={handleChange}
             placeholder="Search assets..."
-            className="w-full text-[10px] uppercase tracking-[0.15em] font-medium text-white placeholder:text-white/40 outline-none bg-transparent pr-8"
+            className={`flex-1 text-[10px] uppercase tracking-widest font-medium ${text} placeholder:${muted} outline-none bg-transparent`}
           />
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth="2.5"
-            stroke="currentColor"
-            className="absolute right-8 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white pointer-events-none"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
           {loading && (
-            <div className="absolute right-16 top-1/2 -translate-y-1/2">
-              <div className="w-3 h-3 border border-white/20 border-t-white/60 rounded-full animate-spin" />
-            </div>
+            <div
+              className={`w-3 h-3 border ${darkMode ? "border-white/20 border-t-white/60" : "border-black/20 border-t-black/60"} rounded-full animate-spin shrink-0`}
+            />
           )}
         </div>
       )}
 
       {open && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-black border border-white/10 shadow-sm max-h-[320px] overflow-y-auto z-[1001]">
+        <div
+          className={`absolute top-full left-0 right-0 mt-1 ${bg} border ${border} shadow-sm max-h-[320px] overflow-y-auto z-[1001]`}
+        >
           {results.map((asset) => (
             <button
               key={asset.id}
               onClick={() => handleSelect(asset)}
-              className="w-full text-left px-3 py-2.5 hover:bg-white/[0.03] border-b border-white/5 last:border-0 transition-colors"
+              className={`w-full text-left px-3 py-2.5 ${hoverBg} border-b ${divider} last:border-0 transition-colors`}
             >
-              <div className="text-[10px] uppercase tracking-wider font-bold text-white truncate">
-                {asset.name || asset.alternative_name || "Untitled"}
+              <div
+                className={`text-[10px] uppercase font-bold ${text} truncate`}
+              >
+                {asset.name ||
+                  asset.alternative_name ||
+                  "Untitled"}
               </div>
-              <div className="text-[9px] uppercase tracking-wider text-white/40 mt-0.5">
-                {[asset.asset_category, asset.district, asset.region].filter(Boolean).join(" · ")}
+              <div
+                className={`text-[9px] uppercase ${muted} mt-0.5`}
+              >
+                {[
+                  asset.asset_category,
+                  asset.district,
+                  asset.region,
+                ]
+                  .filter(Boolean)
+                  .join(" \u00B7 ")}
               </div>
             </button>
           ))}
         </div>
       )}
 
-      {open && query.trim().length >= 2 && results.length === 0 && !loading && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-black border border-white/10 shadow-sm px-3 py-4 text-center z-[1001]">
-          <p className="text-[10px] uppercase tracking-wider text-white/40">No results found</p>
-        </div>
-      )}
+      {open &&
+        query.trim().length >= 2 &&
+        results.length === 0 &&
+        !loading && (
+          <div
+            className={`absolute top-full left-0 right-0 mt-1 ${bg} border ${border} shadow-sm px-3 py-4 text-center z-[1001]`}
+          >
+            <p
+              className={`text-[10px] uppercase ${muted}`}
+            >
+              No results found
+            </p>
+          </div>
+        )}
     </div>
   );
 };
