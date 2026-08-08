@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "../../../components/Header";
 import { ModelViewer } from "../../../components/ModelViewer";
-import { apiUrl } from "../../../lib/api";
+import { apiUrl, mediaUrl } from "../../../lib/api";
 
 type MediaItem = {
   id: string;
@@ -16,18 +17,19 @@ type MediaItem = {
 type Artifact = {
   id: string;
   title: string;
-  date: string;
   location: string;
   currentLocation: string;
+  type: string;
   description: string;
-  weight: string;
-  height: string;
-  material?: string;
-  condition?: string;
-  assetCategory?: string;
   imageUrl: string;
   modelUrl: string;
   media: MediaItem[];
+  year?: number | null;
+  date?: string;
+  material?: string;
+  condition?: string;
+  weight?: string;
+  height?: string;
 };
 
 const stagger = {
@@ -43,6 +45,7 @@ const fadeUp = {
 };
 
 export const Artifacts = (): JSX.Element => {
+  const { id: urlParamId } = useParams<{ id?: string }>();
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const detailsRef = useRef<HTMLDivElement>(null);
@@ -57,35 +60,41 @@ export const Artifacts = (): JSX.Element => {
           return {
             id: item.id,
             title: item.name || item.alternative_name || item.id,
-            date: item.period || item.estimated_age || "Unknown period",
             location:
-              [item.region, item.district, item.community].filter(Boolean).join(", ") || "Unknown",
+              [item.region, item.district, item.community].filter(Boolean).join(", ") ||
+              "Unknown",
             currentLocation: item.current_location || "—",
+            type: item.asset_category || item.asset_type || "Artifact",
             description: item.description || "No description recorded.",
-            weight: item.weight_kg ? `${item.weight_kg} kg` : "Unknown",
-            height: item.height_m ? `${item.height_m} m` : "Unknown",
-            material: item.material || undefined,
-            condition: item.condition || undefined,
-            assetCategory: item.asset_category || undefined,
             imageUrl: media.find((m: MediaItem) => m.mediaType === "image")?.filePath
-              ? apiUrl(media.find((m: MediaItem) => m.mediaType === "image")!.filePath)
+              ? mediaUrl(media.find((m: MediaItem) => m.mediaType === "image")!.filePath)
               : "",
             modelUrl: media.find((m: MediaItem) => m.mediaType === "model")?.filePath
-              ? apiUrl(media.find((m: MediaItem) => m.mediaType === "model")!.filePath)
+              ? mediaUrl(media.find((m: MediaItem) => m.mediaType === "model")!.filePath)
               : "",
             media,
+            year: item.period_start ?? null,
+            date: item.period || item.estimated_age || undefined,
+            material: item.material || undefined,
+            condition: item.condition || undefined,
+            weight: item.weight_kg ? `${item.weight_kg} kg` : undefined,
+            height: item.height_m ? `${item.height_m} m` : undefined,
           };
         });
         setArtifacts(mapped);
         if (mapped.length > 0) {
-          setSelectedId(mapped[0].id);
+          if (urlParamId && mapped.some((a: Artifact) => a.id === urlParamId)) {
+            setSelectedId(urlParamId);
+          } else {
+            setSelectedId(mapped[0].id);
+          }
         }
       } catch (error) {
         console.error("Error fetching artifacts:", error);
       }
     };
     fetchData();
-  }, []);
+  }, [urlParamId]);
 
   const selected = artifacts.find((a) => a.id === selectedId) || null;
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -104,14 +113,14 @@ export const Artifacts = (): JSX.Element => {
     : [];
 
   return (
-    <div className="bg-white w-full h-screen pt-[120px] pb-[40px]">
+    <div className="bg-white w-full h-screen pt-[80px] pb-[40px]">
       <Header />
 
-      <div className="h-full grid grid-cols-1 md:grid-cols-12 gap-6 min-h-0 px-4 sm:px-6 lg:px-8">
+      <div className="h-full grid grid-cols-1 md:grid-cols-12 gap-4 min-h-0 px-4 sm:px-6 lg:px-8">
         {/* Left: Artifact gallery grid */}
         <div className="col-span-1 md:col-span-7 h-full overflow-y-auto py-4 scrollbar-hide">
           <motion.div
-            className="grid grid-cols-2 lg:grid-cols-3 gap-2"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-5"
             variants={stagger}
             initial="hidden"
             animate="visible"
@@ -121,26 +130,26 @@ export const Artifacts = (): JSX.Element => {
                 key={artifact.id}
                 variants={fadeUp}
                 onClick={() => handleSelect(artifact.id)}
-                className={`cursor-pointer overflow-hidden transition-all duration-300 ${
-                  selectedId === artifact.id
-                    ? "ring-1 ring-black scale-[0.98]"
-                    : "opacity-85 hover:opacity-100"
-                }`}
+                className={`group cursor-pointer ${selectedId === artifact.id ? "opacity-100" : "opacity-90 hover:opacity-100"}`}
               >
-                <motion.div
-                  className="aspect-[3/4] w-full overflow-hidden bg-black/5"
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                >
+                {/* Image Container without grey background */}
+                <div className="relative overflow-hidden">
                   <img
                     src={artifact.imageUrl}
-                    alt=""
-                    className="w-full h-full object-cover"
+                    alt={artifact.title}
+                    className="w-full aspect-video object-cover"
                     onError={(e: any) => {
                       e.currentTarget.src =
-                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f5f5f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23ccc'%3E%3C/text%3E%3C/svg%3E";
+                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f5f5f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23ccc'%3ENo Image%3C/text%3E%3C/svg%3E";
                     }}
                   />
-                </motion.div>
+                </div>
+
+                {/* Title & Description */}
+                <div className="mt-2.5">
+                  <h3 className="text-sm font-bold text-black leading-tight">{artifact.title}</h3>
+                  <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{artifact.description}</p>
+                </div>
               </motion.div>
             ))}
           </motion.div>
@@ -176,7 +185,7 @@ export const Artifacts = (): JSX.Element => {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-[10px] uppercase tracking-widest font-bold text-black/20">
+                      <span className="text-[10px] font-bold text-black/20">
                         No media
                       </span>
                     </div>
@@ -190,37 +199,49 @@ export const Artifacts = (): JSX.Element => {
                       {selected.title}
                     </h1>
                     <p className="text-[10px] uppercase font-bold text-black/40 mt-1">
-                      {[selected.location, selected.date]
+                      {[selected.location, selected.type, selected.date]
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
                         Location
                       </p>
                       <p className="text-xs font-bold text-black">
-                        {selected.currentLocation}
+                        {selected.location}
                       </p>
                     </div>
                     <div>
                       <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
-                        Weight
+                        Type / Category
                       </p>
                       <p className="text-xs font-bold text-black">
-                        {selected.weight}
+                        {selected.type}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
-                        Height
-                      </p>
-                      <p className="text-xs font-bold text-black">
-                        {selected.height}
-                      </p>
-                    </div>
+                    {selected.currentLocation && selected.currentLocation !== "—" && (
+                      <div>
+                        <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
+                          Current Location
+                        </p>
+                        <p className="text-xs font-bold text-black">
+                          {selected.currentLocation}
+                        </p>
+                      </div>
+                    )}
+                    {selected.date && (
+                      <div>
+                        <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
+                          Period
+                        </p>
+                        <p className="text-xs font-bold text-black">
+                          {selected.date}
+                        </p>
+                      </div>
+                    )}
                     {selected.material && (
                       <div>
                         <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
@@ -231,16 +252,6 @@ export const Artifacts = (): JSX.Element => {
                         </p>
                       </div>
                     )}
-                    {selected.assetCategory && (
-                      <div>
-                        <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
-                          Category
-                        </p>
-                        <p className="text-xs font-bold text-black">
-                          {selected.assetCategory}
-                        </p>
-                      </div>
-                    )}
                     {selected.condition && (
                       <div>
                         <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
@@ -248,6 +259,26 @@ export const Artifacts = (): JSX.Element => {
                         </p>
                         <p className="text-xs font-bold text-black">
                           {selected.condition}
+                        </p>
+                      </div>
+                    )}
+                    {selected.weight && selected.weight !== "Unknown" && (
+                      <div>
+                        <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
+                          Weight
+                        </p>
+                        <p className="text-xs font-bold text-black">
+                          {selected.weight}
+                        </p>
+                      </div>
+                    )}
+                    {selected.height && selected.height !== "Unknown" && (
+                      <div>
+                        <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
+                          Height
+                        </p>
+                        <p className="text-xs font-bold text-black">
+                          {selected.height}
                         </p>
                       </div>
                     )}
@@ -278,7 +309,7 @@ export const Artifacts = (): JSX.Element => {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.35, ease: "easeInOut" }}
-                            src={apiUrl(imageMedia[activeImageIndex].filePath)}
+                            src={mediaUrl(imageMedia[activeImageIndex].filePath)}
                             alt=""
                             className="w-full h-full object-cover"
                           />
@@ -323,14 +354,13 @@ export const Artifacts = (): JSX.Element => {
                           <button
                             key={m.id}
                             onClick={() => setActiveImageIndex(idx)}
-                            className={`w-14 h-9 flex-shrink-0 border bg-black/5 overflow-hidden transition-all duration-200 ${
-                              activeImageIndex === idx
-                                ? "border-black opacity-100"
-                                : "border-transparent opacity-50 hover:opacity-100"
-                            }`}
+                            className={`w-14 h-9 flex-shrink-0 border bg-black/5 overflow-hidden transition-all duration-200 ${activeImageIndex === idx
+                              ? "border-black opacity-100"
+                              : "border-transparent opacity-50 hover:opacity-100"
+                              }`}
                           >
                             <img
-                              src={apiUrl(m.filePath)}
+                              src={mediaUrl(m.filePath)}
                               className="w-full h-full object-cover"
                               alt=""
                             />

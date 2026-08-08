@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "../../components/Header";
 import { ModelViewer } from "../../components/ModelViewer";
-import { apiUrl } from "../../lib/api";
+import { PortfolioCard } from "../../components/PortfolioCard";
+import { apiUrl, mediaUrl } from "../../lib/api";
 import { Link } from "react-router-dom";
 
 type MediaItem = {
@@ -184,41 +185,20 @@ export const Gallery = (): JSX.Element => {
         ) : (
           <motion.div
             layout
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             <AnimatePresence mode="popLayout">
               {filteredList.map((m) => (
-                <motion.div
-                  layout
+                <PortfolioCard
                   key={m.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  transition={{ duration: 0.35 }}
+                  id={m.id}
+                  title={m.caption || m.assetName}
+                  description={m.assetCategory}
+                  imageUrl={m.filePath}
+                  mediaType={m.mediaType}
+                  category={m.assetCategory}
                   onClick={() => setActiveMedia(m)}
-                  className="group relative cursor-pointer aspect-[4/3] bg-white/5 border border-white/10 overflow-hidden"
-                >
-                  {m.mediaType === "image" ? (
-                    <img
-                      src={apiUrl(m.filePath)}
-                      alt={m.caption}
-                      className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-[#141414] opacity-80 group-hover:opacity-100 transition-opacity duration-300">
-                      <span className="text-[10px] uppercase tracking-[0.25em] font-bold text-white/50 border border-white/10 px-2.5 py-1.5 mb-2">
-                        3D Structure
-                      </span>
-                      <span className="text-[9px] uppercase tracking-[0.15em] text-white/30">{m.assetName}</span>
-                    </div>
-                  )}
-
-                  {/* Hover Overlay (No Image Zoom) */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                    <p className="text-[8px] uppercase tracking-widest text-[#E4002B] font-bold mb-1">{m.assetCategory}</p>
-                    <h3 className="text-xs font-bold uppercase tracking-wide truncate">{m.caption}</h3>
-                  </div>
-                </motion.div>
+                />
               ))}
             </AnimatePresence>
           </motion.div>
@@ -257,13 +237,13 @@ export const Gallery = (): JSX.Element => {
               <div className="col-span-1 md:col-span-8 aspect-[4/3] bg-black flex items-center justify-center relative">
                 {activeMedia.mediaType === "image" ? (
                   <img
-                    src={apiUrl(activeMedia.filePath)}
+                    src={mediaUrl(activeMedia.filePath)}
                     alt={activeMedia.caption}
                     className="w-full h-full object-contain"
                   />
                 ) : (
                   <div className="w-full h-full">
-                    <ModelViewer modelUrl={apiUrl(activeMedia.filePath)} autoRotate={true} />
+                    <ModelViewer modelUrl={mediaUrl(activeMedia.filePath)} autoRotate={true} />
                   </div>
                 )}
               </div>

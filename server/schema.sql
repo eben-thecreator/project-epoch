@@ -127,96 +127,6 @@ CREATE TYPE public.enum_verification_status AS ENUM (
 );
 
 
---
--- Name: tg_heritage_assets_updatable(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.tg_heritage_assets_updatable() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-      DECLARE
-        v_id TEXT;
-      BEGIN
-        IF TG_OP = 'INSERT' THEN
-          v_id := COALESCE(NEW.id, gen_random_uuid()::text);
-
-          INSERT INTO heritage_assets (
-            id, name, alternative_name, description, asset_type, asset_category, cultural_group,
-            geom, location_accuracy, elevation_m, gps_accuracy_m, region, district, community,
-            location_description, height_m, width_m, length_m, diameter_m, weight_kg,
-            material, secondary_material, technique, condition, damage_type, conservation_status,
-            period, period_start, period_end, estimated_age, discovered_date, recorded_date,
-            origin_known, origin_location, current_location, ownership, data_completeness_score,
-            verification_status, data_source, notes, observer, survey_method
-          ) VALUES (
-            v_id, NEW.name, NEW.alternative_name, NEW.description, NEW.asset_type, NEW.asset_category, NEW.cultural_group,
-            NEW.geom, NEW.location_accuracy, NEW.elevation_m, NEW.gps_accuracy_m, NEW.region, NEW.district, NEW.community,
-            NEW.location_description, NEW.height_m, NEW.width_m, NEW.length_m, NEW.diameter_m, NEW.weight_kg,
-            NEW.material, NEW.secondary_material, NEW.technique, NEW.condition, NEW.damage_type, NEW.conservation_status,
-            NEW.period, NEW.period_start, NEW.period_end, NEW.estimated_age, NEW.discovered_date, NEW.recorded_date,
-            COALESCE(NEW.origin_known, TRUE), NEW.origin_location, NEW.current_location, NEW.ownership, NEW.data_completeness_score,
-            NEW.verification_status, NEW.data_source, NEW.notes, NEW.observer, NEW.survey_method
-          );
-          NEW.id := v_id;
-          RETURN NEW;
-
-        ELSIF TG_OP = 'UPDATE' THEN
-          UPDATE heritage_assets SET
-            id = NEW.id,
-            name = NEW.name,
-            alternative_name = NEW.alternative_name,
-            description = NEW.description,
-            asset_type = NEW.asset_type,
-            asset_category = NEW.asset_category,
-            cultural_group = NEW.cultural_group,
-            geom = NEW.geom,
-            location_accuracy = NEW.location_accuracy,
-            elevation_m = NEW.elevation_m,
-            gps_accuracy_m = NEW.gps_accuracy_m,
-            region = NEW.region,
-            district = NEW.district,
-            community = NEW.community,
-            location_description = NEW.location_description,
-            height_m = NEW.height_m,
-            width_m = NEW.width_m,
-            length_m = NEW.length_m,
-            diameter_m = NEW.diameter_m,
-            weight_kg = NEW.weight_kg,
-            material = NEW.material,
-            secondary_material = NEW.secondary_material,
-            technique = NEW.technique,
-            condition = NEW.condition,
-            damage_type = NEW.damage_type,
-            conservation_status = NEW.conservation_status,
-            period = NEW.period,
-            period_start = NEW.period_start,
-            period_end = NEW.period_end,
-            estimated_age = NEW.estimated_age,
-            discovered_date = NEW.discovered_date,
-            recorded_date = NEW.recorded_date,
-            origin_known = NEW.origin_known,
-            origin_location = NEW.origin_location,
-            current_location = NEW.current_location,
-            ownership = NEW.ownership,
-            data_completeness_score = NEW.data_completeness_score,
-            verification_status = NEW.verification_status,
-            data_source = NEW.data_source,
-            notes = NEW.notes,
-            observer = NEW.observer,
-            survey_method = NEW.survey_method,
-            updated_at = NOW()
-          WHERE id = OLD.id;
-          RETURN NEW;
-
-        ELSIF TG_OP = 'DELETE' THEN
-          DELETE FROM heritage_assets WHERE id = OLD.id;
-          RETURN OLD;
-        END IF;
-        RETURN NULL;
-      END;
-      $$;
-
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -230,11 +140,11 @@ CREATE TABLE public.heritage_assets (
     name text,
     alternative_name text,
     description text,
-    asset_type public.enum_asset_type,
-    asset_category public.enum_asset_category,
+    asset_type text,
+    asset_category text,
     cultural_group text,
     geom public.geometry(Geometry,4326) NOT NULL,
-    location_accuracy public.enum_location_accuracy,
+    location_accuracy text,
     elevation_m numeric,
     gps_accuracy_m numeric,
     region text,
@@ -249,9 +159,9 @@ CREATE TABLE public.heritage_assets (
     material text,
     secondary_material text,
     technique text,
-    condition public.enum_condition,
+    condition text,
     damage_type text,
-    conservation_status public.enum_conservation_status,
+    conservation_status text,
     period text,
     period_start integer,
     period_end integer,
@@ -263,173 +173,25 @@ CREATE TABLE public.heritage_assets (
     current_location text,
     ownership text,
     data_completeness_score integer,
-    verification_status public.enum_verification_status,
-    data_source public.enum_data_source,
+    verification_status text,
+    data_source text,
     notes text,
     observer text,
     survey_method text,
     created_at timestamp without time zone DEFAULT now(),
-    updated_at timestamp without time zone DEFAULT now()
+    updated_at timestamp without time zone DEFAULT now(),
+    deleted_at timestamp without time zone DEFAULT NULL,
+    search_vector tsvector GENERATED ALWAYS AS (
+      setweight(to_tsvector('english', coalesce(name, '')), 'A') ||
+      setweight(to_tsvector('english', coalesce(alternative_name, '')), 'A') ||
+      setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
+      setweight(to_tsvector('english', coalesce(region, '')), 'C') ||
+      setweight(to_tsvector('english', coalesce(district, '')), 'C') ||
+      setweight(to_tsvector('english', coalesce(community, '')), 'C') ||
+      setweight(to_tsvector('english', coalesce(asset_category, '')), 'C') ||
+      setweight(to_tsvector('english', coalesce(cultural_group, '')), 'D')
+    ) STORED
 );
-
-
---
--- Name: ha_lines; Type: VIEW; Schema: public; Owner: -
---
-
-CREATE VIEW public.ha_lines AS
- SELECT id,
-    name,
-    alternative_name,
-    description,
-    asset_type,
-    asset_category,
-    cultural_group,
-    (geom)::public.geometry(LineString,4326) AS geom,
-    location_accuracy,
-    elevation_m,
-    gps_accuracy_m,
-    region,
-    district,
-    community,
-    location_description,
-    height_m,
-    width_m,
-    length_m,
-    diameter_m,
-    weight_kg,
-    material,
-    secondary_material,
-    technique,
-    condition,
-    damage_type,
-    conservation_status,
-    period,
-    period_start,
-    period_end,
-    estimated_age,
-    discovered_date,
-    recorded_date,
-    origin_known,
-    origin_location,
-    current_location,
-    ownership,
-    data_completeness_score,
-    verification_status,
-    data_source,
-    notes,
-    observer,
-    survey_method,
-    created_at,
-    updated_at
-   FROM public.heritage_assets
-  WHERE ((public.st_geometrytype(geom) = 'ST_LineString'::text) OR (geom IS NULL));
-
-
---
--- Name: ha_points; Type: VIEW; Schema: public; Owner: -
---
-
-CREATE VIEW public.ha_points AS
- SELECT id,
-    name,
-    alternative_name,
-    description,
-    asset_type,
-    asset_category,
-    cultural_group,
-    (geom)::public.geometry(Point,4326) AS geom,
-    location_accuracy,
-    elevation_m,
-    gps_accuracy_m,
-    region,
-    district,
-    community,
-    location_description,
-    height_m,
-    width_m,
-    length_m,
-    diameter_m,
-    weight_kg,
-    material,
-    secondary_material,
-    technique,
-    condition,
-    damage_type,
-    conservation_status,
-    period,
-    period_start,
-    period_end,
-    estimated_age,
-    discovered_date,
-    recorded_date,
-    origin_known,
-    origin_location,
-    current_location,
-    ownership,
-    data_completeness_score,
-    verification_status,
-    data_source,
-    notes,
-    observer,
-    survey_method,
-    created_at,
-    updated_at
-   FROM public.heritage_assets
-  WHERE ((public.st_geometrytype(geom) = 'ST_Point'::text) OR (geom IS NULL));
-
-
---
--- Name: ha_polygons; Type: VIEW; Schema: public; Owner: -
---
-
-CREATE VIEW public.ha_polygons AS
- SELECT id,
-    name,
-    alternative_name,
-    description,
-    asset_type,
-    asset_category,
-    cultural_group,
-    (geom)::public.geometry(MultiPolygon,4326) AS geom,
-    location_accuracy,
-    elevation_m,
-    gps_accuracy_m,
-    region,
-    district,
-    community,
-    location_description,
-    height_m,
-    width_m,
-    length_m,
-    diameter_m,
-    weight_kg,
-    material,
-    secondary_material,
-    technique,
-    condition,
-    damage_type,
-    conservation_status,
-    period,
-    period_start,
-    period_end,
-    estimated_age,
-    discovered_date,
-    recorded_date,
-    origin_known,
-    origin_location,
-    current_location,
-    ownership,
-    data_completeness_score,
-    verification_status,
-    data_source,
-    notes,
-    observer,
-    survey_method,
-    created_at,
-    updated_at
-   FROM public.heritage_assets
-  WHERE ((public.st_geometrytype(geom) = ANY (ARRAY['ST_Polygon'::text, 'ST_MultiPolygon'::text])) OR (geom IS NULL));
 
 
 --
@@ -840,32 +602,121 @@ CREATE INDEX map_roads_geom_idx ON public.map_roads USING gist (geom);
 
 
 --
--- Name: ha_lines tg_ha_lines_manage; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER tg_ha_lines_manage INSTEAD OF INSERT OR DELETE OR UPDATE ON public.ha_lines FOR EACH ROW EXECUTE FUNCTION public.tg_heritage_assets_updatable();
-
-
---
--- Name: ha_points tg_ha_points_manage; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER tg_ha_points_manage INSTEAD OF INSERT OR DELETE OR UPDATE ON public.ha_points FOR EACH ROW EXECUTE FUNCTION public.tg_heritage_assets_updatable();
-
-
---
--- Name: ha_polygons tg_ha_polygons_manage; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER tg_ha_polygons_manage INSTEAD OF INSERT OR DELETE OR UPDATE ON public.ha_polygons FOR EACH ROW EXECUTE FUNCTION public.tg_heritage_assets_updatable();
-
-
---
 -- Name: heritage_asset_media heritage_asset_media_asset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.heritage_asset_media
     ADD CONSTRAINT heritage_asset_media_asset_id_fkey FOREIGN KEY (asset_id) REFERENCES public.heritage_assets(id) ON DELETE CASCADE;
+
+
+--
+-- Name: idx_ha_search; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ha_search ON public.heritage_assets USING GIN (search_vector);
+
+
+--
+-- Name: idx_ha_artifacts; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ha_artifacts ON public.heritage_assets (id)
+WHERE (
+  (asset_type = 'Object (Physical Artifact)' OR asset_category IN ('Artifact', 'Jewelry / Beadwork'))
+  AND asset_category IS DISTINCT FROM 'Textile (Kente, etc.)'
+);
+
+
+--
+-- Name: idx_ha_museums; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ha_museums ON public.heritage_assets (id)
+WHERE (
+  asset_type = 'Site (Geography / Ruins)'
+  OR asset_category IN ('Museum', 'Fort', 'Castle', 'Monument')
+);
+
+
+--
+-- Name: idx_ha_textiles; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ha_textiles ON public.heritage_assets (id)
+WHERE asset_category = 'Textile (Kente, etc.)';
+
+
+--
+-- Name: idx_ha_documents; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ha_documents ON public.heritage_assets (id)
+WHERE (
+  asset_type = 'Document (Photo, Map, Archive)'
+  OR asset_category IN ('Photograph / Digital Media', 'Audio / Music')
+);
+
+
+--
+-- Name: idx_ha_needs_review; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ha_needs_review ON public.heritage_assets (id)
+WHERE asset_type IS NULL OR asset_category IS NULL;
+
+
+--
+-- Name: idx_ha_created_at_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ha_created_at_id ON public.heritage_assets (created_at DESC, id);
+
+
+--
+-- Name: idx_ha_deleted_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ha_deleted_at ON public.heritage_assets (deleted_at)
+WHERE deleted_at IS NOT NULL;
+
+
+--
+-- Name: idx_ha_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ha_active ON public.heritage_assets (id)
+WHERE deleted_at IS NULL;
+
+
+--
+-- Name: tg_heritage_assets_updated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER tg_heritage_assets_updated
+BEFORE UPDATE ON heritage_assets
+FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+
+
+--
+-- Name: tg_heritage_asset_media_updated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER tg_heritage_asset_media_updated
+BEFORE UPDATE ON heritage_asset_media
+FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+
+
+--
+-- Name: update_timestamp(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE OR REPLACE FUNCTION update_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
 
 --

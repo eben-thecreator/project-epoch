@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { HeritageAsset } from "./HeritageLayer";
-import { apiUrl } from "../../../lib/api";
+import { apiUrl, mediaUrl } from "../../../lib/api";
 
 interface SidePanelProps {
   asset: HeritageAsset | null;
@@ -18,7 +18,7 @@ function getImages(asset: HeritageAsset): string[] {
   const sorted = primary
     ? [primary, ...images.filter((m) => m.id !== primary.id)]
     : images;
-  return sorted.map((m) => apiUrl(m.filePath));
+  return sorted.map((m) => mediaUrl(m.filePath));
 }
 
 export const SidePanel: React.FC<SidePanelProps> = ({
@@ -139,8 +139,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                           key={i}
                           onClick={() => setActiveImageIndex(i)}
                           className={`w-1.5 h-1.5 transition-colors ${i === activeImageIndex
-                              ? "bg-[#E4002B]"
-                              : "bg-white/40 hover:bg-white/70"
+                            ? "bg-[#E4002B]"
+                            : "bg-white/40 hover:bg-white/70"
                             }`}
                         />
                       ))}

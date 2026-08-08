@@ -133,17 +133,23 @@ function ClusteredPointLayer({
 }) {
   const map = useMap();
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
-  const renderedIdsRef = useRef<Set<string | number>>(new Set());
 
   useEffect(() => {
-    const cluster = L.markerClusterGroup({
+    if (typeof window !== "undefined" && !(window as any).L) {
+      (window as any).L = L;
+    }
+    const createClusterGroup =
+      (L as any).markerClusterGroup || (window as any).L?.markerClusterGroup;
+    if (!createClusterGroup) return;
+
+    const cluster = createClusterGroup({
       maxClusterRadius: 50,
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
       zoomToBoundsOnClick: true,
       disableClusteringAtZoom: 16,
       chunkedLoading: true,
-      iconCreateFunction: (cl) => {
+      iconCreateFunction: (cl: any) => {
         const count = cl.getChildCount();
         let size = 32;
         if (count >= 50) {
@@ -163,7 +169,6 @@ function ClusteredPointLayer({
     return () => {
       map.removeLayer(cluster);
       clusterRef.current = null;
-      renderedIdsRef.current.clear();
     };
   }, [map]);
 
@@ -171,21 +176,9 @@ function ClusteredPointLayer({
     const cluster = clusterRef.current;
     if (!cluster) return;
 
-    const currentIds = new Set(assets.map((a) => a.id));
-
-    renderedIdsRef.current.forEach((id) => {
-      if (!currentIds.has(id)) {
-        cluster.eachLayer((layer) => {
-          if ((layer as any)._assetId === id) {
-            cluster.removeLayer(layer);
-          }
-        });
-        renderedIdsRef.current.delete(id);
-      }
-    });
+    cluster.clearLayers();
 
     assets.forEach((asset) => {
-      if (renderedIdsRef.current.has(asset.id)) return;
       const coords = asset.geometry?.coordinates as number[];
       if (!coords || coords.length < 2) return;
       const icon = createMarkerIcon(
@@ -217,7 +210,6 @@ function ClusteredPointLayer({
       });
 
       cluster.addLayer(marker);
-      renderedIdsRef.current.add(asset.id);
     });
   }, [assets, darkMode, onSelectAsset]);
 
@@ -385,7 +377,7 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
     onAssetCountChange,
   ]);
 
-  const showLabels = zoom >= 11;
+  const showLabels = false;
 
   if (!visible) return null;
 

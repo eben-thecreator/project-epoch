@@ -6,7 +6,6 @@ import { ReferenceLayers } from "./components/ReferenceLayers";
 import { LayerControl } from "./components/LayerControl";
 import { SearchBar } from "./components/SearchBar";
 import { SidePanel } from "./components/SidePanel";
-import { TimeSlider } from "./components/TimeSlider";
 import { Legend } from "./components/Legend";
 import { CompassControl } from "./components/CompassControl";
 import { CoordinateDisplay } from "./components/CoordinateDisplay";
@@ -85,11 +84,15 @@ export const MapScreen: React.FC = () => {
     setSelectedAsset(asset);
     if (asset.geometry?.coordinates) {
       const coords = asset.geometry.coordinates;
-      if (asset.geometry.type === "Point" && coords.length >= 2) {
-        setFlyTo({
-          center: [coords[1] as number, coords[0] as number],
-          zoom: 14,
-        });
+      if (asset.geometry.type === "Point" && Array.isArray(coords) && coords.length >= 2) {
+        const lat = coords[1] as number;
+        const lng = coords[0] as number;
+        if (!isNaN(lat) && !isNaN(lng)) {
+          setFlyTo({
+            center: [lat, lng],
+            zoom: 14,
+          });
+        }
       } else if (
         asset.geometry.type === "Polygon" &&
         Array.isArray(coords[0]) &&
@@ -97,15 +100,21 @@ export const MapScreen: React.FC = () => {
       ) {
         const ring = coords[0] as number[][];
         let lngSum = 0,
-          latSum = 0;
+          latSum = 0,
+          validCount = 0;
         ring.forEach((c) => {
-          lngSum += c[0];
-          latSum += c[1];
+          if (Array.isArray(c) && c.length >= 2) {
+            lngSum += c[0];
+            latSum += c[1];
+            validCount++;
+          }
         });
-        setFlyTo({
-          center: [latSum / ring.length, lngSum / ring.length],
-          zoom: 13,
-        });
+        if (validCount > 0) {
+          setFlyTo({
+            center: [latSum / validCount, lngSum / validCount],
+            zoom: 13,
+          });
+        }
       } else if (
         asset.geometry.type === "MultiPolygon" &&
         Array.isArray(coords[0]) &&
@@ -114,15 +123,21 @@ export const MapScreen: React.FC = () => {
         const firstPoly = coords[0] as number[][][];
         const ring = firstPoly[0];
         let lngSum = 0,
-          latSum = 0;
+          latSum = 0,
+          validCount = 0;
         ring.forEach((c) => {
-          lngSum += c[0];
-          latSum += c[1];
+          if (Array.isArray(c) && c.length >= 2) {
+            lngSum += c[0];
+            latSum += c[1];
+            validCount++;
+          }
         });
-        setFlyTo({
-          center: [latSum / ring.length, lngSum / ring.length],
-          zoom: 13,
-        });
+        if (validCount > 0) {
+          setFlyTo({
+            center: [latSum / validCount, lngSum / validCount],
+            zoom: 13,
+          });
+        }
       }
     }
   }, []);
@@ -177,11 +192,15 @@ export const MapScreen: React.FC = () => {
   const handleZoomToAsset = useCallback((asset: HeritageAsset) => {
     if (asset.geometry?.coordinates) {
       const coords = asset.geometry.coordinates;
-      if (asset.geometry.type === "Point" && coords.length >= 2) {
-        setFlyTo({
-          center: [coords[1] as number, coords[0] as number],
-          zoom: 14,
-        });
+      if (asset.geometry.type === "Point" && Array.isArray(coords) && coords.length >= 2) {
+        const lat = coords[1] as number;
+        const lng = coords[0] as number;
+        if (!isNaN(lat) && !isNaN(lng)) {
+          setFlyTo({
+            center: [lat, lng],
+            zoom: 14,
+          });
+        }
       } else if (
         (asset.geometry.type === "Polygon" || asset.geometry.type === "MultiPolygon") &&
         Array.isArray(coords[0])
@@ -189,16 +208,24 @@ export const MapScreen: React.FC = () => {
         const ring = Array.isArray(coords[0][0])
           ? (coords[0] as number[][][])[0][0]
           : (coords[0] as number[][]);
-        let lngSum = 0,
-          latSum = 0;
-        ring.forEach((c: number[]) => {
-          lngSum += c[0];
-          latSum += c[1];
-        });
-        setFlyTo({
-          center: [latSum / ring.length, lngSum / ring.length],
-          zoom: 14,
-        });
+        if (Array.isArray(ring)) {
+          let lngSum = 0,
+            latSum = 0,
+            validCount = 0;
+          ring.forEach((c: number[]) => {
+            if (Array.isArray(c) && c.length >= 2) {
+              lngSum += c[0];
+              latSum += c[1];
+              validCount++;
+            }
+          });
+          if (validCount > 0) {
+            setFlyTo({
+              center: [latSum / validCount, lngSum / validCount],
+              zoom: 14,
+            });
+          }
+        }
       }
     }
   }, []);
@@ -230,7 +257,6 @@ export const MapScreen: React.FC = () => {
             onAssetCountChange={setAssetCount}
           />
           <ReferenceLayers activeLayers={activeRefLayers} darkMode={darkMode} />
-          <CoordinateDisplay darkMode={darkMode} />
         </MapView>
 
         {/* ZONE 1: TOP-LEFT COMMAND DOCK (SEARCH & FILTERS) */}
@@ -279,15 +305,6 @@ export const MapScreen: React.FC = () => {
             onReset={handleResetMap}
           />
         </div>
-
-        {/* ZONE 4: BOTTOM-CENTER TIMELINE HORIZON DOCK */}
-        <TimeSlider
-          yearRange={yearRange}
-          onChange={setYearRange}
-          dataMin={periodRange.min}
-          dataMax={periodRange.max}
-          darkMode={darkMode}
-        />
 
         {/* ZONE 5: BOTTOM-RIGHT LEGEND DOCK */}
         <Legend

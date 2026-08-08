@@ -1197,10 +1197,93 @@ app.use((err, req, res, next) => {
 });
 
 // Start listening for requests
-app.listen(PORT, () => {
-  console.log(`==================================================`);
-  console.log(`🚀 Node.js Express server running on port ${PORT}`);
-  console.log(`👉 API status check: http://localhost:${PORT}/api/status`);
-  console.log(`👉 Get Assets API: http://localhost:${PORT}/api/heritage-assets`);
-  console.log(`==================================================`);
-});
+const startServer = async () => {
+  // Run startup migrations before accepting traffic
+  try {
+    await db.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'heritage_assets' AND column_name = 'deleted_at'
+        ) THEN
+          ALTER TABLE heritage_assets ADD COLUMN deleted_at timestamp DEFAULT NULL;
+          CREATE INDEX IF NOT EXISTS idx_ha_deleted_at ON heritage_assets (deleted_at) WHERE deleted_at IS NOT NULL;
+          CREATE INDEX IF NOT EXISTS idx_ha_active ON heritage_assets (id) WHERE deleted_at IS NULL;
+          console.log('added deleted_at column');
+        END IF;
+      END $$;
+    `);
+    console.log("✓ deleted_at column present.");
+  } catch (err) {
+    console.warn("⚠ deleted_at migration failed:", err.message);
+  }
+
+  try {
+    await db.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'heritage_assets' AND column_name = 'search_vector'
+        ) THEN
+          ALTER TABLE heritage_assets ADD COLUMN search_vector tsvector
+          GENERATED ALWAYS AS (
+            setweight(to_tsvector('english', coalesce(name, '')), 'A') ||
+            setweight(to_tsvector('english', coalesce(alternative_name, '')), 'A') ||
+            setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
+            setweight(to_tsvector('english', coalesce(region, '')), 'C') ||
+            setweight(to_tsvector('english', coalesce(district, '')), 'C') ||
+            setweight(to_tsvector('english', coalesce(community, '')), 'C') ||
+            setweight(to_tsvector('english', coalesce(asset_category, '')), 'C') ||
+            setweight(to_tsvector('english', coalesce(cultural_group, '')), 'D')
+          ) STORED;
+          CREATE INDEX IF NOT EXISTS idx_ha_search ON heritage_assets USING GIN (search_vector);
+          console.log('added search_vector column');
+        END IF;
+      END $$;
+    `);
+    console.log("✓ search_vector column present.");
+  } catch (err) {
+    console.warn("⚠ search_vector migration failed:", err.message);
+  }
+
+  try {
+    const enumCols = await db.query(`
+      SELECT column_name, udt_name
+      FROM information_schema.columns
+      WHERE table_name = 'heritage_assets'
+        AND udt_name IN ('enum_asset_type', 'enum_asset_category', 'enum_condition',
+                          'enum_conservation_status', 'enum_data_source',
+                          'enum_location_accuracy', 'enum_verification_status')
+    `);
+    for (const row of enumCols.rows) {
+      await db.query(`ALTER TABLE heritage_assets ALTER COLUMN ${row.column_name} TYPE text`);
+      console.log(`✓ Converted ${row.column_name} from ENUM to TEXT.`);
+    }
+  } catch (err) {
+    // no-op if columns already converted or don't exist
+  }
+
+  // Drop unused QGIS views, their triggers, and the orphaned trigger function
+  try {
+    await db.query(`DROP TRIGGER IF EXISTS tg_ha_lines_manage ON ha_lines`);
+    await db.query(`DROP TRIGGER IF EXISTS tg_ha_points_manage ON ha_points`);
+    await db.query(`DROP TRIGGER IF EXISTS tg_ha_polygons_manage ON ha_polygons`);
+    await db.query(`DROP VIEW IF EXISTS ha_lines`);
+    await db.query(`DROP VIEW IF EXISTS ha_points`);
+    await db.query(`DROP VIEW IF EXISTS ha_polygons`);
+    await db.query(`DROP FUNCTION IF EXISTS tg_heritage_assets_updatable()`);
+    console.log("✓ Dropped unused views/triggers/function.");
+  } catch (err) {
+    // no-op if already cleaned up
+  }
+
+  app.listen(PORT, () => {
+    console.log(`==================================================`);
+    console.log(`🚀 Node.js Express server running on port ${PORT}`);
+    console.log(`👉 API status check: http://localhost:${PORT}/api/status`);
+    console.log(`👉 Get Assets API: http://localhost:${PORT}/api/heritage-assets`);
+    console.log(`==================================================`);
+  });
+};
+
+startServer();

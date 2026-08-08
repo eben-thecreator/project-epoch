@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { apiUrl } from "../../lib/api";
+import { apiUrl, mediaUrl } from "../../lib/api";
 import type { HeritageAsset } from "./types";
 
 interface AssetTableProps {
@@ -233,7 +233,7 @@ export const AssetTable = ({
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-black/5 overflow-hidden flex-shrink-0">
                           {imageMedia ? (
-                            <img src={apiUrl(imageMedia.filePath)} alt="" className="w-full h-full object-cover" />
+                            <img src={mediaUrl(imageMedia.filePath)} alt="" className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <svg className="w-3.5 h-3.5 text-black/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">

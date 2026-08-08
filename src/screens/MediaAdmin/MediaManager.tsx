@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { apiUrl } from "../../lib/api";
+import { apiUrl, mediaUrl } from "../../lib/api";
 import { ModelViewer } from "../../components/ModelViewer";
 import type { HeritageAsset, MediaItem } from "./types";
 
@@ -178,7 +178,7 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
                   onClick={() => setPreviewMedia(m)}
                 >
                   {m.mediaType === "image" ? (
-                    <img src={apiUrl(m.filePath)} alt={m.caption || ""} className="w-full h-full object-cover" />
+                    <img src={mediaUrl(m.filePath)} alt={m.caption || ""} className="w-full h-full object-cover" />
                   ) : m.mediaType === "video" ? (
                     <div className="w-full h-full bg-[#1A1A1A] flex items-center justify-center">
                       <svg className="w-6 h-6 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,9 +258,9 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
 
               <div className="aspect-[4/3] bg-black/5 rounded-lg overflow-hidden mb-3">
                 {previewMedia.mediaType === "image" ? (
-                  <img src={apiUrl(previewMedia.filePath)} alt="" className="w-full h-full object-contain" />
+                  <img src={mediaUrl(previewMedia.filePath)} alt="" className="w-full h-full object-contain" />
                 ) : previewMedia.mediaType === "model" ? (
-                  <ModelViewer modelUrl={apiUrl(previewMedia.filePath)} backgroundColor="#f9fafb" autoRotate={false} />
+                  <ModelViewer modelUrl={mediaUrl(previewMedia.filePath)} backgroundColor="#f9fafb" autoRotate={false} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <span className="text-[10px] uppercase text-black/30">{previewMedia.mediaType}</span>

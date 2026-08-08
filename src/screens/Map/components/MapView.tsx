@@ -22,7 +22,10 @@ interface MapViewProps {
 function MapController() {
   const map = useMap();
   React.useEffect(() => {
-    map.invalidateSize();
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+    return () => clearTimeout(timer);
   }, [map]);
   return null;
 }
@@ -34,7 +37,12 @@ function MapFlyTo({
 }) {
   const map = useMap();
   React.useEffect(() => {
-    if (target) {
+    if (
+      target &&
+      Array.isArray(target.center) &&
+      !isNaN(target.center[0]) &&
+      !isNaN(target.center[1])
+    ) {
       map.flyTo(target.center, target.zoom, { duration: 1.2 });
     }
   }, [target, map]);

@@ -103,12 +103,12 @@ export const Legend: React.FC<LegendProps> = ({
   return (
     <div
       className={`absolute bottom-4 right-4 z-[1000] ${bg} border ${border} shadow-md transition-all select-none`}
-      style={{ maxWidth: 200 }}
+      style={{ maxWidth: 240 }}
     >
       {/* Header Button */}
       <button
         onClick={() => setCollapsed((c) => !c)}
-        className={`w-full px-3 py-2 flex items-center justify-between gap-3 text-[10px] uppercase font-bold tracking-wider ${text} ${hoverBg} transition-colors`}
+        className={`w-full px-3.5 py-2.5 flex items-center justify-between gap-3 text-[12px] uppercase font-bold tracking-wider ${text} ${hoverBg} transition-colors`}
       >
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-[#E4002B]" />
@@ -134,7 +134,7 @@ export const Legend: React.FC<LegendProps> = ({
 
       {/* Expandable Category List */}
       {!collapsed && (
-        <div className="px-3 pb-2.5 pt-1 space-y-1.5 border-t border-white/10 max-h-48 overflow-y-auto">
+        <div className="px-3.5 pb-3 pt-1.5 space-y-2 border-t border-white/10 max-h-56 overflow-y-auto">
           {visibleCategories.map((cat) => {
             const { color, shape } = config[cat] || {
               color: darkMode ? "#ffffff" : "#000000",
@@ -153,13 +153,13 @@ export const Legend: React.FC<LegendProps> = ({
                     {renderShape(shape, color)}
                   </svg>
                   <span
-                    className={`text-[9px] font-medium uppercase tracking-wider ${darkMode ? "text-white/80" : "text-black/80"} truncate`}
+                    className={`text-[11px] font-medium uppercase tracking-wider ${darkMode ? "text-white/80" : "text-black/80"} truncate`}
                   >
                     {cat}
                   </span>
                 </div>
                 {count !== undefined && (
-                  <span className={`text-[9px] font-mono ${muted} tabular-nums`}>
+                  <span className={`text-[11px] font-mono ${muted} tabular-nums`}>
                     {count}
                   </span>
                 )}

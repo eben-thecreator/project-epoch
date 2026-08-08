@@ -1,98 +1,210 @@
 import { Link } from "react-router-dom";
 import { Header } from "../../components/Header";
+import { RollingBanner } from "../../components/RollingBanner";
+import { apiUrl } from "../../lib/api";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 export const Home = (): JSX.Element => {
+  const [catalogueSummary, setCatalogueSummary] = useState<any>({
+    artifacts: 0,
+    museums: 0,
+    textiles: 0,
+    documents: 0,
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const summaryResponse = await fetch(apiUrl("/api/catalogue/summary"));
+        const summaryData = await summaryResponse.json();
+        setCatalogueSummary(summaryData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const collections = [
+    {
+      id: "artifacts",
+      title: "Objects / Artefacts",
+      image: "/images/core/objects.jpg",
+      route: "/case-studies/artifacts",
+    },
+    {
+      id: "museums",
+      title: "Heritage Sites",
+      image: "/images/core/museum.jpg",
+      route: "/case-studies/museums",
+    },
+    {
+      id: "textiles",
+      title: "Materials / Textiles",
+      image: "/images/core/textile.jpg",
+      route: "/case-studies/textiles",
+    },
+    {
+      id: "documents",
+      title: "Document Archive / Photography",
+      image: "/images/core/documents.jpg",
+      route: "/case-studies/documents",
+    },
+  ];
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+        delayChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 40 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 80,
+        damping: 15
+      }
+    }
+  };
+
   return (
-    <div className="w-full h-screen flex flex-col overflow-hidden bg-white select-none">
-      {/* Shared header — identical to every other page */}
+    <div className="bg-white w-full min-h-screen relative flex flex-col font-sans">
       <Header />
 
-      {/* Body: two-column split, starts behind the fixed header */}
-      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+      {/* Hero Section — full viewport */}
+      <section className="relative w-full h-screen overflow-hidden">
+        {/* Background image */}
+        <img
+          src="/images/home.jpg"
+          alt="SCHIS Hero"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/30" />
 
-        {/* LEFT COLUMN — museum image background + floating black card */}
-        <div className="relative w-full md:w-[47%] h-[45vh] md:h-full flex-shrink-0 overflow-hidden flex flex-col items-start justify-start px-4 sm:px-6 lg:px-8 pt-20 md:pt-28">
-          <img
-            src="/images/home_about/virtual.jpg"
-            alt="SCHIS Museum Hall Vault"
-            className="absolute inset-0 w-full h-full object-cover brightness-95"
-          />
-          <div className="absolute inset-0 bg-black/10" />
-
-          {/* Floating Left-Aligned Black Card */}
-          <div className="relative bg-[#060606] text-white p-6 md:p-8 w-full max-w-[340px] aspect-[1.7] flex flex-col justify-between shadow-2xl z-10">
-            <p className="text-[11px] md:text-[12px] leading-relaxed text-left text-white/95 font-medium">
-              The Digital Museum project digitizes and preserves rich cultural heritage, making diverse archaeological and ethnographical treasures accessible globally.
+        {/* Research Team — left aligned, vertically centered */}
+        <motion.div 
+          className="absolute inset-0 flex items-center"
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 1, delay: 0.5 }}
+        >
+          <div className="px-6 sm:px-12 lg:px-20 max-w-2xl z-10">
+            <p className="text-white text-[13px] md:text-[15px] font-bold uppercase text-left drop-shadow-lg">
+              Research Team: Amoah-Yeboah Abena Pokua &bull; Ankudey Ebenezer &bull; Elorm Dei-Zanga Aku
             </p>
+            <p className="text-white/70 text-[11px] md:text-[13px] mt-2 font-medium uppercase text-left drop-shadow-lg">
+              Academic Supervisor: Professor Quaye Ballard
+            </p>
+          </div>
+        </motion.div>
 
-            <div className="text-left">
-              <Link
-                to="/case-studies/museums"
-                className="inline-flex items-center gap-3 text-white font-bold uppercase tracking-widest text-[10px] hover:text-white/80 transition-colors group"
-              >
-                <span>Enter Digital Museum</span>
+        {/* Digital Museum Card — bottom right */}
+        <motion.div 
+          className="absolute bottom-20 right-4 sm:right-6 lg:right-8 z-10"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 0.8 }}
+        >
+          <Link to="/case-studies/museums" className="block group">
+            <div className="flex items-start gap-2.5 bg-white p-2.5 pr-4 shadow-lg max-w-[340px] sm:max-w-[380px]">
+              <img
+                src="/images/core/museum.jpg"
+                alt="Digital Museum"
+                className="w-[80px] h-[80px] object-cover shrink-0"
+              />
+              <div className="flex-1 min-w-0 pt-0.5">
+                <h3 className="text-[14px] sm:text-[15px] font-bold text-black leading-tight mb-1">
+                  Digital Museum
+                </h3>
+                <p className="text-[10px] sm:text-[11px] text-gray-500 leading-snug mb-1.5">
+                  Explore Ghana's cultural heritage through immersive 3D artifacts.
+                </p>
+              </div>
+              <div className="shrink-0">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
-                  strokeWidth="2.5"
+                  strokeWidth="2"
                   stroke="currentColor"
-                  className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300"
+                  className="w-4 h-4 text-gray-400 group-hover:text-black group-hover:translate-x-0.5 transition-all duration-300"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
                 </svg>
-              </Link>
+              </div>
             </div>
-          </div>
-
-          {/* Research team credits */}
-          <div className="absolute bottom-6 left-4 sm:left-6 lg:left-8 text-white z-10 max-w-[90%] md:max-w-[85%]">
-            <p className="text-[9px] md:text-[10px] leading-relaxed text-white font-semibold tracking-wider uppercase">
-              Research Team: Amoah-Yeboah Abena Pokua • Ankudey Ebenezer • Elorm Dei-Zanga Aku<br />
-              Academic Supervisor: Professor Quaye Ballard
-            </p>
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN — Main Introduction Info */}
-        <div className="relative w-full md:w-[53%] h-[60vh] md:h-full bg-white flex flex-col items-center justify-start px-6 sm:px-12 lg:px-16 overflow-y-auto pt-20 md:pt-28">
-
-          {/* Main Visual */}
-          <div className="w-full max-w-[340px] aspect-[1.7] overflow-hidden mb-8 flex-shrink-0">
-            <img
-              src="/images/home_about/exhibition.jpg"
-              alt="SCHIS Museum Exhibition View"
-              className="w-full h-full object-cover transform transition-transform duration-500"
-            />
-          </div>
-
-          {/* Project Introduction */}
-          <p className="text-black text-[13px] md:text-sm leading-relaxed max-w-md mx-auto mb-8 font-medium text-center">
-            The Spatial Cultural Heritage Information System (SCHIS) connects places, artifacts, and historical narratives into a unified interactive map, allowing users to explore heritage as something rooted in real-world locations rather than isolated records.
-          </p>
-
-          {/* Browse Database CTA */}
-          <Link
-            to="/case-studies"
-            className="group relative bg-black text-white font-bold px-10 py-4 flex items-center justify-center overflow-hidden text-[10px] uppercase tracking-widest"
-          >
-            <span className="transition-transform duration-300 group-hover:-translate-x-3">
-              Visit Catalogue
-            </span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="2.5"
-              stroke="currentColor"
-              className="absolute right-8 w-3.5 h-3.5 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-            </svg>
           </Link>
-        </div>
+        </motion.div>
 
-      </div>
+        {/* Rolling Banner — at the base of the hero */}
+        <div className="absolute bottom-0 left-0 w-full z-10">
+          <RollingBanner pinned />
+        </div>
+      </section>
+
+      {/* Collection Section */}
+      <motion.section 
+        className="w-full bg-white py-12 md:py-20 px-4 sm:px-6 lg:px-8"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-100px" }}
+        variants={containerVariants}
+      >
+        {/* Centered header */}
+        <motion.div className="flex flex-col items-center text-center mb-10" variants={itemVariants}>
+          <h2 className="text-[18px] md:text-[22px] uppercase font-bold text-black">
+            Collection
+          </h2>
+          <p className="text-[12px] md:text-[13px] text-black mt-3 max-w-lg leading-relaxed">
+            Explore a curated collection of documented heritage assets, including artefacts, monuments, textiles, and archival records that preserve the cultural identity and history of Ghana.
+          </p>
+        </motion.div>
+
+        {/* Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 w-full">
+          {collections.map((collection) => (
+            <motion.div
+              key={collection.id}
+              variants={itemVariants}
+               className={`group flex flex-col cursor-pointer ${
+                collection.id === "museums" ? "col-span-2" : ""
+              }`}
+            >
+              <Link to={collection.route} className="flex flex-col">
+                <div className={`relative w-full overflow-hidden bg-black/5 h-[220px] md:h-[300px] ${
+                  collection.id === "museums" ? "" : "aspect-[3/4]"
+                }`}>
+                    <img
+                    src={collection.image}
+                    alt={collection.title}
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out"
+                  />
+                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-500" />
+                   <div className="absolute bottom-6 left-6 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                     <span className="block text-white text-5xl md:text-6xl font-bold leading-none">{catalogueSummary[collection.id]}</span>
+                     <div className="w-8 h-[1px] bg-white/40 mt-3 mb-2" />
+                     <span className="block text-white/70 text-[10px] uppercase tracking-[0.15em]">items</span>
+                  </div>
+                </div>
+                <h3 className="text-[13px] md:text-[15px] uppercase font-bold text-black mt-3 group-hover:text-gray-600 transition-colors duration-300">
+                  {collection.title}
+                </h3>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </motion.section>
     </div>
   );
 };

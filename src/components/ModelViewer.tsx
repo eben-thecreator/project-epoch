@@ -7,6 +7,7 @@ interface ModelViewerProps {
   modelUrl: string;
   backgroundColor?: string;
   autoRotate?: boolean;
+  rotateSpeed?: number;
 }
 
 class ModelErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
@@ -42,19 +43,19 @@ class ModelErrorBoundary extends React.Component<{ children: React.ReactNode }, 
   }
 }
 
-const RotatingModel: React.FC<{ object: THREE.Object3D; autoRotate: boolean }> = ({ object, autoRotate }) => {
+const RotatingModel: React.FC<{ object: THREE.Object3D; autoRotate: boolean; speed: number }> = ({ object, autoRotate, speed }) => {
   const ref = useRef<THREE.Object3D>(object);
 
   useFrame(() => {
     if (autoRotate && ref.current) {
-      ref.current.rotation.y += 0.005;
+      ref.current.rotation.y += speed;
     }
   });
 
   return <primitive object={object} ref={ref} />;
 };
 
-const Model: React.FC<{ modelUrl: string; autoRotate?: boolean }> = ({ modelUrl, autoRotate = false }) => {
+const Model: React.FC<{ modelUrl: string; autoRotate?: boolean; speed?: number }> = ({ modelUrl, autoRotate = false, speed = 0.002 }) => {
   const { scene } = useGLTF(modelUrl);
 
   const model = React.useMemo(() => scene.clone(true), [scene]);
@@ -87,7 +88,7 @@ const Model: React.FC<{ modelUrl: string; autoRotate?: boolean }> = ({ modelUrl,
 
   return (
     <group>
-      <RotatingModel object={model} autoRotate={autoRotate} />
+      <RotatingModel object={model} autoRotate={autoRotate} speed={speed} />
     </group>
   );
 };
@@ -95,7 +96,8 @@ const Model: React.FC<{ modelUrl: string; autoRotate?: boolean }> = ({ modelUrl,
 export const ModelViewer: React.FC<ModelViewerProps> = ({ 
   modelUrl, 
   backgroundColor = "#f3f4f6",
-  autoRotate = false
+  autoRotate = false,
+  rotateSpeed = 0.002
 }) => {
   if (!modelUrl) {
     return (
@@ -159,7 +161,7 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
 
           <Suspense fallback={<div className="text-center w-full h-full flex items-center justify-center text-black/40 text-xs uppercase tracking-wider font-bold">Loading model...</div>}>
             <Bounds fit observe margin={1}>
-              <Model modelUrl={modelUrl} autoRotate={autoRotate} key={modelKey} />
+              <Model modelUrl={modelUrl} autoRotate={autoRotate} speed={rotateSpeed} key={modelKey} />
             </Bounds>
           </Suspense>
 
@@ -170,7 +172,7 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
             minDistance={0.5}
             maxDistance={100}
             autoRotate={autoRotate}
-            autoRotateSpeed={20}
+            autoRotateSpeed={2}
             makeDefault
             up={[0, 1, 0]}
           />

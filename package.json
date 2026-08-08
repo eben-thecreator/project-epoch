@@ -31,7 +31,8 @@
     "sanitize-html": "^2.17.6",
     "tailwind-merge": "2.5.4",
     "tailwindcss-animate": "1.0.7",
-    "three": "^0.169.0"
+    "three": "^0.169.0",
+    "typescript": "^7.0.2"
   },
   "devDependencies": {
     "@types/leaflet": "^1.9.21",

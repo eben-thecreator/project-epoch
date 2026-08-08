@@ -10,6 +10,7 @@ import { Contact } from "./screens/Contact";
 import {
   CaseStudies,
   Artifacts,
+  ArtifactDetail,
   Museum,
   Textiles,
   Documents,
@@ -46,6 +47,11 @@ const router = createBrowserRouter([
   {
     path: "/case-studies/artifacts",
     element: <Artifacts />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/case-studies/artifacts/:id",
+    element: <ArtifactDetail />,
     errorElement: <ErrorPage />,
   },
   {

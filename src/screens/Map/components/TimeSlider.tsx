@@ -90,14 +90,7 @@ export const TimeSlider: React.FC<TimeSliderProps> = ({
     >
       {/* Top Header & Era Presets */}
       <div className="flex items-center justify-between gap-2 border-b pb-2 border-white/5">
-        <div className="flex items-center gap-1.5">
-          <span className={`text-[9px] uppercase font-mono tracking-widest ${muted}`}>
-            TIME HORIZON
-          </span>
-          <span className={`text-[11px] font-mono font-bold ${text} tracking-wider tabular-nums`}>
-            {localRange[0]} CE — {localRange[1]} CE
-          </span>
-        </div>
+        <div />
 
         {/* Quick Era Presets */}
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
