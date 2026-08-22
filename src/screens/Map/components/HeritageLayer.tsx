@@ -283,9 +283,12 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
       params.set("period_end", String(yearRange[1]));
     const qs = params.toString();
     fetch(apiUrl(`/api/heritage-assets${qs ? `?${qs}` : ""}`))
-      .then((r) => r.json())
-      .then((data: HeritageAsset[]) => {
-        setAssets(data);
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((data: unknown) => {
+        setAssets(Array.isArray(data) ? (data as HeritageAsset[]) : []);
         setError(false);
       })
       .catch(() => {

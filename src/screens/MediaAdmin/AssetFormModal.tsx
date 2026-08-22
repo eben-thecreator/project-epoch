@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { apiUrl } from "../../lib/api";
 import { adminFetch } from "../../lib/adminAuth";
 import type { HeritageAsset } from "./types";
@@ -35,10 +37,47 @@ const defaultForm = {
   ownership: "",
 };
 
+/** Default map view centred on Ghana */
+const GHANA_CENTER: L.LatLngTuple = [7.9465, -1.0232];
+
+const getInitialPoint = (
+  asset: HeritageAsset | null
+): L.LatLngTuple | null => {
+  if (!asset?.geometry) return null;
+  const g = asset.geometry;
+  if (g.type !== "Point") return null;
+  const c = g.coordinates;
+  if (Array.isArray(c) && typeof c[0] === "number" && typeof c[1] === "number") {
+    return [c[1], c[0]];
+  }
+  return null;
+};
+
+const createIcon = () =>
+  L.divIcon({
+    className: "",
+    html: `<div style="width:18px;height:18px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#E4002B;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 16],
+  });
+
 export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormModalProps): JSX.Element => {
   const [form, setForm] = useState(defaultForm);
   const [saving, setSaving] = useState(false);
   const isEditing = !!asset;
+
+  const initialPoint = getInitialPoint(asset);
+  const initialGeometryRef = useRef(asset?.geometry ?? null);
+  const [point, setPoint] = useState<L.LatLngTuple | null>(
+    initialPoint ?? (isEditing ? null : null)
+  );
+  const [geometryDirty, setGeometryDirty] = useState(false);
+  const [latInput, setLatInput] = useState(initialPoint ? String(initialPoint[0]) : "");
+  const [lngInput, setLngInput] = useState(initialPoint ? String(initialPoint[1]) : "");
+
+  const mapElRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
 
   useEffect(() => {
     if (asset) {
@@ -69,13 +108,99 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
     }
   }, [asset]);
 
+  // Initialise the Leaflet picker once
+  useEffect(() => {
+    if (!mapElRef.current || mapRef.current) return;
+    const view = point ?? GHANA_CENTER;
+    const map = L.map(mapElRef.current, {
+      center: view,
+      zoom: point ? 14 : 7,
+      scrollWheelZoom: false,
+    });
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      attribution: "&copy; OpenStreetMap contributors",
+      maxZoom: 19,
+    }).addTo(map);
+
+    if (point) {
+      markerRef.current = L.marker(point, { icon: createIcon(), draggable: true })
+        .addTo(map)
+        .on("dragend", () => {
+          const pos = markerRef.current!.getLatLng();
+          applyPoint([pos.lat, pos.lng], true);
+        });
+    }
+
+    map.on("click", (e: L.LeafletMouseEvent) => {
+      applyPoint([e.latlng.lat, e.latlng.lng], true);
+      if (!markerRef.current) {
+        markerRef.current = L.marker(e.latlng, { icon: createIcon(), draggable: true }).addTo(map);
+        markerRef.current.on("dragend", () => {
+          const pos = markerRef.current!.getLatLng();
+          applyPoint([pos.lat, pos.lng], true);
+        });
+      } else {
+        markerRef.current.setLatLng(e.latlng);
+      }
+    });
+
+    mapRef.current = map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => mapRef.current?.invalidateSize(), 150);
+    return () => {
+      clearTimeout(t);
+      mapRef.current?.remove();
+      mapRef.current = null;
+      markerRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const applyPoint = useCallback((next: L.LatLngTuple, dirty: boolean) => {
+    setPoint(next);
+    setLatInput(next[0].toFixed(6));
+    setLngInput(next[1].toFixed(6));
+    if (dirty) setGeometryDirty(true);
+  }, []);
+
+  const handleLatLangInput = (which: "lat" | "lng", value: string) => {
+    if (which === "lat") setLatInput(value);
+    else setLngInput(value);
+    const lat = parseFloat(which === "lat" ? value : latInput);
+    const lng = parseFloat(which === "lng" ? value : lngInput);
+    if (Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+      setPoint([lat, lng]);
+      setGeometryDirty(true);
+      markerRef.current?.setLatLng([lat, lng]);
+      mapRef.current?.panTo([lat, lng]);
+    }
+  };
+
   const set = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return;
     if (!form.name.trim()) {
       onToast("error", "Asset name is required.");
       return;
+    }
+
+    let geometry: Record<string, unknown> | undefined;
+    if (isEditing) {
+      if (geometryDirty && point) {
+        geometry = { type: "Point", coordinates: [point[1], point[0]] };
+      }
+      // otherwise keep the stored geometry untouched
+    } else {
+      if (!point) {
+        onToast("error", "Pick the asset location on the map before saving.");
+        return;
+      }
+      geometry = { type: "Point", coordinates: [point[1], point[0]] };
     }
 
     setSaving(true);
@@ -84,8 +209,8 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
         ...form,
         period_start: form.period_start ? Number(form.period_start) : null,
         period_end: form.period_end ? Number(form.period_end) : null,
-        geometry: asset?.geometry ?? { type: "Point", coordinates: [0, 0] },
       };
+      if (geometry) body.geometry = geometry;
 
       const url = isEditing ? apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}`) : apiUrl("/api/heritage-assets");
       const method = isEditing ? "PUT" : "POST";
@@ -113,6 +238,7 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
 
   const inputClass = "w-full px-3 py-2 text-xs bg-black/5 rounded-lg border-0 outline-none focus:ring-2 focus:ring-[#E4002B]/30 transition-all";
   const labelClass = "text-[10px] font-bold uppercase tracking-wider text-black/50 mb-1.5 block";
+  const hasStoredNonPoint = isEditing && !!initialGeometryRef.current && initialGeometryRef.current.type !== "Point";
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40" onClick={onClose}>
@@ -167,7 +293,7 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
             {/* Location */}
             <div>
               <p className="text-[9px] font-bold uppercase tracking-widest text-[#E4002B] mb-3">Location</p>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className={labelClass}>Region</label>
                   <input value={form.region} onChange={(e) => set("region", e.target.value)} className={inputClass} />
@@ -189,6 +315,54 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
                   <input value={form.origin_location} onChange={(e) => set("origin_location", e.target.value)} className={inputClass} />
                 </div>
               </div>
+
+              {/* Coordinates picker */}
+              <div className="rounded-xl overflow-hidden border border-black/10">
+                <div className="bg-black/[0.03] px-3 py-2 flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-black/50">
+                    Map Location *
+                  </span>
+                  <span className={`text-[10px] font-mono ${point ? "text-black/60" : "text-[#E4002B]"}`}>
+                    {point ? `${latInput}, ${lngInput}` : "Click the map to place"}
+                  </span>
+                </div>
+                <div ref={mapElRef} className="h-56 w-full z-0" />
+                <div className="grid grid-cols-2 gap-3 px-3 py-3 bg-black/[0.03]">
+                  <div>
+                    <label className="block text-[9px] uppercase font-mono text-black/40 mb-1">Latitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={latInput}
+                      onChange={(e) => handleLatLangInput("lat", e.target.value)}
+                      className="w-full px-2 py-1.5 text-xs font-mono bg-white rounded-lg border border-black/10 outline-none focus:border-[#E4002B]"
+                      placeholder="7.9465"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase font-mono text-black/40 mb-1">Longitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={lngInput}
+                      onChange={(e) => handleLatLangInput("lng", e.target.value)}
+                      className="w-full px-2 py-1.5 text-xs font-mono bg-white rounded-lg border border-black/10 outline-none focus:border-[#E4002B]"
+                      placeholder="-1.0232"
+                    />
+                  </div>
+                </div>
+              </div>
+              {!isEditing && !point && (
+                <p className="mt-2 text-[10px] text-[#E4002B]/80 font-semibold">
+                  A map position is required so the asset appears in the GIS viewer.
+                </p>
+              )}
+              {hasStoredNonPoint && !geometryDirty && (
+                <p className="mt-2 text-[10px] text-black/45">
+                  This asset stores a {initialGeometryRef.current!.type} geometry. Picking a new map
+                  position will replace it with a point.
+                </p>
+              )}
             </div>
 
             {/* Material & Condition */}
@@ -270,7 +444,6 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
           </button>
           <button
             type="submit"
-            onClick={handleSubmit}
             disabled={saving}
             className="px-5 py-2 text-[10px] font-bold uppercase rounded-lg bg-[#E4002B] text-white hover:bg-[#C40025] transition-colors disabled:opacity-50 flex items-center gap-1.5"
           >

@@ -73,9 +73,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           )}`
         )
       )
-        .then((r) => r.json())
-        .then((data: HeritageAsset[]) => {
-          setResults(data.slice(0, 12));
+        .then((r) => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        })
+        .then((data: unknown) => {
+          setResults(Array.isArray(data) ? (data as HeritageAsset[]).slice(0, 12) : []);
         })
         .catch(() => setResults([]))
         .finally(() => setLoading(false));
