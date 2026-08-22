@@ -6,6 +6,7 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { apiUrl } from "../../../lib/api";
 import { createMarkerIcon } from "./AssetMarker";
+import { categoryColor } from "../../../lib/categories";
 
 export type HeritageAsset = {
   id: string | number;
@@ -22,15 +23,24 @@ export type HeritageAsset = {
   region?: string;
   district?: string;
   community?: string;
+  location_description?: string;
+  location_accuracy?: string;
+  elevation_m?: number | null;
+  gps_accuracy_m?: number | null;
   period?: string;
   period_start?: number;
   period_end?: number;
   condition?: string;
+  damage_type?: string;
   ownership?: string;
   material?: string;
+  secondary_material?: string;
+  technique?: string;
   conservation_status?: string;
-  current_location?: string;
-  location_description?: string;
+  estimated_age?: string;
+  data_source?: string;
+  data_completeness_score?: number | null;
+  verification_status?: string;
   media?: Array<{
     id: string;
     mediaType: string;
@@ -40,45 +50,7 @@ export type HeritageAsset = {
   }>;
 };
 
-const categoryColors: Record<string, string> = {
-  Museum: "#E4002B",
-  Fort: "#D35400",
-  Castle: "#C0392B",
-  Monument: "#8E44AD",
-  Shrine: "#27AE60",
-  Palace: "#F39C12",
-  "Traditional Palace": "#E67E22",
-  Artifact: "#2980B9",
-  "Jewelry / Beadwork": "#1ABC9C",
-  "Archaeological Site": "#7F8C8D",
-  "Sacred Grove": "#2ECC71",
-  "Historic Building": "#9B59B6",
-  Festival: "#E74C3C",
-  Textile: "#3498DB",
-  "Textile (Kente, etc.)": "#2980B9",
-  "Photograph / Digital Media": "#16A085",
-  "Audio / Music": "#D4AC0D",
-};
 
-const darkCategoryColors: Record<string, string> = {
-  Museum: "#FF6B6B",
-  Fort: "#FFA071",
-  Castle: "#FF7675",
-  Monument: "#A29BFE",
-  Shrine: "#55EFC4",
-  Palace: "#FFEAA7",
-  "Traditional Palace": "#FDCB6E",
-  Artifact: "#74B9FF",
-  "Jewelry / Beadwork": "#00CEC9",
-  "Archaeological Site": "#B2BEC3",
-  "Sacred Grove": "#00B894",
-  "Historic Building": "#A29BFE",
-  Festival: "#FF7675",
-  Textile: "#81ECEC",
-  "Textile (Kente, etc.)": "#74B9FF",
-  "Photograph / Digital Media": "#55EFC4",
-  "Audio / Music": "#FFEAA7",
-};
 
 function escapeHtml(str: string): string {
   return str
@@ -89,13 +61,7 @@ function escapeHtml(str: string): string {
 }
 
 function getPolygonStyle(category?: string, dark = false): L.PathOptions {
-  const color = category
-    ? dark
-      ? darkCategoryColors[category] || "#ffffff"
-      : categoryColors[category] || "#000000"
-    : dark
-    ? "#ffffff"
-    : "#000000";
+  const color = categoryColor(category, dark);
   return {
     color,
     weight: 2,
@@ -175,9 +141,7 @@ function ClusteredPointLayer({
       (marker as any)._assetId = asset.id;
       marker.on("click", () => onSelectAsset(asset));
 
-      const catColor = darkMode
-        ? darkCategoryColors[asset.asset_category || ""] || "#FF6B6B"
-        : categoryColors[asset.asset_category || ""] || "#E4002B";
+      const catColor = categoryColor(asset.asset_category, darkMode);
 
       const tooltipContent = `
         <div style="display:flex;align-items:center;gap:6px;">
@@ -253,6 +217,7 @@ interface HeritageLayerProps {
   onVisibleCategoriesChange: (categories: string[]) => void;
   onCategoryCountsChange?: (counts: Record<string, number>) => void;
   onAssetCountChange?: (count: number) => void;
+  onAssetsLoaded?: (assets: HeritageAsset[]) => void;
 }
 
 export const HeritageLayer: React.FC<HeritageLayerProps> = ({
@@ -264,6 +229,7 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
   onVisibleCategoriesChange,
   onCategoryCountsChange,
   onAssetCountChange,
+  onAssetsLoaded,
 }) => {
   const [assets, setAssets] = useState<HeritageAsset[]>([]);
   const [loading, setLoading] = useState(false);
@@ -287,7 +253,9 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
         return r.json();
       })
       .then((data: unknown) => {
-        setAssets(Array.isArray(data) ? (data as HeritageAsset[]) : []);
+        const list = Array.isArray(data) ? (data as HeritageAsset[]) : [];
+        setAssets(list);
+        onAssetsLoaded?.(list);
         setError(false);
       })
       .catch(() => {
@@ -388,9 +356,7 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
 
       {polygonAssets.map((asset) => {
         const centroid = getPolygonCentroid(asset.geometry!);
-        const catColor = darkMode
-          ? darkCategoryColors[asset.asset_category || ""] || "#FF6B6B"
-          : categoryColors[asset.asset_category || ""] || "#E4002B";
+        const catColor = categoryColor(asset.asset_category, darkMode);
         return (
           <React.Fragment key={`poly-group-${asset.id}`}>
             <GeoJSON
@@ -457,9 +423,7 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
 
       {lineAssets.map((asset) => {
         const midpoint = getLineMidpoint(asset.geometry!);
-        const catColor = darkMode
-          ? darkCategoryColors[asset.asset_category || ""] || "#FF6B6B"
-          : categoryColors[asset.asset_category || ""] || "#E4002B";
+        const catColor = categoryColor(asset.asset_category, darkMode);
         return (
           <React.Fragment key={`line-group-${asset.id}`}>
             <GeoJSON

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { categoryColor } from "../../../lib/categories";
 
 const paths: Record<string, string> = {
   museum:
@@ -22,58 +23,39 @@ const paths: Record<string, string> = {
   textile:
     "M4 4h2v16H4V4zm4 0h2v16H8V4zm4 0h2v16h-2V4zm4 0h2v16h-2V4z M2 6h20v2H2V6zm0 4h20v2H2v-2zm0 4h20v2H2v-2zm0 4h20v2H2v-2z",
   media:
-    "M20 6h-4l-2-2H10L8 6H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-8 10c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z",
+    "M20 6h-4l-2-2H10L8 6H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1.9-2 2-2zm-8 10c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z",
   audio:
     "M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z",
   circle:
     "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z",
 };
 
-const categoryConfig: Record<string, { color: string; shape: string }> = {
-  Museum: { color: "#E4002B", shape: "museum" },
-  Fort: { color: "#D35400", shape: "castle" },
-  Castle: { color: "#C0392B", shape: "castle" },
-  Monument: { color: "#8E44AD", shape: "monument" },
-  Shrine: { color: "#27AE60", shape: "shrine" },
-  Palace: { color: "#F39C12", shape: "palace" },
-  "Traditional Palace": { color: "#E67E22", shape: "palace" },
-  Artifact: { color: "#2980B9", shape: "artifact" },
-  "Jewelry / Beadwork": { color: "#1ABC9C", shape: "jewelry" },
-  "Archaeological Site": { color: "#7F8C8D", shape: "site" },
-  "Sacred Grove": { color: "#2ECC71", shape: "grove" },
-  "Historic Building": { color: "#9B59B6", shape: "building" },
-  Festival: { color: "#E74C3C", shape: "festival" },
-  Textile: { color: "#3498DB", shape: "textile" },
-  "Textile (Kente, etc.)": { color: "#2980B9", shape: "textile" },
-  "Photograph / Digital Media": { color: "#16A085", shape: "media" },
-  "Audio / Music": { color: "#D4AC0D", shape: "audio" },
+/** Glyph shape per category — mirrors the map marker icons. */
+const CATEGORY_SHAPES: Record<string, string> = {
+  Museum: "museum",
+  Fort: "castle",
+  Castle: "castle",
+  Monument: "monument",
+  Shrine: "shrine",
+  Palace: "palace",
+  "Traditional Palace": "palace",
+  Artifact: "artifact",
+  "Jewelry / Beadwork": "jewelry",
+  "Archaeological Site": "site",
+  "Sacred Grove": "grove",
+  "Historic Building": "building",
+  Festival: "festival",
+  Textile: "textile",
+  "Textile (Kente, etc.)": "textile",
+  "Photograph / Digital Media": "media",
+  "Audio / Music": "audio",
 };
 
-const darkCategoryConfig: Record<string, { color: string; shape: string }> = {
-  Museum: { color: "#FF6B6B", shape: "museum" },
-  Fort: { color: "#FFA071", shape: "castle" },
-  Castle: { color: "#FF7675", shape: "castle" },
-  Monument: { color: "#A29BFE", shape: "monument" },
-  Shrine: { color: "#55EFC4", shape: "shrine" },
-  Palace: { color: "#FFEAA7", shape: "palace" },
-  "Traditional Palace": { color: "#FDCB6E", shape: "palace" },
-  Artifact: { color: "#74B9FF", shape: "artifact" },
-  "Jewelry / Beadwork": { color: "#00CEC9", shape: "jewelry" },
-  "Archaeological Site": { color: "#B2BEC3", shape: "site" },
-  "Sacred Grove": { color: "#00B894", shape: "grove" },
-  "Historic Building": { color: "#A29BFE", shape: "building" },
-  Festival: { color: "#FF7675", shape: "festival" },
-  Textile: { color: "#81ECEC", shape: "textile" },
-  "Textile (Kente, etc.)": { color: "#74B9FF", shape: "textile" },
-  "Photograph / Digital Media": { color: "#55EFC4", shape: "media" },
-  "Audio / Music": { color: "#FFEAA7", shape: "audio" },
-};
-
-function renderShape(shape: string, color: string, size: number = 10) {
+function renderShape(shape: string, size: number = 10) {
   const pathD = paths[shape] || paths.circle;
   return (
     <g transform={`scale(${size / 24})`}>
-      <path d={pathD} fill={color} />
+      <path d={pathD} fill="#fff" />
     </g>
   );
 }
@@ -93,7 +75,6 @@ export const Legend: React.FC<LegendProps> = ({
 
   if (visibleCategories.length === 0) return null;
 
-  const config = darkMode ? darkCategoryConfig : categoryConfig;
   const bg = darkMode ? "bg-[#0d0d0d]" : "bg-white";
   const border = darkMode ? "border-white/15" : "border-black/15";
   const text = darkMode ? "text-white" : "text-black";
@@ -134,23 +115,23 @@ export const Legend: React.FC<LegendProps> = ({
 
       {/* Expandable Category List */}
       {!collapsed && (
-        <div className="px-3.5 pb-3 pt-1.5 space-y-2 border-t border-white/10 max-h-56 overflow-y-auto">
+        <div className="px-3.5 pb-3 pt-1.5 space-y-2 border-t border-black/5 max-h-56 overflow-y-auto">
           {visibleCategories.map((cat) => {
-            const { color, shape } = config[cat] || {
-              color: darkMode ? "#ffffff" : "#000000",
-              shape: "circle",
-            };
+            const color = categoryColor(cat, darkMode);
+            const shape = CATEGORY_SHAPES[cat] || "circle";
             const count = categoryCounts[cat];
             return (
               <div key={cat} className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
+                  {/* Swatch mirrors real map symbology: coloured disc + white glyph */}
                   <svg
-                    width="10"
-                    height="10"
-                    viewBox="0 0 10 10"
-                    className="shrink-0"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    className="shrink-0 rounded-full border border-black/10 dark:border-white/20"
+                    style={{ backgroundColor: color }}
                   >
-                    {renderShape(shape, color)}
+                    {renderShape(shape)}
                   </svg>
                   <span
                     className={`text-[11px] font-medium uppercase tracking-wider ${darkMode ? "text-white/80" : "text-black/80"} truncate`}

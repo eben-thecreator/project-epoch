@@ -1,5 +1,6 @@
 import React from "react";
 import { divIcon } from "leaflet";
+import { categoryColor } from "../../../lib/categories";
 import { Marker } from "react-leaflet";
 
 const paths: Record<string, string> = {
@@ -20,49 +21,25 @@ const paths: Record<string, string> = {
   circle: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z",
 };
 
-const categoryStyles: Record<string, { color: string; shape: string }> = {
-  Museum: { color: "#E4002B", shape: "museum" },
-  Fort: { color: "#D35400", shape: "castle" },
-  Castle: { color: "#C0392B", shape: "castle" },
-  Monument: { color: "#8E44AD", shape: "monument" },
-  Shrine: { color: "#27AE60", shape: "shrine" },
-  Palace: { color: "#F39C12", shape: "palace" },
-  "Traditional Palace": { color: "#E67E22", shape: "palace" },
-  Artifact: { color: "#2980B9", shape: "artifact" },
-  "Jewelry / Beadwork": { color: "#1ABC9C", shape: "jewelry" },
-  "Archaeological Site": { color: "#7F8C8D", shape: "site" },
-  "Sacred Grove": { color: "#2ECC71", shape: "grove" },
-  "Historic Building": { color: "#9B59B6", shape: "building" },
-  Festival: { color: "#E74C3C", shape: "festival" },
-  Textile: { color: "#3498DB", shape: "textile" },
-  "Textile (Kente, etc.)": { color: "#2980B9", shape: "textile" },
-  "Photograph / Digital Media": { color: "#16A085", shape: "media" },
-  "Audio / Music": { color: "#D4AC0D", shape: "audio" },
+const SHAPES: Record<string, string> = {
+  Museum: "museum",
+  Fort: "castle",
+  Castle: "castle",
+  Monument: "monument",
+  Shrine: "shrine",
+  Palace: "palace",
+  "Traditional Palace": "palace",
+  Artifact: "artifact",
+  "Jewelry / Beadwork": "jewelry",
+  "Archaeological Site": "site",
+  "Sacred Grove": "grove",
+  "Historic Building": "building",
+  Festival: "festival",
+  Textile: "textile",
+  "Textile (Kente, etc.)": "textile",
+  "Photograph / Digital Media": "media",
+  "Audio / Music": "audio",
 };
-
-const darkCategoryStyles: Record<string, { color: string; shape: string }> = {
-  Museum: { color: "#FF6B6B", shape: "museum" },
-  Fort: { color: "#FFA071", shape: "castle" },
-  Castle: { color: "#FF7675", shape: "castle" },
-  Monument: { color: "#A29BFE", shape: "monument" },
-  Shrine: { color: "#55EFC4", shape: "shrine" },
-  Palace: { color: "#FFEAA7", shape: "palace" },
-  "Traditional Palace": { color: "#FDCB6E", shape: "palace" },
-  Artifact: { color: "#74B9FF", shape: "artifact" },
-  "Jewelry / Beadwork": { color: "#00CEC9", shape: "jewelry" },
-  "Archaeological Site": { color: "#B2BEC3", shape: "site" },
-  "Sacred Grove": { color: "#00B894", shape: "grove" },
-  "Historic Building": { color: "#A29BFE", shape: "building" },
-  Festival: { color: "#FF7675", shape: "festival" },
-  Textile: { color: "#81ECEC", shape: "textile" },
-  "Textile (Kente, etc.)": { color: "#74B9FF", shape: "textile" },
-  "Photograph / Digital Media": { color: "#55EFC4", shape: "media" },
-  "Audio / Music": { color: "#FFEAA7", shape: "audio" },
-};
-
-const defaultStyle = { color: "#E4002B", shape: "circle" };
-const darkDefaultStyle = { color: "#FF6B6B", shape: "circle" };
-
 function buildSvg(
   shape: string,
   color: string,
@@ -144,13 +121,11 @@ function escapeXml(str: string): string {
     .replace(/'/g, "&apos;");
 }
 
-function getStyle(
-  category: string | null | undefined,
-  dark: boolean
-) {
-  const styles = dark ? darkCategoryStyles : categoryStyles;
-  if (!category) return dark ? darkDefaultStyle : defaultStyle;
-  return styles[category] || (dark ? darkDefaultStyle : defaultStyle);
+function getStyle(category: string | null | undefined, dark: boolean) {
+  return {
+    color: categoryColor(category, dark),
+    shape: (category && SHAPES[category]) || "circle",
+  };
 }
 
 export function createMarkerIcon(

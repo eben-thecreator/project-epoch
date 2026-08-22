@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { HeritageAsset } from "./HeritageLayer";
+import type { HeritageAsset } from "./HeritageLayer";
 import { mediaUrl } from "../../../lib/api";
+import { categoryColor } from "../../../lib/categories";
 
 interface SidePanelProps {
   asset: HeritageAsset | null;
@@ -22,26 +23,6 @@ function getImages(asset: HeritageAsset): string[] {
   return sorted.map((m) => mediaUrl(m.filePath));
 }
 
-const categoryColors: Record<string, string> = {
-  Museum: "#E4002B",
-  Fort: "#D35400",
-  Castle: "#C0392B",
-  Monument: "#8E44AD",
-  Shrine: "#27AE60",
-  Palace: "#F39C12",
-  "Traditional Palace": "#E67E22",
-  Artifact: "#2980B9",
-  "Jewelry / Beadwork": "#1ABC9C",
-  "Archaeological Site": "#7F8C8D",
-  "Sacred Grove": "#2ECC71",
-  "Historic Building": "#9B59B6",
-  Festival: "#E74C3C",
-  Textile: "#3498DB",
-  "Textile (Kente, etc.)": "#2980B9",
-  "Photograph / Digital Media": "#16A085",
-  "Audio / Music": "#D4AC0D",
-};
-
 export const SidePanel: React.FC<SidePanelProps> = ({
   asset,
   onClose,
@@ -50,6 +31,11 @@ export const SidePanel: React.FC<SidePanelProps> = ({
 }) => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const navigate = useNavigate();
+
+  // Reset carousel position when switching assets
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [asset?.id]);
 
   const bg = darkMode ? "bg-[#0d0d0d]" : "bg-white";
   const border = darkMode ? "border-white/10" : "border-black/10";
@@ -61,14 +47,85 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const hoverBg = darkMode ? "hover:bg-white/10" : "hover:bg-gray-100";
 
   const images = asset ? getImages(asset) : [];
-  const catColor = asset
-    ? categoryColors[asset.asset_category || ""] || (darkMode ? "#FF6B6B" : "#E4002B")
-    : undefined;
+  const catColor = asset ? categoryColor(asset.asset_category, darkMode) : undefined;
+  const safeIndex = Math.min(activeImageIndex, Math.max(images.length - 1, 0));
+
+  /** Route to the catalogue section matching this asset's category. */
+  const detailRouteFor = (a: HeritageAsset): string => {
+    const category = a.asset_category || "";
+    if (
+      category === "Textile (Kente, etc.)" ||
+      category === "Textile"
+    ) {
+      return "/case-studies/textiles";
+    }
+    if (["Museum", "Fort", "Castle", "Monument"].includes(category)) {
+      return `/case-studies/museums/${a.id}`;
+    }
+    if (["Photograph / Digital Media", "Audio / Music"].includes(category)) {
+      return "/case-studies/documents";
+    }
+    return `/case-studies/artifacts/${a.id}`;
+  };
 
   const handleViewMore = () => {
     if (!asset) return;
-    navigate(`/case-studies/artifacts/${asset.id}`);
+    navigate(detailRouteFor(asset));
   };
+
+  /** Extract the point coordinate for the dossier readout. */
+  const pointCoordinate = (() => {
+    if (!asset?.geometry || asset.geometry.type !== "Point") return null;
+    const c = asset.geometry.coordinates;
+    if (
+      Array.isArray(c) &&
+      typeof c[0] === "number" &&
+      typeof c[1] === "number"
+    ) {
+      return { lat: c[1], lng: c[0] };
+    }
+    return null;
+  })();
+
+  const formatDMS = (value: number, isLat: boolean): string => {
+    const hemi = isLat ? (value >= 0 ? "N" : "S") : value >= 0 ? "E" : "W";
+    const abs = Math.abs(value);
+    const deg = Math.floor(abs);
+    const minFloat = (abs - deg) * 60;
+    const min = Math.floor(minFloat);
+    const sec = ((minFloat - min) * 60).toFixed(1);
+    return `${deg}° ${min}' ${sec}" ${hemi}`;
+  };
+
+  const dossierRows: Array<{ label: string; value: string }> = [];
+  if (pointCoordinate) {
+    dossierRows.push({
+      label: "Coordinates",
+      value: `${formatDMS(pointCoordinate.lat, true)} ${formatDMS(pointCoordinate.lng, false)}`,
+    });
+    dossierRows.push({
+      label: "Decimal",
+      value: `${pointCoordinate.lat.toFixed(5)}, ${pointCoordinate.lng.toFixed(5)}`,
+    });
+  } else if (asset?.geometry?.type) {
+    dossierRows.push({
+      label: "Geometry",
+      value: asset.geometry.type.replace(/^(Multi)?/, (m) => m),
+    });
+  }
+  if (asset?.gps_accuracy_m != null)
+    dossierRows.push({ label: "GPS Accuracy", value: `± ${asset.gps_accuracy_m} m` });
+  if (asset?.location_accuracy)
+    dossierRows.push({ label: "Location Quality", value: String(asset.location_accuracy) });
+  if (asset?.elevation_m != null)
+    dossierRows.push({ label: "Elevation", value: `${asset.elevation_m} m` });
+  if (asset?.data_source)
+    dossierRows.push({ label: "Data Source", value: String(asset.data_source) });
+
+  const completeness =
+    typeof asset?.data_completeness_score === "number"
+      ? Math.round(asset.data_completeness_score * (asset.data_completeness_score <= 1 ? 100 : 1))
+      : null;
 
   return (
     <AnimatePresence>
@@ -78,7 +135,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           animate={{ x: 0 }}
           exit={{ x: "100%" }}
           transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
-          className={`absolute top-0 right-0 bottom-0 z-[1002] ${bg} border-l ${border} shadow-2xl flex flex-col select-none`}
+          className={`absolute top-0 right-0 bottom-0 z-[1002] ${bg} border-l ${border} shadow-2xl flex flex-col`}
           style={{ width: 400, maxWidth: "90vw" }}
         >
           {/* Header */}
@@ -117,7 +174,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
             {images.length > 0 && (
               <div className="relative w-full aspect-[4/3] overflow-hidden">
                 <img
-                  src={images[activeImageIndex]}
+                  src={images[safeIndex]}
                   alt={asset.name || ""}
                   className="w-full h-full object-cover"
                 />
@@ -191,7 +248,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                 {/* Image count badge */}
                 {images.length > 1 && (
                   <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm text-white text-[10px] font-mono px-2 py-0.5">
-                    {activeImageIndex + 1}/{images.length}
+                    {safeIndex + 1}/{images.length}
                   </div>
                 )}
               </div>
@@ -323,6 +380,55 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                     ))}
                 </div>
               </div>
+
+              {/* GIS Dossier */}
+              {dossierRows.length > 0 && (
+                <div className="mb-5">
+                  <p
+                    className={`text-[9px] uppercase font-mono tracking-[0.2em] ${sectionLabel} mb-3`}
+                  >
+                    Spatial Record
+                  </p>
+                  <div className={`border ${border} ${cardBg} rounded-sm px-3.5 py-3 space-y-2`}>
+                    {dossierRows.map((row) => (
+                      <div key={row.label} className="flex items-baseline justify-between gap-3">
+                        <span className={`text-[9px] uppercase font-mono shrink-0 ${sectionLabel}`}>
+                          {row.label}
+                        </span>
+                        <span className="text-right">
+                          <span
+                            className={
+                              row.label === "Decimal" || row.label === "GPS Accuracy"
+                                ? `text-[11px] font-mono font-semibold ${text}`
+                                : `text-[11px] font-semibold ${text}`
+                            }
+                          >
+                            {row.value}
+                          </span>
+                        </span>
+                      </div>
+                    ))}
+                    {completeness != null && (
+                      <div>
+                        <div className="flex items-baseline justify-between gap-3 mb-1">
+                          <span className={`text-[9px] uppercase font-mono ${sectionLabel}`}>
+                            Record Completeness
+                          </span>
+                          <span className={`text-[11px] font-mono font-semibold ${text}`}>
+                            {completeness}%
+                          </span>
+                        </div>
+                        <div className={`h-1 w-full ${darkMode ? "bg-white/10" : "bg-black/10"}`}>
+                          <div
+                            className="h-full bg-[#E4002B]"
+                            style={{ width: `${Math.min(100, Math.max(0, completeness))}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Description */}
               {asset.description && (

@@ -59,6 +59,7 @@ export const MapScreen: React.FC = () => {
   const [periodRange, setPeriodRange] = useState({ min: 1100, max: 2026 });
   const [flyTo, setFlyTo] = useState<FlyToTarget | null>(null);
   const [assetCount, setAssetCount] = useState(0);
+  const [dynamicOptions, setDynamicOptions] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     localStorage.setItem("schis-map-theme", darkMode ? "dark" : "light");
@@ -92,6 +93,28 @@ export const MapScreen: React.FC = () => {
   }, []);
   const handleClosePanel = useCallback(() => {
     setSelectedAsset(null);
+  }, []);
+
+  /** Derive dynamic filter options from the loaded catalogue. */
+  const handleAssetsLoaded = useCallback((assets: HeritageAsset[]) => {
+    const fields = [
+      "period",
+      "condition",
+      "ownership",
+      "conservation_status",
+      "material",
+      "cultural_group",
+    ] as const;
+    const next: Record<string, string[]> = {};
+    for (const field of fields) {
+      const values = new Set<string>();
+      for (const a of assets) {
+        const v = a[field];
+        if (typeof v === "string" && v.trim()) values.add(v.trim());
+      }
+      if (values.size > 0) next[field] = [...values].sort();
+    }
+    setDynamicOptions(next);
   }, []);
 
   const handleToggleRefLayer = useCallback((key: string) => {
@@ -171,6 +194,7 @@ export const MapScreen: React.FC = () => {
             onVisibleCategoriesChange={setVisibleCategories}
             onCategoryCountsChange={setCategoryCounts}
             onAssetCountChange={setAssetCount}
+            onAssetsLoaded={handleAssetsLoaded}
           />
           <ReferenceLayers activeLayers={activeRefLayers} darkMode={darkMode} />
         </MapView>
@@ -180,6 +204,7 @@ export const MapScreen: React.FC = () => {
           <SearchBar onSelectAsset={handleSelectAsset} darkMode={darkMode} />
           <LayerControl
             layers={layerItems}
+            dynamicOptions={dynamicOptions}
             onToggle={handleToggleLayer}
             filters={filters}
             onFilterChange={setFilters}

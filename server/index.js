@@ -528,6 +528,165 @@ app.get("/api/catalogue/summary", async (req, res) => {
   }
 });
 
+// GET /api/heritage-assets/export - Download the active selection as GeoJSON or CSV
+app.get("/api/heritage-assets/export", async (req, res) => {
+  try {
+    const format = (req.query.format || "geojson").toLowerCase();
+    if (!["geojson", "csv"].includes(format)) {
+      return res.status(400).json({ error: "Unsupported format. Use geojson or csv." });
+    }
+
+    // Reuse the same filter builder as the list endpoint via a subrequest-free approach:
+    // build conditions directly here.
+    const conditions = ["ha.deleted_at IS NULL"];
+    const values = [];
+    let paramIndex = 1;
+
+    const addArrayFilter = (field, param) => {
+      if (isNonEmptyString(param)) {
+        const items = param.split(",").map((s) => s.trim()).filter(Boolean);
+        if (items.length > 0) {
+          conditions.push(`LOWER(ha.${field}) = ANY($${paramIndex}::text[])`);
+          values.push(items.map((i) => i.toLowerCase()));
+          paramIndex++;
+        }
+      }
+    };
+    const addTextSearch = (param) => {
+      if (isNonEmptyString(param)) {
+        conditions.push(`search_vector @@ plainto_tsquery('english', $${paramIndex})`);
+        values.push(param.trim());
+        paramIndex++;
+      }
+    };
+
+    addTextSearch(req.query.search);
+    addArrayFilter("asset_category", req.query.asset_category);
+    addArrayFilter("asset_type", req.query.asset_type);
+    addArrayFilter("period", req.query.period);
+    addArrayFilter("condition", req.query.condition);
+    addArrayFilter("ownership", req.query.ownership);
+    addArrayFilter("cultural_group", req.query.cultural_group);
+    addArrayFilter("material", req.query.material);
+    addArrayFilter("region", req.query.region);
+    addArrayFilter("district", req.query.district);
+    addArrayFilter("conservation_status", req.query.conservation_status);
+
+    const periodStart = parseInt(req.query.period_start, 10);
+    const periodEnd = parseInt(req.query.period_end, 10);
+    if (Number.isFinite(periodStart)) {
+      conditions.push(`COALESCE(ha.period_end, ha.period_start) >= $${paramIndex}`);
+      values.push(periodStart);
+      paramIndex++;
+    }
+    if (Number.isFinite(periodEnd)) {
+      conditions.push(`COALESCE(ha.period_start, ha.period_end) <= $${paramIndex}`);
+      values.push(periodEnd);
+      paramIndex++;
+    }
+
+    const whereClause = `WHERE ${conditions.join(" AND ")}`;
+
+    if (format === "geojson") {
+      const result = await db.query(`
+        SELECT json_build_object(
+          'type', 'FeatureCollection',
+          'name', 'project_epoch_heritage_assets',
+          'features', COALESCE(json_agg(
+            json_build_object(
+              'type', 'Feature',
+              'geometry', ST_AsGeoJSON(ha.geom)::json,
+              'properties', json_build_object(
+                'id', ha.id,
+                'name', ha.name,
+                'alternative_name', ha.alternative_name,
+                'asset_type', ha.asset_type,
+                'asset_category', ha.asset_category,
+                'cultural_group', ha.cultural_group,
+                'region', ha.region,
+                'district', ha.district,
+                'community', ha.community,
+                'condition', ha.condition,
+                'conservation_status', ha.conservation_status,
+                'period', ha.period,
+                'period_start', ha.period_start,
+                'period_end', ha.period_end,
+                'material', ha.material,
+                'ownership', ha.ownership,
+                'elevation_m', ha.elevation_m,
+                'gps_accuracy_m', ha.gps_accuracy_m,
+                'location_accuracy', ha.location_accuracy,
+                'data_source', ha.data_source,
+                'data_completeness_score', ha.data_completeness_score,
+                'verification_status', ha.verification_status
+              )
+            )
+          ), '[]'::json)
+        ) AS geojson
+        FROM heritage_assets ha
+        ${whereClause}
+      `, values);
+
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="heritage-assets-${new Date().toISOString().slice(0, 10)}.geojson"`
+      );
+      return res.type("application/geo+json").send(JSON.stringify(result.rows[0].geojson));
+    }
+
+    // CSV export (geometry as WKT for GIS round-tripping)
+    const result = await db.query(`
+      SELECT
+        ha.id,
+        ha.name,
+        ha.alternative_name,
+        ha.asset_type,
+        ha.asset_category,
+        ha.cultural_group,
+        ha.region,
+        ha.district,
+        ha.community,
+        ha.condition,
+        ha.conservation_status,
+        ha.period,
+        ha.period_start,
+        ha.period_end,
+        ha.material,
+        ha.ownership,
+        ha.elevation_m,
+        ha.gps_accuracy_m,
+        ha.location_accuracy,
+        ha.data_source,
+        ha.data_completeness_score,
+        ha.verification_status,
+        ST_AsText(ha.geom) AS wkt_geom
+      FROM heritage_assets ha
+      ${whereClause}
+      ORDER BY ha.id
+    `, values);
+
+    const columns = Object.keys(result.rows[0] || { id: null });
+    const escapeCsv = (value) => {
+      if (value === null || value === undefined) return "";
+      const str = String(value);
+      return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+    };
+    const csv = [
+      columns.join(","),
+      ...result.rows.map((row) => columns.map((c) => escapeCsv(row[c])).join(",")),
+    ].join("\n");
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="heritage-assets-${new Date().toISOString().slice(0, 10)}.csv"`
+    );
+    return res.type("text/csv").send(csv);
+  } catch (err) {
+    console.error("Error exporting heritage assets:", err.message);
+    res.status(500).json({ error: "Failed to export heritage assets." });
+  }
+});
+
 // GET /api/heritage-assets/summary - Lightweight diagnostic counts for the admin page
 app.get("/api/heritage-assets/summary", async (req, res) => {
   try {
