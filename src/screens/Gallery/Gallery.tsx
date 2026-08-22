@@ -231,7 +231,7 @@ export const Gallery = (): JSX.Element => {
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 220 }}
               className="bg-[#111] max-w-4xl w-full border border-white/10 grid grid-cols-1 md:grid-cols-12 overflow-hidden shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               {/* Media Container */}
               <div className="col-span-1 md:col-span-8 aspect-[4/3] bg-black flex items-center justify-center relative">

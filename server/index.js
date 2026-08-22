@@ -62,12 +62,36 @@ const mediaStorage = multer.diskStorage({
   },
 });
 
+const MAX_FILE_SIZE_GENERAL = 50 * 1024 * 1024;
+const MAX_FILE_SIZE_MODEL = 500 * 1024 * 1024;
+
+const isModelFile = (filename = "") => {
+  const ext = path.extname(filename).toLowerCase();
+  return ext === ".glb" || ext === ".gltf";
+};
+
 const uploadMediaFiles = multer({
   storage: mediaStorage,
   limits: {
-    fileSize: 1024 * 1024 * 50,
+    fileSize: MAX_FILE_SIZE_MODEL,
   },
 });
+
+const enforceFileSizeLimits = (req, res, next) => {
+  if (!req.files || req.files.length === 0) return next();
+  const oversized = req.files.filter((f) => {
+    const maxSize = isModelFile(f.originalname) ? MAX_FILE_SIZE_MODEL : MAX_FILE_SIZE_GENERAL;
+    return f.size > maxSize;
+  });
+  if (oversized.length > 0) {
+    oversized.forEach((f) => {
+      try { fs.unlinkSync(f.path); } catch {}
+    });
+    const names = oversized.map((f) => f.originalname).join(", ");
+    return res.status(413).json({ error: `File(s) too large: ${names}. 3D models up to 500 MB, other files up to 50 MB.` });
+  }
+  next();
+};
 
 const isNonEmptyString = (value) => typeof value === "string" && value.trim().length > 0;
 
@@ -537,6 +561,15 @@ app.get("/api/map/reference/:layerKey", async (req, res) => {
       return res.status(404).json({ error: `Layer table '${tableName}' does not exist in the database.` });
     }
 
+    const colResult = await db.query(
+      `SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1`,
+      [tableName]
+    );
+    const columns = colResult.rows.map((r) => r.column_name);
+
+    const nameExpr = columns.includes("name") ? "name" : (columns.includes("label") ? "label" : "''");
+    const nameEnExpr = columns.includes("name_en") ? "name_en" : (columns.includes("name") ? "name" : (columns.includes("label") ? "label" : "''"));
+
     const result = await db.query(`
       SELECT json_build_object(
         'type', 'FeatureCollection',
@@ -547,8 +580,8 @@ app.get("/api/map/reference/:layerKey", async (req, res) => {
               'geometry', ST_AsGeoJSON(geom)::json,
               'properties', json_build_object(
                 'id', id,
-                'name', COALESCE(name, label, ''),
-                'name_en', COALESCE(name_en, name, label, '')
+                'name', COALESCE(${nameExpr}, ''),
+                'name_en', COALESCE(${nameEnExpr}, '')
               )
             )
           ),
@@ -794,7 +827,7 @@ app.post("/api/heritage-assets/:id/media", async (req, res) => {
 });
 
 // POST /api/heritage-assets/:id/media/upload - Upload files and create media records
-app.post("/api/heritage-assets/:id/media/upload", uploadMediaFiles.array("files", 20), async (req, res) => {
+app.post("/api/heritage-assets/:id/media/upload", uploadMediaFiles.array("files", 20), enforceFileSizeLimits, async (req, res) => {
   const { id } = req.params;
 
   try {

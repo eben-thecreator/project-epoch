@@ -10,7 +10,15 @@ interface MediaManagerProps {
 }
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
+const MAX_FILE_SIZE_MODEL = 500 * 1024 * 1024;
 const MAX_FILES = 20;
+
+const isModelFile = (file: File) => {
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  return ext === "glb" || ext === "gltf";
+};
+
+const getMaxFileSize = (file: File) => isModelFile(file) ? MAX_FILE_SIZE_MODEL : MAX_FILE_SIZE;
 
 export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): JSX.Element => {
   const [uploading, setUploading] = useState(false);
@@ -23,14 +31,14 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
-    const valid = selected.filter((f) => f.size <= MAX_FILE_SIZE).slice(0, MAX_FILES);
-    if (valid.length < selected.length) {
-      const skipped = selected.length - valid.length;
-      // toast handled via callback
+    const valid = selected.filter((f) => f.size <= getMaxFileSize(f)).slice(0, MAX_FILES);
+    const skipped = selected.length - valid.length;
+    if (skipped > 0) {
+      onToast("error", `${skipped} file(s) skipped ΓÇö too large. 3D models up to 500 MB, other files up to 50 MB.`);
     }
     setPendingFiles(valid);
     e.target.value = "";
-  }, []);
+  }, [onToast]);
 
   const handleUpload = async () => {
     if (!asset || pendingFiles.length === 0) return;
@@ -130,8 +138,6 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
   }
 
   const media = asset.media || [];
-  const imageMedia = media.filter((m) => m.mediaType === "image");
-  const otherMedia = media.filter((m) => m.mediaType !== "image");
 
   return (
     <div className="bg-white rounded-xl border border-black/5 overflow-hidden">
@@ -169,7 +175,7 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
             </div>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {media.map((m, idx) => (
+              {media.map((m) => (
                 <div
                   key={m.id}
                   className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer group border-2 transition-colors ${

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "../../../components/Header";
 import { ModelViewer } from "../../../components/ModelViewer";

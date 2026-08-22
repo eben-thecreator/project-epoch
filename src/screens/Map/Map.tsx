@@ -8,7 +8,6 @@ import { SearchBar } from "./components/SearchBar";
 import { SidePanel } from "./components/SidePanel";
 import { Legend } from "./components/Legend";
 import { CompassControl } from "./components/CompassControl";
-import { CoordinateDisplay } from "./components/CoordinateDisplay";
 import { apiUrl } from "../../lib/api";
 import "./components/map.css";
 
@@ -36,7 +35,7 @@ export const MapScreen: React.FC = () => {
   const [selectedAsset, setSelectedAsset] = useState<HeritageAsset | null>(null);
   const [filters, setFilters] = useState<Record<string, string>>(defaultFilters);
   const [yearRange, setYearRange] = useState<[number, number]>([1100, 2026]);
-  const [activeRefLayers, setActiveRefLayers] = useState<string[]>(["regions"]);
+  const [activeRefLayers, setActiveRefLayers] = useState<string[]>(["regions", "protected_areas"]);
   const [heritageVisible, setHeritageVisible] = useState(true);
   const [visibleCategories, setVisibleCategories] = useState<string[]>([]);
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
@@ -205,20 +204,25 @@ export const MapScreen: React.FC = () => {
         (asset.geometry.type === "Polygon" || asset.geometry.type === "MultiPolygon") &&
         Array.isArray(coords[0])
       ) {
-        const ring = Array.isArray(coords[0][0])
-          ? (coords[0] as number[][][])[0][0]
-          : (coords[0] as number[][]);
-        if (Array.isArray(ring)) {
+        const firstRing =
+          asset.geometry.type === "MultiPolygon"
+            ? ((coords as unknown as number[][][][])[0]?.[0] ?? [])
+            : ((coords as unknown as number[][][])[0] ?? []);
+        if (firstRing.length > 0) {
           let lngSum = 0,
             latSum = 0,
             validCount = 0;
-          ring.forEach((c: number[]) => {
-            if (Array.isArray(c) && c.length >= 2) {
+          for (const c of firstRing) {
+            if (
+              Array.isArray(c) &&
+              typeof c[0] === "number" &&
+              typeof c[1] === "number"
+            ) {
               lngSum += c[0];
               latSum += c[1];
               validCount++;
             }
-          });
+          }
           if (validCount > 0) {
             setFlyTo({
               center: [latSum / validCount, lngSum / validCount],
@@ -241,7 +245,7 @@ export const MapScreen: React.FC = () => {
 
   return (
     <div className={`${bgColor} w-full h-screen flex flex-col overflow-hidden`}>
-      <Header hideRollingBanner />
+      <Header />
 
       {/* Main Map Spatial Canvas — Positioned directly below 64px fixed header */}
       <div className="flex-1 relative mt-[64px] w-full h-[calc(100vh-64px)]">

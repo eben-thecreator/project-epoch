@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { apiUrl, mediaUrl } from "../../lib/api";
+import { mediaUrl } from "../../lib/api";
 import type { HeritageAsset } from "./types";
 
 interface AssetTableProps {

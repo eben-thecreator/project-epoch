@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Header } from "../../components/Header";
 import { apiUrl, mediaUrl } from "../../lib/api";
@@ -180,7 +180,7 @@ export const Documents = (): JSX.Element => {
                       {metadataTags.map((tag, index) => (
                         <span
                           key={index}
-                          className="text-[10px] uppercase tracking-wider text-black/50"
+                          className="text-[10px] text-black/50"
                         >
                           {tag}
                           {index < metadataTags.length - 1 && (

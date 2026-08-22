@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 
 export const CaseStudies = (): JSX.Element => {
   const navigate = useNavigate();
-  const [catalogueSummary, setCatalogueSummary] = useState<any>({
+  const [, setCatalogueSummary] = useState<any>({
     artifacts: 0,
     museums: 0,
     textiles: 0,

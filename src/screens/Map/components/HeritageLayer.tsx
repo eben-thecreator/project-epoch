@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { GeoJSON, Marker, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet.markercluster";
@@ -103,23 +103,6 @@ function getPolygonStyle(category?: string, dark = false): L.PathOptions {
     fillColor: color,
     fillOpacity: dark ? 0.2 : 0.15,
   };
-}
-
-function ZoomTracker({
-  onZoomChange,
-}: {
-  onZoomChange: (zoom: number) => void;
-}) {
-  const map = useMap();
-  useEffect(() => {
-    onZoomChange(map.getZoom());
-    const handler = () => onZoomChange(map.getZoom());
-    map.on("zoomend", handler);
-    return () => {
-      map.off("zoomend", handler);
-    };
-  }, [map, onZoomChange]);
-  return null;
 }
 
 function ClusteredPointLayer({
@@ -269,7 +252,6 @@ interface HeritageLayerProps {
   darkMode?: boolean;
   onVisibleCategoriesChange: (categories: string[]) => void;
   onCategoryCountsChange?: (counts: Record<string, number>) => void;
-  onZoomChange?: (zoom: number) => void;
   onAssetCountChange?: (count: number) => void;
 }
 
@@ -281,21 +263,11 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
   darkMode = false,
   onVisibleCategoriesChange,
   onCategoryCountsChange,
-  onZoomChange,
   onAssetCountChange,
 }) => {
   const [assets, setAssets] = useState<HeritageAsset[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
-  const [zoom, setZoom] = useState(7);
-
-  const handleZoomChange = useCallback(
-    (z: number) => {
-      setZoom(z);
-      onZoomChange?.(z);
-    },
-    [onZoomChange]
-  );
 
   useEffect(() => {
     if (!visible) return;
@@ -383,8 +355,6 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
 
   return (
     <>
-      <ZoomTracker onZoomChange={handleZoomChange} />
-
       {loading && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1002] pointer-events-none">
           <div className="bg-white/90 dark:bg-[#0d0d0d]/90 backdrop-blur-sm px-4 py-2.5 shadow-lg border border-black/10 dark:border-white/10 flex items-center gap-2.5">
@@ -424,10 +394,10 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
             <GeoJSON
               key={`poly-${asset.id}`}
               data={{
-                type: "Feature" as const,
-                geometry: asset.geometry as any,
+                type: "Feature",
+                geometry: asset.geometry,
                 properties: { asset_category: asset.asset_category },
-              }}
+              } as GeoJSON.Feature}
               style={() => getPolygonStyle(asset.asset_category, darkMode)}
               eventHandlers={{
                 click: () => onSelectAsset(asset),
@@ -493,10 +463,10 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
             <GeoJSON
               key={`line-${asset.id}`}
               data={{
-                type: "Feature" as const,
-                geometry: asset.geometry as any,
+                type: "Feature",
+                geometry: asset.geometry,
                 properties: { asset_category: asset.asset_category },
-              }}
+              } as GeoJSON.Feature}
               style={{
                 color: catColor,
                 weight: 2.5,

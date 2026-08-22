@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
 
 interface Exhibition {
   id: string;
@@ -61,12 +60,10 @@ interface RollingBannerProps {
 export const RollingBanner: React.FC<RollingBannerProps> = ({ pinned = false }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [duration, setDuration] = useState(30); // Default duration
-  const location = useLocation();
 
   useEffect(() => {
     const calculateDuration = () => {
       if (containerRef.current) {
-        const containerWidth = containerRef.current.offsetWidth;
         const contentWidth = containerRef.current.scrollWidth / 2; // Divide by 2 because we duplicate the content
         // Calculate duration based on content width (pixels per second)
         const newDuration = Math.max(contentWidth / 50, 10); // Minimum 10 seconds
@@ -78,8 +75,6 @@ export const RollingBanner: React.FC<RollingBannerProps> = ({ pinned = false }) 
     window.addEventListener('resize', calculateDuration);
     return () => window.removeEventListener('resize', calculateDuration);
   }, []);
-
-  const isHomePage = location.pathname === "/";
 
   return (
     <div className={`${pinned ? "relative" : "fixed top-0 left-0 z-[1060]"} bg-[#000] h-[40px] flex items-center overflow-hidden text-white transition-all duration-300 w-full`}>

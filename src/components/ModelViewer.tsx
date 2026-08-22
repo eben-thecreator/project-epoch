@@ -1,4 +1,4 @@
-import React, { Suspense, useRef } from "react";
+import React, { Suspense, useRef, useState, useCallback } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Preload, useGLTF, Bounds } from "@react-three/drei";
 import * as THREE from "three";
@@ -10,14 +10,18 @@ interface ModelViewerProps {
   rotateSpeed?: number;
 }
 
-class ModelErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
-  constructor(props: { children: React.ReactNode }) {
+const MAX_RETRIES = 4;
+
+class ModelErrorBoundary extends React.Component<
+  { children: React.ReactNode; onRetry?: () => void },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; onRetry?: () => void }) {
     super(props);
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error) {
-    console.error("Model Error Boundary caught an error:", error);
+  static getDerivedStateFromError() {
     return { hasError: true };
   }
 
@@ -33,12 +37,19 @@ class ModelErrorBoundary extends React.Component<{ children: React.ReactNode }, 
             <svg className="w-12 h-12 mx-auto text-black/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <p className="mt-2 text-xs uppercase tracking-wider font-bold">Error loading 3D model</p>
+            <p className="mt-2 text-xs font-bold">Error loading 3D model</p>
+            {this.props.onRetry && (
+              <button
+                onClick={this.props.onRetry}
+                className="mt-3 px-3 py-1 text-[10px] uppercase tracking-wider font-bold border border-black/20 text-black/50 hover:text-black hover:border-black/40 transition-colors"
+              >
+                Retry
+              </button>
+            )}
           </div>
         </div>
       );
     }
-
     return this.props.children;
   }
 }
@@ -93,11 +104,107 @@ const Model: React.FC<{ modelUrl: string; autoRotate?: boolean; speed?: number }
   );
 };
 
-export const ModelViewer: React.FC<ModelViewerProps> = ({ 
-  modelUrl, 
+const ModelWithRetry: React.FC<{
+  modelUrl: string;
+  autoRotate?: boolean;
+  speed?: number;
+  backgroundColor: string;
+}> = ({ modelUrl, autoRotate, speed, backgroundColor }) => {
+  const [retryCount, setRetryCount] = useState(0);
+  const [error, setError] = useState(false);
+
+  const handleRetry = useCallback(() => {
+    useGLTF.clear(modelUrl);
+    setError(false);
+    setRetryCount((c) => c + 1);
+  }, [modelUrl]);
+
+  if (error) {
+    return (
+      <div className="w-full h-full flex items-center justify-center" style={{ background: backgroundColor }}>
+        <div className="text-center text-black/50">
+          <svg className="w-12 h-12 mx-auto text-black/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <p className="mt-2 text-xs font-bold">Error loading 3D model</p>
+          {retryCount < MAX_RETRIES && (
+            <button
+              onClick={handleRetry}
+              className="mt-3 px-3 py-1 text-[10px] uppercase tracking-wider font-bold border border-black/20 text-black/50 hover:text-black hover:border-black/40 transition-colors"
+            >
+              Retry
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <ModelErrorBoundary key={`boundary-${retryCount}`} onRetry={retryCount < MAX_RETRIES ? handleRetry : undefined}>
+      <Canvas
+        camera={{ position: [0, 0, 5], fov: 50 }}
+        gl={{ antialias: true, alpha: true }}
+        shadows
+        key={`canvas-${modelUrl}-${retryCount}`}
+      >
+        <ambientLight intensity={0.5} />
+
+        <directionalLight
+          castShadow
+          position={[5, 10, 5]}
+          intensity={1.5}
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-camera-near={0.5}
+          shadow-camera-far={50}
+          shadow-camera-left={-20}
+          shadow-camera-right={20}
+          shadow-camera-top={20}
+          shadow-camera-bottom={-20}
+        />
+
+        <directionalLight position={[-5, 5, -5]} intensity={1} />
+        <directionalLight position={[0, -5, -5]} intensity={0.5} />
+        <pointLight position={[0, 15, -15]} intensity={0.8} />
+
+        <spotLight
+          position={[0, 20, 0]}
+          intensity={0.7}
+          angle={0.3}
+          penumbra={1}
+          castShadow
+        />
+
+        <Suspense fallback={<div className="text-center w-full h-full flex items-center justify-center text-black/40 text-xs font-bold">Loading model...</div>}>
+          <Bounds fit observe margin={1}>
+            <Model modelUrl={modelUrl} autoRotate={autoRotate} speed={speed} key={`model-${retryCount}`} />
+          </Bounds>
+        </Suspense>
+
+        <OrbitControls
+          enableZoom
+          enablePan
+          enableRotate
+          minDistance={0.5}
+          maxDistance={100}
+          autoRotate={autoRotate}
+          autoRotateSpeed={2}
+          makeDefault
+          up={[0, 1, 0]}
+        />
+
+        <Preload all />
+      </Canvas>
+    </ModelErrorBoundary>
+  );
+};
+
+export const ModelViewer: React.FC<ModelViewerProps> = ({
+  modelUrl,
   backgroundColor = "#f3f4f6",
-  autoRotate = false,
-  rotateSpeed = 0.002
+  autoRotate = true,
+  rotateSpeed = 1
 }) => {
   if (!modelUrl) {
     return (
@@ -106,80 +213,20 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
           <svg className="w-12 h-12 mx-auto text-black/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <p className="mt-2 text-xs uppercase tracking-wider font-bold">No model available</p>
+          <p className="mt-2 text-xs font-bold">No model available</p>
         </div>
       </div>
     );
   }
 
-  const modelKey = React.useMemo(() => modelUrl, [modelUrl]);
-
   return (
     <div className="w-full h-full relative" style={{ background: backgroundColor }}>
-      <ModelErrorBoundary>
-        <Canvas
-          camera={{ position: [0, 0, 5], fov: 50}}
-          gl={{ antialias: true, alpha: true }}
-          shadows
-          key={modelKey}
-        >
-          <ambientLight intensity={0.5} />
-
-          <directionalLight
-            castShadow
-            position={[5, 10, 5]}
-            intensity={1.5}
-            shadow-mapSize-width={2048}
-            shadow-mapSize-height={2048}
-            shadow-camera-near={0.5}
-            shadow-camera-far={50}
-            shadow-camera-left={-20}
-            shadow-camera-right={20}
-            shadow-camera-top={20}
-            shadow-camera-bottom={-20}
-          />
-
-          <directionalLight
-            position={[-5, 5, -5]}
-            intensity={1}
-          />
-
-          <directionalLight
-            position={[0, -5, -5]}
-            intensity={0.5}
-          />
-
-          <pointLight position={[0, 15, -15]} intensity={0.8} />
-
-          <spotLight
-            position={[0, 20, 0]}
-            intensity={0.7}
-            angle={0.3}
-            penumbra={1}
-            castShadow
-          />
-
-          <Suspense fallback={<div className="text-center w-full h-full flex items-center justify-center text-black/40 text-xs uppercase tracking-wider font-bold">Loading model...</div>}>
-            <Bounds fit observe margin={1}>
-              <Model modelUrl={modelUrl} autoRotate={autoRotate} speed={rotateSpeed} key={modelKey} />
-            </Bounds>
-          </Suspense>
-
-          <OrbitControls
-            enableZoom
-            enablePan
-            enableRotate
-            minDistance={0.5}
-            maxDistance={100}
-            autoRotate={autoRotate}
-            autoRotateSpeed={2}
-            makeDefault
-            up={[0, 1, 0]}
-          />
-
-          <Preload all />
-        </Canvas>
-      </ModelErrorBoundary>
+      <ModelWithRetry
+        modelUrl={modelUrl}
+        autoRotate={autoRotate}
+        speed={rotateSpeed}
+        backgroundColor={backgroundColor}
+      />
     </div>
   );
 };

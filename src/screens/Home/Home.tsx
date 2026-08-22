@@ -79,7 +79,7 @@ export const Home = (): JSX.Element => {
   };
 
   return (
-    <div className="bg-white w-full min-h-screen relative flex flex-col font-sans">
+    <div className="bg-white w-full min-h-screen relative flex flex-col">
       <Header />
 
       {/* Hero Section — full viewport */}
@@ -100,10 +100,10 @@ export const Home = (): JSX.Element => {
           transition={{ duration: 1, delay: 0.5 }}
         >
           <div className="px-6 sm:px-12 lg:px-20 max-w-2xl z-10">
-            <p className="text-white text-[13px] md:text-[15px] font-bold uppercase text-left drop-shadow-lg">
+            <p className="text-white text-[13px] md:text-[15px] font-medium uppercase text-left drop-shadow-lg">
               Research Team: Amoah-Yeboah Abena Pokua &bull; Ankudey Ebenezer &bull; Elorm Dei-Zanga Aku
             </p>
-            <p className="text-white/70 text-[11px] md:text-[13px] mt-2 font-medium uppercase text-left drop-shadow-lg">
+            <p className="text-white/70 text-[13px] md:text-[13px] mt-2 font-medium uppercase text-left drop-shadow-lg">
               Academic Supervisor: Professor Quaye Ballard
             </p>
           </div>
@@ -194,7 +194,7 @@ export const Home = (): JSX.Element => {
                    <div className="absolute bottom-6 left-6 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
                      <span className="block text-white text-5xl md:text-6xl font-bold leading-none">{catalogueSummary[collection.id]}</span>
                      <div className="w-8 h-[1px] bg-white/40 mt-3 mb-2" />
-                     <span className="block text-white/70 text-[10px] uppercase tracking-[0.15em]">items</span>
+                     <span className="block text-white text-[16px]">Items</span>
                   </div>
                 </div>
                 <h3 className="text-[13px] md:text-[15px] uppercase font-bold text-black mt-3 group-hover:text-gray-600 transition-colors duration-300">

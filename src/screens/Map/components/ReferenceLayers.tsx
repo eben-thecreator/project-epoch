@@ -20,8 +20,8 @@ const layerConfigs: LayerConfig[] = [
   { key: "regions", label: "Regions", color: "#000", weight: 1.5, fillOpacity: 0, fillColor: "transparent", darkColor: "rgba(255,255,255,0.5)", darkFillColor: "transparent" },
   { key: "districts", label: "Districts", color: "#000", weight: 0.5, dashArray: "4,4", fillOpacity: 0, fillColor: "transparent", darkColor: "rgba(255,255,255,0.3)", darkFillColor: "transparent" },
   { key: "roads", label: "Roads", color: "#888", weight: 1, fillOpacity: 0, fillColor: "transparent", darkColor: "rgba(255,255,255,0.25)", darkFillColor: "transparent" },
-  { key: "rivers", label: "Rivers", color: "#999", weight: 1, fillOpacity: 0, fillColor: "transparent", darkColor: "rgba(100,160,220,0.4)", darkFillColor: "transparent" },
-  { key: "protected_areas", label: "Protected Areas", color: "#1a5a2a", weight: 1, fillOpacity: 0.06, fillColor: "#1a5a2a", darkColor: "rgba(68,170,85,0.5)", darkFillColor: "rgba(68,170,85,0.08)" },
+  { key: "rivers", label: "Rivers", color: "#4caae9ff", weight: 1.5, fillOpacity: 0, fillColor: "transparent", darkColor: "rgba(100,160,220,0.4)", darkFillColor: "transparent" },
+  { key: "protected_areas", label: "Protected Areas", color: "#095c1dff", weight: 1, fillOpacity: 0.5, fillColor: "#08b132ff", darkColor: "rgba(68,170,85,0.5)", darkFillColor: "rgba(68,170,85,0.08)" },
 ];
 
 interface ReferenceLayerProps {
@@ -62,7 +62,7 @@ export const ReferenceLayers: React.FC<ReferenceLayerProps> = ({ activeLayers, d
           if (!data || data.features.length === 0) return null;
           return (
             <GeoJSON
-              key={`${cfg.key}-${darkMode ? "dark" : "light"}`}
+              key={`${cfg.key}-${darkMode ? "dark" : "light"}-${data.features.length}`}
               data={data}
               style={{
                 color: darkMode ? cfg.darkColor : cfg.color,
