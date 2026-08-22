@@ -1,3 +1,30 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+*.local
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# User uploads (runtime data, not source)
+uploads/
+
+# Tool outputs
+graphify-out/
+gis_thngs/*.qml
+*.pack.gz
+
+# Stale framework artifacts
+apps/
+
+# Documents / binaries that don't belong in VCS
+*.pdf
+
 # Logs
 logs
 *.log
@@ -6,11 +33,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
 
 # Editor directories and files
 .vscode/*
