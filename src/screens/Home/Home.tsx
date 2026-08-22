@@ -5,25 +5,33 @@ import { apiUrl } from "../../lib/api";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
+interface CatalogueSummary {
+  total?: number;
+  artifacts?: number;
+  museums?: number;
+  textiles?: number;
+  documents?: number;
+}
+
 export const Home = (): JSX.Element => {
-  const [catalogueSummary, setCatalogueSummary] = useState<any>({
-    artifacts: 0,
-    museums: 0,
-    textiles: 0,
-    documents: 0,
-  });
+  const [catalogueSummary, setCatalogueSummary] = useState<CatalogueSummary | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const summaryResponse = await fetch(apiUrl("/api/catalogue/summary"));
-        const summaryData = await summaryResponse.json();
-        setCatalogueSummary(summaryData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
+    let cancelled = false;
+    fetch(apiUrl("/api/catalogue/summary"))
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((data: CatalogueSummary) => {
+        if (!cancelled) setCatalogueSummary(data);
+      })
+      .catch(() => {
+        /* non-critical */
+      });
+    return () => {
+      cancelled = true;
     };
-    fetchData();
   }, []);
 
   const collections = [
@@ -192,7 +200,9 @@ export const Home = (): JSX.Element => {
                   />
                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-500" />
                    <div className="absolute bottom-6 left-6 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-                     <span className="block text-white text-5xl md:text-6xl font-bold leading-none">{catalogueSummary[collection.id]}</span>
+                     <span className="block text-white text-5xl md:text-6xl font-bold leading-none">
+                       {catalogueSummary ? catalogueSummary[collection.id as keyof CatalogueSummary] ?? 0 : "—"}
+                     </span>
                      <div className="w-8 h-[1px] bg-white/40 mt-3 mb-2" />
                      <span className="block text-white text-[16px]">Items</span>
                   </div>

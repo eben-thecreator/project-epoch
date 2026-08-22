@@ -13,7 +13,7 @@ interface ResearchPaper {
 const RESEARCH_PAPERS: ResearchPaper[] = [
   {
     title: "High-Fidelity 3D Reconstruction of West African Pottery using Low-Cost Photogrammetry",
-    authors: "Amoah Yeboah Abena Pokua, Academic Supervisor: Professor Quaye Ballard",
+    authors: "Amoah-Yeboah Abena Pokua, Academic Supervisor: Professor Quaye Ballard",
     journal: "Journal of Cultural Heritage Digitalization",
     year: 2025,
     abstract: "This study explores cost-effective methodologies for capturing and preserving historical pottery artifacts. By utilizing standard consumer-grade cameras and open-source photogrammetry pipelines, we demonstrate high-accuracy 3D asset generation comparable to industrial laser scanning.",
@@ -29,7 +29,7 @@ const RESEARCH_PAPERS: ResearchPaper[] = [
   },
   {
     title: "Preserving Indigenous Narrative through Interactive 3D Environments",
-    authors: "Elorm Dei-Zanga, Academic Supervisor: Professor Quaye Ballard",
+    authors: "Elorm Dei-Zanga Aku, Academic Supervisor: Professor Quaye Ballard",
     journal: "Virtual Heritage & Narrative Technologies",
     year: 2026,
     abstract: "How can 3D environments preserve intangible oral histories? This paper presents a case study of virtual walk-throughs in digitized historic sites, integrating spatial audio and contextual annotations to create emotional resonance and historical accuracy.",

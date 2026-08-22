@@ -15,7 +15,7 @@ const BLOG_POSTS: BlogPost[] = [
     title: "Behind the Scenes: Digitizing Ancient Pottery Collections",
     excerpt: "How we translated three-dimensional pottery shapes into perfect digital meshes with crisp texture maps using photogrammetry.",
     date: "June 24, 2026",
-    author: "Amoah Yeboah Abena Pokua",
+    author: "Amoah-Yeboah Abena Pokua",
     readTime: "5 min read",
     image: "/images/home_about/artifact.jpg"
   },
@@ -31,7 +31,7 @@ const BLOG_POSTS: BlogPost[] = [
     title: "Bringing History to Life: Building the 3D Virtual Walkthrough",
     excerpt: "A deep dive into WebGL, Three.js, and how we optimized large-scale interior museum models to run seamlessly on mobile browsers.",
     date: "May 29, 2026",
-    author: "Elorm Dei-Zanga",
+    author: "Elorm Dei-Zanga Aku",
     readTime: "8 min read",
     image: "/images/home_about/museum.jpg"
   }

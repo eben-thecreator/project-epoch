@@ -4,27 +4,39 @@ import { useState, useEffect } from "react";
 import { apiUrl } from "../../lib/api";
 import { motion } from "framer-motion";
 
+interface CatalogueSummary {
+  total?: number;
+  artifacts?: number;
+  museums?: number;
+  textiles?: number;
+  documents?: number;
+  needs_review?: number;
+}
+
 export const CaseStudies = (): JSX.Element => {
   const navigate = useNavigate();
-  const [, setCatalogueSummary] = useState<any>({
-    artifacts: 0,
-    museums: 0,
-    textiles: 0,
-    documents: 0,
-  });
+  const [summary, setSummary] = useState<CatalogueSummary | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const summaryResponse = await fetch(apiUrl("/api/catalogue/summary"));
-        const summaryData = await summaryResponse.json();
-        setCatalogueSummary(summaryData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
+    let cancelled = false;
+    fetch(apiUrl("/api/catalogue/summary"))
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((data: CatalogueSummary) => {
+        if (!cancelled) setSummary(data);
+      })
+      .catch(() => {
+        /* summary is non-critical — cards render with em-dash counts */
+      });
+    return () => {
+      cancelled = true;
     };
-    fetchData();
   }, []);
+
+  const countOf = (key: keyof CatalogueSummary) =>
+    summary ? summary[key] ?? 0 : null;
 
   const collections = [
     {
@@ -34,11 +46,7 @@ export const CaseStudies = (): JSX.Element => {
       route: "/case-studies/artifacts",
       aspectRatio: "aspect-square",
       flexGrow: 1,
-      details: [
-        { label: "Royal", value: "28 Items" },
-        { label: "Cultural", value: "19 Artifacts" },
-        { label: "Religious", value: "27 Available" }
-      ]
+      count: countOf("artifacts"),
     },
     {
       id: "museums",
@@ -47,12 +55,7 @@ export const CaseStudies = (): JSX.Element => {
       route: "/case-studies/museums",
       aspectRatio: "aspect-[4/3]",
       flexGrow: 1.333,
-      details: [
-        { label: "Heritage Sites", value: "4 Collections" },
-        { label: "Monuments", value: "32 Items" },
-        { label: "Specialized Museums", value: "2" },
-        { label: "Traditional", value: "14 Sites" }
-      ]
+      count: countOf("museums"),
     },
     {
       id: "textiles",
@@ -61,11 +64,7 @@ export const CaseStudies = (): JSX.Element => {
       route: "/case-studies/textiles",
       aspectRatio: "aspect-square",
       flexGrow: 1,
-      details: [
-        { label: "Documentation", value: "32" },
-        { label: "Synthetic", value: "51" },
-        { label: "Cloth & Spunned Materials", value: "05 Documented" }
-      ]
+      count: countOf("textiles"),
     },
     {
       id: "documents",
@@ -74,20 +73,13 @@ export const CaseStudies = (): JSX.Element => {
       route: "/case-studies/documents",
       aspectRatio: "aspect-square",
       flexGrow: 1,
-      details: [
-        { label: "Historical", value: "18 Documents" },
-        { label: "Photographic Archives", value: "10 Texts" },
-        { label: "Unindexed", value: "17 Records" },
-        { label: "Cultural", value: "25 Scanned" }
-      ]
+      count: countOf("documents"),
     },
   ];
 
   const sidebarStats = [
-    { label: "Heritage Assets", count: 92 },
-    { label: "3d Models", count: 82 },
-    { label: "Locations Mapped", count: 85 },
-    { label: "Collections", count: 18 },
+    { label: "Heritage Assets", count: countOf("total") },
+    { label: "Awaiting Classification", count: countOf("needs_review") },
   ];
 
   // Framer Motion Variants
@@ -134,25 +126,30 @@ export const CaseStudies = (): JSX.Element => {
         animate="show"
         className="flex-1 pt-32 md:pt-36 px-4 sm:px-6 lg:px-8 pb-6 flex flex-col justify-start overflow-hidden"
       >
-        {/* Stats at top-left — plain text, no interaction */}
+        {/* Live catalogue statistics */}
         <motion.div className="mb-10 shrink-0" variants={pageContainerVariants}>
           <div className="flex flex-col space-y-0.5">
-            {sidebarStats.map((stat, index) => (
+            <p className="text-[9px] uppercase font-mono tracking-[0.25em] text-gray-400 mb-2">
+              Live Catalogue
+            </p>
+            {sidebarStats.map((stat) => (
               <motion.p
-                key={index}
+                key={stat.label}
                 variants={statItemVariants}
                 className="text-[13px] font-bold text-black"
               >
                 {stat.label}
-                <span className="text-[#a0a0a0] font-normal ml-1.5">({stat.count})</span>
+                <span className="text-[#a0a0a0] font-normal ml-1.5">
+                  ({stat.count ?? "—"})
+                </span>
               </motion.p>
             ))}
           </div>
         </motion.div>
 
         {/* Collection Cards Row */}
-        <motion.div 
-          className="flex-1 min-h-0 flex flex-row items-stretch justify-between gap-4 w-full select-none pb-4"
+        <motion.div
+          className="flex-1 min-h-0 flex flex-row items-stretch justify-between gap-4 w-full pb-4"
           variants={pageContainerVariants}
         >
           {collections.map((collection) => (
@@ -182,14 +179,14 @@ export const CaseStudies = (): JSX.Element => {
                 {collection.title}
               </h3>
 
-              {/* Details List */}
-              <div className="space-y-0.5 w-full text-[10px] tracking-tight leading-normal shrink-0">
-                {collection.details.map((detail, index) => (
-                  <div key={index} className="flex justify-between w-full text-black py-0.5 border-b border-black/5 last:border-b-0">
-                    <span className="text-[#555555] font-normal pr-2 truncate group-hover:text-black transition-colors duration-300">{detail.label}</span>
-                    <span className="font-normal text-right shrink-0 group-hover:text-[#E4002B] transition-colors duration-300">{detail.value}</span>
-                  </div>
-                ))}
+              {/* Count */}
+              <div className="w-full text-[10px] tracking-tight leading-normal shrink-0">
+                <div className="flex justify-between w-full text-black py-0.5 border-b border-black/5 last:border-b-0">
+                  <span className="text-[#555555] font-normal pr-2 truncate group-hover:text-black transition-colors duration-300">Documented Assets</span>
+                  <span className="font-mono font-semibold text-right shrink-0 group-hover:text-[#E4002B] transition-colors duration-300">
+                    {collection.count ?? "—"}
+                  </span>
+                </div>
               </div>
             </motion.div>
           ))}
