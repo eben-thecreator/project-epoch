@@ -198,7 +198,7 @@ export const MapScreen: React.FC = () => {
         </MapView>
 
         {/* ZONE 1: TOP-LEFT COMMAND DOCK (SEARCH & FILTERS) */}
-        <div className="absolute top-4 left-4 sm:left-6 z-[1000] flex flex-col items-start gap-2.5 w-[240px]">
+        <div className="absolute top-4 left-4 sm:left-6 z-[1000] flex flex-col items-start gap-2.5 w-[200px] sm:w-[240px]">
           <SearchBar onSelectAsset={handleSelectAsset} darkMode={darkMode} />
           <LayerControl
             layers={layerItems}

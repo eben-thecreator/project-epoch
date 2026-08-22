@@ -4,6 +4,7 @@ import {
   createBrowserRouter,
   RouterProvider,
   Outlet,
+  ScrollRestoration,
 } from "react-router-dom";
 import { ErrorPage } from "./screens/ErrorPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -50,6 +51,7 @@ function RootLayout() {
     <ErrorBoundary>
       <Suspense fallback={<RouteLoader />}>
         <Outlet />
+        <ScrollRestoration />
       </Suspense>
     </ErrorBoundary>
   );

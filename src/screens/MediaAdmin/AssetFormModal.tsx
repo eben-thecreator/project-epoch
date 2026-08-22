@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useFocusTrap } from "../../lib/useFocusTrap";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { apiUrl } from "../../lib/api";
@@ -74,6 +75,9 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
   const [geometryDirty, setGeometryDirty] = useState(false);
   const [latInput, setLatInput] = useState(initialPoint ? String(initialPoint[0]) : "");
   const [lngInput, setLngInput] = useState(initialPoint ? String(initialPoint[1]) : "");
+
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, true, onClose);
 
   const mapElRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -243,6 +247,10 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40" onClick={onClose}>
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={isEditing ? "Edit asset" : "Create asset"}
         className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >

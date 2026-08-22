@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { apiUrl, mediaUrl } from "../../lib/api";
-import { adminFetch } from "../../lib/adminAuth";
+import { adminFetch, getAdminToken, clearAdminToken } from "../../lib/adminAuth";
 import { ModelViewer } from "../../components/ModelViewer";
 import type { HeritageAsset, MediaItem } from "./types";
 
@@ -23,6 +23,7 @@ const getMaxFileSize = (file: File) => isModelFile(file) ? MAX_FILE_SIZE_MODEL :
 
 export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): JSX.Element => {
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [caption, setCaption] = useState("");
   const [markFirstPrimary, setMarkFirstPrimary] = useState(true);
@@ -41,34 +42,59 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
     e.target.value = "";
   }, [onToast]);
 
-  const handleUpload = async () => {
-    if (!asset || pendingFiles.length === 0) return;
+  const handleUpload = () => {
+    if (!asset || pendingFiles.length === 0 || uploading) return;
     setUploading(true);
-    try {
-      const formData = new FormData();
-      pendingFiles.forEach((f) => formData.append("files", f));
-      formData.append("caption", caption);
-      formData.append("markFirstAsPrimary", String(markFirstPrimary));
+    setUploadProgress(0);
 
-      const res = await adminFetch(apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}/media/upload`), {
-        method: "POST",
-        body: formData,
-      });
+    // XHR instead of fetch so multi-hundred-MB model uploads show progress
+    const formData = new FormData();
+    pendingFiles.forEach((f) => formData.append("files", f));
+    formData.append("caption", caption);
+    formData.append("markFirstAsPrimary", String(markFirstPrimary));
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Upload failed.");
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}/media/upload`));
+    const token = getAdminToken();
+    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        setUploadProgress(Math.round((e.loaded / e.total) * 100));
       }
+    };
 
-      onToast("success", `Uploaded ${pendingFiles.length} file${pendingFiles.length > 1 ? "s" : ""}.`);
-      setPendingFiles([]);
-      setCaption("");
-      onRefresh();
-    } catch (err) {
-      onToast("error", err instanceof Error ? err.message : "Upload failed.");
-    } finally {
+    const finish = (message: string, type: "success" | "error") => {
       setUploading(false);
-    }
+      setUploadProgress(0);
+      if (type === "success") {
+        onToast("success", message);
+        setPendingFiles([]);
+        setCaption("");
+        onRefresh();
+      } else {
+        onToast("error", message);
+      }
+    };
+
+    xhr.onload = () => {
+      let body: { error?: string } = {};
+      try {
+        body = JSON.parse(xhr.responseText);
+      } catch {
+        /* non-JSON error */
+      }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        finish(`Uploaded ${pendingFiles.length} file${pendingFiles.length > 1 ? "s" : ""}.`, "success");
+      } else if (xhr.status === 401) {
+        clearAdminToken();
+        window.location.reload();
+      } else {
+        finish(body.error || "Upload failed.", "error");
+      }
+    };
+    xhr.onerror = () => finish("Network error during upload.", "error");
+    xhr.send(formData);
   };
 
   const handleDeleteMedia = async (mediaId: string) => {
@@ -111,19 +137,23 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
     const targetIdx = direction === "up" ? idx - 1 : idx + 1;
     if (targetIdx < 0 || targetIdx >= media.length) return;
 
-    const updates = [
-      { id: media[idx].id, sortOrder: targetIdx },
-      { id: media[targetIdx].id, sortOrder: idx },
-    ];
-
+    // Single transactional request — two sequential PATCHes could corrupt
+    // sortOrder if one failed midway.
     try {
-      for (const u of updates) {
-        await adminFetch(apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}/media/${u.id}`), {
-          method: "PATCH",
+      const res = await adminFetch(
+        apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}/media/reorder`),
+        {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sortOrder: u.sortOrder }),
-        });
-      }
+          body: JSON.stringify({
+            order: [
+              { id: media[idx].id, sortOrder: targetIdx },
+              { id: media[targetIdx].id, sortOrder: idx },
+            ],
+          }),
+        }
+      );
+      if (!res.ok) throw new Error();
       onRefresh();
     } catch {
       onToast("error", "Failed to reorder.");
@@ -343,11 +373,27 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
                 </label>
               </div>
 
+              {uploading && (
+                <div className="mb-2">
+                  <div className="flex justify-between text-[9px] uppercase font-mono text-black/40 mb-1">
+                    <span>Uploading</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-brand transition-all duration-200"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setPendingFiles([])}
-                  className="flex-1 px-3 py-2 text-[10px] font-bold uppercase bg-black/5 rounded-lg hover:bg-black/10 transition-colors"
+                  disabled={uploading}
+                  className="flex-1 px-3 py-2 text-[10px] font-bold uppercase bg-black/5 rounded-lg hover:bg-black/10 transition-colors disabled:opacity-50"
                 >
                   Clear
                 </button>
@@ -355,9 +401,9 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
                   type="button"
                   onClick={handleUpload}
                   disabled={uploading}
-                  className="flex-1 px-3 py-2 text-[10px] font-bold uppercase bg-brand text-white rounded-lg hover:bg-[#C40025] transition-colors disabled:opacity-50"
+                  className="flex-1 px-3 py-2 text-[10px] font-bold uppercase bg-brand text-white rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50"
                 >
-                  {uploading ? "Uploading..." : "Upload"}
+                  {uploading ? `${uploadProgress}%` : "Upload"}
                 </button>
               </div>
             </div>

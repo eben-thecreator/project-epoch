@@ -342,9 +342,16 @@ app.get("/api/heritage-assets", async (req, res) => {
 
     const addTextSearch = (param) => {
       if (isNonEmptyString(param)) {
-        const term = param.trim();
-        conditions.push(`search_vector @@ plainto_tsquery('english', $${paramIndex})`);
-        values.push(term);
+        // Prefix-tolerant FTS: "kum" matches "Kumasi". Words are sanitised and
+        // combined with AND so every term must match, each as a prefix.
+        const sanitized = param.trim().replace(/[^\p{L}\p{N}\s]/gu, " ").trim();
+        if (!sanitized) return;
+        const tsQuery = sanitized
+          .split(/\s+/)
+          .map((w) => `${w}:*`)
+          .join(" & ");
+        conditions.push(`search_vector @@ to_tsquery('english', $${paramIndex})`);
+        values.push(tsQuery);
         paramIndex++;
       }
     };
@@ -554,8 +561,14 @@ app.get("/api/heritage-assets/export", async (req, res) => {
     };
     const addTextSearch = (param) => {
       if (isNonEmptyString(param)) {
-        conditions.push(`search_vector @@ plainto_tsquery('english', $${paramIndex})`);
-        values.push(param.trim());
+        const sanitized = param.trim().replace(/[^\p{L}\p{N}\s]/gu, " ").trim();
+        if (!sanitized) return;
+        const tsQuery = sanitized
+          .split(/\s+/)
+          .map((w) => `${w}:*`)
+          .join(" & ");
+        conditions.push(`search_vector @@ to_tsquery('english', $${paramIndex})`);
+        values.push(tsQuery);
         paramIndex++;
       }
     };
@@ -1398,6 +1411,36 @@ app.patch("/api/heritage-assets/:id/media/:mediaId", requireAdmin, async (req, r
   } catch (err) {
     console.error("Failed to update media:", err.message);
     res.status(500).json({ error: "Failed to update media." });
+  }
+});
+
+// POST /api/heritage-assets/:id/media/reorder - Atomically persist a sort order
+app.post("/api/heritage-assets/:id/media/reorder", requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { order } = req.body;
+
+  if (!Array.isArray(order) || order.length === 0 ||
+      !order.every((entry) => entry && isNonEmptyString(entry.id) && Number.isFinite(Number(entry.sortOrder)))) {
+    return res.status(400).json({ error: "Provide an array of { id, sortOrder } entries." });
+  }
+
+  const client = await db.pool.connect();
+  try {
+    await client.query("BEGIN");
+    for (const entry of order) {
+      await client.query(
+        "UPDATE heritage_asset_media SET sort_order = $1, updated_at = NOW() WHERE id = $2 AND asset_id = $3",
+        [Number(entry.sortOrder), entry.id, id]
+      );
+    }
+    await client.query("COMMIT");
+    res.json({ success: true, updated: order.length });
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => { });
+    console.error("Failed to reorder media:", err.message);
+    res.status(500).json({ error: "Failed to reorder media." });
+  } finally {
+    client.release();
   }
 });
 

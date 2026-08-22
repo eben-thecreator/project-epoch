@@ -15,8 +15,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<HeritageAsset[]>([]);
   const [loading, setLoading] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(-1);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
-const abortRef = useRef<AbortController>();
+  const abortRef = useRef<AbortController>();
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -27,14 +28,22 @@ const abortRef = useRef<AbortController>();
   }, [open]);
 
   useEffect(() => {
+    setHighlightIndex(-1);
+  }, [results]);
+
+  const closeAndReset = useCallback(() => {
+    setOpen(false);
+    setQuery("");
+    setResults([]);
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
         wrapperRef.current &&
         !wrapperRef.current.contains(e.target as Node)
       ) {
-        setOpen(false);
-        setQuery("");
-        setResults([]);
+        closeAndReset();
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -42,14 +51,12 @@ const abortRef = useRef<AbortController>();
       document.removeEventListener("mousedown", handleClickOutside);
       clearTimeout(timerRef.current);
     };
-  }, []);
+  }, [closeAndReset]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setOpen(false);
-        setQuery("");
-        setResults([]);
+        closeAndReset();
       } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOpen(true);
@@ -57,7 +64,7 @@ const abortRef = useRef<AbortController>();
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [closeAndReset]);
 
   const search = useCallback((term: string) => {
     clearTimeout(timerRef.current);
@@ -101,9 +108,23 @@ const abortRef = useRef<AbortController>();
 
   const handleSelect = (asset: HeritageAsset) => {
     onSelectAsset(asset);
-    setOpen(false);
-    setQuery("");
-    setResults([]);
+    closeAndReset();
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (results.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightIndex((prev) => (prev + 1) % results.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightIndex(
+        (prev) => (prev <= 0 ? results.length - 1 : prev - 1)
+      );
+    } else if (e.key === "Enter" && highlightIndex >= 0) {
+      e.preventDefault();
+      handleSelect(results[highlightIndex]);
+    }
   };
 
   const bg = darkMode ? "bg-[#0d0d0d]" : "bg-white";
@@ -168,10 +189,15 @@ const abortRef = useRef<AbortController>();
           <input
             ref={inputRef}
             type="text"
+            role="combobox"
+            aria-expanded={open && results.length > 0}
+            aria-controls="map-search-results"
+            aria-autocomplete="list"
             value={query}
             onChange={handleChange}
+            onKeyDown={handleInputKeyDown}
             placeholder="TYPE ASSET NAME OR PLACE..."
-            className={`flex-1 text-[10px] uppercase tracking-wider font-semibold ${text} placeholder:${muted} outline-none bg-transparent`}
+            className={`flex-1 text-[10px] uppercase tracking-wider font-semibold ${text} ${muted} placeholder:opacity-70 outline-none bg-transparent`}
           />
           {loading ? (
             <div
@@ -183,7 +209,8 @@ const abortRef = useRef<AbortController>();
                 setQuery("");
                 setResults([]);
               }}
-              className={`text-[10px] ${muted} hover:${text}`}
+              aria-label="Clear search"
+              className={`text-[10px] ${muted} hover:opacity-100`}
             >
               ✕
             </button>
@@ -195,14 +222,25 @@ const abortRef = useRef<AbortController>();
 
       {open && results.length > 0 && (
         <div
+          id="map-search-results"
+          role="listbox"
           className={`absolute top-full left-0 right-0 mt-1 ${bg} border ${border} shadow-lg max-h-[300px] overflow-y-auto z-[1001]`}
         >
-          {results.map((asset) => (
-            <button
-              key={asset.id}
-              onClick={() => handleSelect(asset)}
-              className={`w-full text-left px-3 py-2 ${hoverBg} border-b ${divider} last:border-0 transition-colors flex items-center justify-between`}
-            >
+          {results.map((asset, index) => {
+            const isHighlighted = index === highlightIndex;
+            return (
+              <button
+                key={asset.id}
+                role="option"
+                aria-selected={isHighlighted}
+                onMouseEnter={() => setHighlightIndex(index)}
+                onClick={() => handleSelect(asset)}
+                className={`w-full text-left px-3 py-2 ${
+                  isHighlighted
+                    ? darkMode ? "bg-white/[0.07]" : "bg-black/[0.05]"
+                    : hoverBg
+                } border-b ${divider} last:border-0 transition-colors flex items-center justify-between`}
+              >
               <div className="min-w-0 flex-1 pr-2">
                 <div
                   className={`text-[10px] uppercase font-bold ${text} truncate`}
@@ -223,11 +261,12 @@ const abortRef = useRef<AbortController>();
                     .join(" \u00B7 ")}
                 </div>
               </div>
-              <span className={`text-[9px] font-mono uppercase ${darkMode ? "text-[#FF6B6B]" : "text-brand"}`}>
-                VIEW ↗
-              </span>
-            </button>
-          ))}
+                <span className={`text-[9px] font-mono uppercase ${darkMode ? "text-[#FF6B6B]" : "text-brand"}`}>
+                  VIEW ↗
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import type { HeritageAsset } from "./HeritageLayer";
 import { mediaUrl } from "../../../lib/api";
 import { categoryColor } from "../../../lib/categories";
+import { useFocusTrap } from "../../../lib/useFocusTrap";
 
 interface SidePanelProps {
   asset: HeritageAsset | null;
@@ -31,6 +32,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
 }) => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const navigate = useNavigate();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(panelRef, !!asset, onClose);
 
   // Reset carousel position when switching assets
   useEffect(() => {
@@ -131,6 +134,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
     <AnimatePresence>
       {asset && (
         <motion.div
+          ref={panelRef}
           initial={{ x: "100%" }}
           animate={{ x: 0 }}
           exit={{ x: "100%" }}

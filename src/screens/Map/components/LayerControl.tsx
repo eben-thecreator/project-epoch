@@ -120,7 +120,9 @@ export const LayerControl: React.FC<LayerControlProps> = ({
   darkMode = false,
   dynamicOptions = {},
 }) => {
-  const [layersOpen, setLayersOpen] = useState(true);
+  const [layersOpen, setLayersOpen] = useState(
+    () => typeof window === "undefined" || window.innerWidth >= 640
+  );
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [expandedFilter, setExpandedFilter] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
@@ -168,7 +170,7 @@ export const LayerControl: React.FC<LayerControlProps> = ({
   return (
     <div
       className={`${bg} border ${border} shadow-md flex flex-col w-full transition-all`}
-      style={{ width: 240, maxHeight: "calc(100vh - 220px)" }}
+      style={{ width: "100%", maxHeight: "calc(100vh - 220px)" }}
     >
       {/* Layers Accordion Header */}
       <div className={`flex-shrink-0 border-b ${divider}`}>
