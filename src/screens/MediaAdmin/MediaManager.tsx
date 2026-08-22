@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { apiUrl, mediaUrl } from "../../lib/api";
+import { adminFetch } from "../../lib/adminAuth";
 import { ModelViewer } from "../../components/ModelViewer";
 import type { HeritageAsset, MediaItem } from "./types";
 
@@ -49,7 +50,7 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
       formData.append("caption", caption);
       formData.append("markFirstAsPrimary", String(markFirstPrimary));
 
-      const res = await fetch(apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}/media/upload`), {
+      const res = await adminFetch(apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}/media/upload`), {
         method: "POST",
         body: formData,
       });
@@ -73,7 +74,7 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
   const handleDeleteMedia = async (mediaId: string) => {
     if (!asset) return;
     try {
-      const res = await fetch(apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}/media/${mediaId}`), {
+      const res = await adminFetch(apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}/media/${mediaId}`), {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Delete failed.");
@@ -89,7 +90,7 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
   const handleSetPrimary = async (mediaId: string) => {
     if (!asset) return;
     try {
-      const res = await fetch(apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}/media/${mediaId}`), {
+      const res = await adminFetch(apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}/media/${mediaId}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isPrimary: true }),
@@ -117,7 +118,7 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
 
     try {
       for (const u of updates) {
-        await fetch(apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}/media/${u.id}`), {
+        await adminFetch(apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}/media/${u.id}`), {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sortOrder: u.sortOrder }),

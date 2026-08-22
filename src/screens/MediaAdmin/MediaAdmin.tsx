@@ -1,15 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiUrl } from "../../lib/api";
+import {
+  adminFetch,
+  clearAdminToken,
+  isAdminAuthenticated,
+} from "../../lib/adminAuth";
 import { AdminHeader } from "./AdminHeader";
 import { AdminSidebar } from "./AdminSidebar";
 import { StatsDashboard } from "./StatsDashboard";
 import { AssetTable } from "./AssetTable";
 import { AssetFormModal } from "./AssetFormModal";
 import { MediaManager } from "./MediaManager";
+import { AdminLogin } from "./AdminLogin";
 import { ToastContainer } from "./Toast";
 import type { AdminTab, HeritageAsset, Toast } from "./types";
 
 export const MediaAdmin = (): JSX.Element => {
+  const [authenticated, setAuthenticated] = useState(isAdminAuthenticated());
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [assets, setAssets] = useState<HeritageAsset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,10 +38,14 @@ export const MediaAdmin = (): JSX.Element => {
   const loadAssets = useCallback(async () => {
     try {
       if (!loadedRef.current) setLoading(true);
-      const res = await fetch(apiUrl("/api/heritage-assets"));
+      const res = await adminFetch(apiUrl("/api/heritage-assets"));
+      if (res.status === 401) {
+        setAuthenticated(false);
+        return;
+      }
       if (!res.ok) throw new Error("Failed to load assets.");
       const data = await res.json();
-      setAssets(data);
+      setAssets(Array.isArray(data) ? data : []);
       loadedRef.current = true;
     } catch {
       addToast("error", "Failed to load heritage assets.");
@@ -44,8 +55,8 @@ export const MediaAdmin = (): JSX.Element => {
   }, [addToast]);
 
   useEffect(() => {
-    loadAssets();
-  }, [loadAssets]);
+    if (authenticated) loadAssets();
+  }, [authenticated, loadAssets]);
 
   const selectedAsset = assets.find((a) => a.id === selectedAssetId) || null;
 
@@ -56,7 +67,12 @@ export const MediaAdmin = (): JSX.Element => {
 
   const handleDeleteAsset = async (id: string) => {
     try {
-      const res = await fetch(apiUrl(`/api/heritage-assets/${encodeURIComponent(id)}`), { method: "DELETE" });
+      const res = await adminFetch(apiUrl(`/api/heritage-assets/${encodeURIComponent(id)}`), { method: "DELETE" });
+      if (res.status === 401) {
+        clearAdminToken();
+        setAuthenticated(false);
+        return;
+      }
       if (!res.ok) throw new Error("Delete failed.");
       addToast("success", "Asset deleted.");
       if (selectedAssetId === id) setSelectedAssetId(null);
@@ -68,11 +84,16 @@ export const MediaAdmin = (): JSX.Element => {
 
   const handleBulkDelete = async (ids: string[]) => {
     try {
-      const res = await fetch(apiUrl("/api/heritage-assets/bulk-delete"), {
+      const res = await adminFetch(apiUrl("/api/heritage-assets/bulk-delete"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids }),
       });
+      if (res.status === 401) {
+        clearAdminToken();
+        setAuthenticated(false);
+        return;
+      }
       if (!res.ok) throw new Error("Bulk delete failed.");
       const data = await res.json();
       addToast("success", `${data.deleted} asset${data.deleted > 1 ? "s" : ""} deleted.`);
@@ -82,6 +103,10 @@ export const MediaAdmin = (): JSX.Element => {
       addToast("error", err instanceof Error ? err.message : "Bulk delete failed.");
     }
   };
+
+  if (!authenticated) {
+    return <AdminLogin onAuthenticated={() => setAuthenticated(true)} />;
+  }
 
   const breadcrumb = activeTab === "dashboard" ? "Dashboard" : activeTab === "assets" ? "Assets" : "Media";
 

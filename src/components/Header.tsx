@@ -19,7 +19,6 @@ export const Header = (): JSX.Element => {
     { label: "Blog", to: "/blog" },
     { label: "About", to: "/about" },
     { label: "Contact", to: "/contact" },
-    { label: "Admin Panel", to: "/admin/media" },
   ];
 
   const isActive = (path: string) => {

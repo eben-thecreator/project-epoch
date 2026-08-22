@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 import multer from "multer";
 import { fileURLToPath } from "url";
 
@@ -21,10 +22,80 @@ if (!fs.existsSync(uploadRoot)) {
   fs.mkdirSync(uploadRoot, { recursive: true });
 }
 
+// ---------------------------------------------------------------------------
+// Admin authentication (shared-secret token)
+// ---------------------------------------------------------------------------
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+if (!ADMIN_PASSWORD || ADMIN_PASSWORD.length < 8) {
+  console.warn(
+    "WARNING: ADMIN_PASSWORD is not set (or shorter than 8 chars). " +
+      "All admin/write endpoints will REJECT every request until it is configured."
+  );
+}
+
+const timingSafeEqual = (a, b) => {
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  if (bufA.length !== bufB.length) {
+    // Still perform a comparison to keep timing uniform.
+    crypto.timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
+};
+
+const issueAdminToken = () =>
+  crypto.createHmac("sha256", String(ADMIN_PASSWORD)).update("project-epoch-admin-v1").digest("hex");
+
+const isValidAdminToken = (token) => {
+  if (!ADMIN_PASSWORD || !isNonEmptyString(token)) return false;
+  return timingSafeEqual(token, issueAdminToken());
+};
+
+/** Gates every mutating route. Clients send: Authorization: Bearer <token> */
+const requireAdmin = (req, res, next) => {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+  if (!isValidAdminToken(token)) {
+    return res.status(401).json({ error: "Unauthorized. Admin authentication required." });
+  }
+  next();
+};
+
+// ---------------------------------------------------------------------------
+// Upload path safety
+// ---------------------------------------------------------------------------
+
+/** Resolves a stored /uploads/... path inside uploadRoot; returns null on escape attempts. */
+const resolveUploadPath = (storedPath) => {
+  if (!isNonEmptyString(storedPath)) return null;
+  const relative = storedPath.replace(/^\/?uploads\//, "");
+  const resolved = path.resolve(uploadRoot, relative);
+  if (resolved !== uploadRoot && !resolved.startsWith(uploadRoot + path.sep)) {
+    return null;
+  }
+  return resolved;
+};
+
+const ASSET_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
+
+
 // Enable CORS and parsing of JSON payloads
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 app.use("/uploads", express.static(uploadRoot));
+
+app.post("/api/admin/login", (req, res) => {
+  const { password } = req.body || {};
+  if (!ADMIN_PASSWORD) {
+    return res.status(503).json({ error: "Admin access is not configured on this server." });
+  }
+  if (!isNonEmptyString(password) || !timingSafeEqual(password, ADMIN_PASSWORD)) {
+    return res.status(401).json({ error: "Invalid credentials." });
+  }
+  res.json({ success: true, token: issueAdminToken() });
+});
 
 const createMediaTypeFromMime = (mimeType = "") => {
   if (mimeType.startsWith("image/")) return "image";
@@ -48,7 +119,13 @@ const buildMediaUrl = (relativePath) => `/uploads/${relativePath.replace(/\\/g, 
 const mediaStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const assetId = req.params.id;
-    const targetDir = path.join(uploadRoot, "media", assetId);
+    if (!ASSET_ID_PATTERN.test(String(assetId))) {
+      return cb(new Error("Invalid asset id."));
+    }
+    const targetDir = path.join(uploadRoot, "media", String(assetId));
+    if (!targetDir.startsWith(uploadRoot + path.sep)) {
+      return cb(new Error("Invalid upload destination."));
+    }
     fs.mkdirSync(targetDir, { recursive: true });
     cb(null, targetDir);
   },
@@ -70,10 +147,27 @@ const isModelFile = (filename = "") => {
   return ext === ".glb" || ext === ".gltf";
 };
 
+/** Whitelist of accepted upload types (heritage media only). */
+const ALLOWED_UPLOAD_EXTENSIONS = new Set([
+  ".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif",
+  ".mp4", ".webm",
+  ".mp3", ".wav", ".ogg", ".m4a",
+  ".glb", ".gltf",
+  ".pdf",
+]);
+
 const uploadMediaFiles = multer({
   storage: mediaStorage,
   limits: {
     fileSize: MAX_FILE_SIZE_MODEL,
+    files: 20,
+  },
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname || "").toLowerCase();
+    if (!ALLOWED_UPLOAD_EXTENSIONS.has(ext)) {
+      return cb(new multer.MulterError("LIMIT_UNACCEPTABLE_TYPE", file));
+    }
+    cb(null, true);
   },
 });
 
@@ -122,9 +216,14 @@ const normalizeMediaItem = (item, fallbackSortOrder = 0) => {
     throw new Error("Each media item must include a filePath, path, url, or src value.");
   }
 
+  const normalizedPath = filePath.trim();
+  if (!/^\/uploads\/[A-Za-z0-9._\-/]+$/.test(normalizedPath) || normalizedPath.includes("..")) {
+    throw new Error("Each media item filePath must reference an uploaded file under /uploads/."); 
+  }
+
   return {
     mediaType: isNonEmptyString(item.mediaType) ? item.mediaType.trim() : isNonEmptyString(item.type) ? item.type.trim() : "image",
-    filePath: filePath.trim(),
+    filePath: normalizedPath,
     fileName: isNonEmptyString(item.fileName) ? item.fileName.trim() : isNonEmptyString(item.name) ? item.name.trim() : null,
     caption: isNonEmptyString(item.caption) ? item.caption.trim() : null,
     altText: isNonEmptyString(item.altText) ? item.altText.trim() : null,
@@ -210,7 +309,7 @@ app.get("/api/status", async (req, res) => {
   } catch (err) {
     console.error("API status check failed:", err.message);
     res.status(500).json({
-      status: "online",
+      status: "error",
       database: "disconnected",
       error: "Failed to check API status.",
     });
@@ -229,14 +328,6 @@ app.get("/api/heritage-assets", async (req, res) => {
     if (collectionFilter) {
       conditions.push(collectionFilter);
     }
-
-    const addTextFilter = (field, param) => {
-      if (isNonEmptyString(param)) {
-        conditions.push(`LOWER(ha.${field}) = LOWER($${paramIndex})`);
-        values.push(param.trim());
-        paramIndex++;
-      }
-    };
 
     const addArrayFilter = (field, param) => {
       if (isNonEmptyString(param)) {
@@ -269,7 +360,6 @@ app.get("/api/heritage-assets", async (req, res) => {
     addArrayFilter("region", req.query.region);
     addArrayFilter("district", req.query.district);
     addArrayFilter("conservation_status", req.query.conservation_status);
-    addTextFilter("accessibility", req.query.accessibility);
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
@@ -606,7 +696,7 @@ app.get("/api/monuments", async (req, res) => {
 });
 
 // POST /api/heritage-assets - Add a new heritage asset (e.g. from the web interface)
-app.post("/api/heritage-assets", async (req, res) => {
+app.post("/api/heritage-assets", requireAdmin, async (req, res) => {
   const {
     name, alternative_name, description, asset_type, asset_category, cultural_group,
     geometry, location_accuracy, elevation_m, gps_accuracy_m, region, district, community,
@@ -745,7 +835,7 @@ app.get("/api/heritage-assets/:id/media", async (req, res) => {
 });
 
 // POST /api/heritage-assets/:id/media - Add one or more media records to an existing asset
-app.post("/api/heritage-assets/:id/media", async (req, res) => {
+app.post("/api/heritage-assets/:id/media", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const mediaItems = Array.isArray(req.body?.mediaItems)
@@ -827,7 +917,7 @@ app.post("/api/heritage-assets/:id/media", async (req, res) => {
 });
 
 // POST /api/heritage-assets/:id/media/upload - Upload files and create media records
-app.post("/api/heritage-assets/:id/media/upload", uploadMediaFiles.array("files", 20), enforceFileSizeLimits, async (req, res) => {
+app.post("/api/heritage-assets/:id/media/upload", requireAdmin, uploadMediaFiles.array("files", 20), enforceFileSizeLimits, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -925,7 +1015,7 @@ app.post("/api/heritage-assets/:id/media/upload", uploadMediaFiles.array("files"
 });
 
 // PUT /api/heritage-assets/:id - Update an existing heritage asset
-app.put("/api/heritage-assets/:id", async (req, res) => {
+app.put("/api/heritage-assets/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   const {
     name, alternative_name, description, asset_type, asset_category, cultural_group,
@@ -1003,7 +1093,7 @@ app.put("/api/heritage-assets/:id", async (req, res) => {
 });
 
 // DELETE /api/heritage-assets/:id - Soft-delete a heritage asset
-app.delete("/api/heritage-assets/:id", async (req, res) => {
+app.delete("/api/heritage-assets/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -1028,7 +1118,7 @@ app.delete("/api/heritage-assets/:id", async (req, res) => {
 });
 
 // DELETE /api/heritage-assets/:id/media/:mediaId - Delete a media record and its file
-app.delete("/api/heritage-assets/:id/media/:mediaId", async (req, res) => {
+app.delete("/api/heritage-assets/:id/media/:mediaId", requireAdmin, async (req, res) => {
   const { id, mediaId } = req.params;
 
   try {
@@ -1051,9 +1141,10 @@ app.delete("/api/heritage-assets/:id/media/:mediaId", async (req, res) => {
 
     await db.query("DELETE FROM heritage_asset_media WHERE id = $1", [mediaId]);
 
-    const filePath = existing.rows[0].file_path;
-    const fullPath = path.join(uploadRoot, filePath.replace(/^\/uploads\//, ""));
-    await fs.promises.unlink(fullPath).catch(() => { });
+    const fullPath = resolveUploadPath(existing.rows[0].file_path);
+    if (fullPath) {
+      await fs.promises.unlink(fullPath).catch(() => { });
+    }
 
     res.json({ success: true, message: "Media deleted." });
   } catch (err) {
@@ -1063,7 +1154,7 @@ app.delete("/api/heritage-assets/:id/media/:mediaId", async (req, res) => {
 });
 
 // PATCH /api/heritage-assets/:id/media/:mediaId - Update media record (caption, isPrimary, sortOrder)
-app.patch("/api/heritage-assets/:id/media/:mediaId", async (req, res) => {
+app.patch("/api/heritage-assets/:id/media/:mediaId", requireAdmin, async (req, res) => {
   const { id, mediaId } = req.params;
   const { caption, isPrimary, sortOrder } = req.body;
 
@@ -1138,7 +1229,7 @@ app.patch("/api/heritage-assets/:id/media/:mediaId", async (req, res) => {
 });
 
 // POST /api/heritage-assets/bulk-delete - Soft-delete multiple heritage assets
-app.post("/api/heritage-assets/bulk-delete", async (req, res) => {
+app.post("/api/heritage-assets/bulk-delete", requireAdmin, async (req, res) => {
   const { ids } = req.body;
 
   if (!Array.isArray(ids) || ids.length === 0) {
@@ -1159,7 +1250,7 @@ app.post("/api/heritage-assets/bulk-delete", async (req, res) => {
 });
 
 // POST /api/heritage-assets/:id/restore - Restore a soft-deleted heritage asset
-app.post("/api/heritage-assets/:id/restore", async (req, res) => {
+app.post("/api/heritage-assets/:id/restore", requireAdmin, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -1180,7 +1271,7 @@ app.post("/api/heritage-assets/:id/restore", async (req, res) => {
 });
 
 // DELETE /api/heritage-assets/:id/permanent - Permanently delete a heritage asset (admin only)
-app.delete("/api/heritage-assets/:id/permanent", async (req, res) => {
+app.delete("/api/heritage-assets/:id/permanent", requireAdmin, async (req, res) => {
   const { id } = req.params;
   const client = await db.pool.connect();
 
@@ -1204,8 +1295,10 @@ app.delete("/api/heritage-assets/:id/permanent", async (req, res) => {
     await client.query("COMMIT");
 
     for (const row of mediaFiles.rows) {
-      const fullPath = path.join(uploadRoot, row.file_path.replace(/^\/uploads\//, ""));
-      await fs.promises.unlink(fullPath).catch(() => { });
+      const fullPath = resolveUploadPath(row.file_path);
+      if (fullPath) {
+        await fs.promises.unlink(fullPath).catch(() => { });
+      }
     }
 
     res.json({ success: true, message: "Heritage asset permanently deleted." });
@@ -1225,89 +1318,22 @@ app.use((req, res) => {
 
 // Global error-handling middleware
 app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    const messages = {
+      LIMIT_FILE_SIZE: "File is too large. 3D models up to 500 MB, other files up to 50 MB.",
+      LIMIT_UNACCEPTABLE_TYPE: "File type not allowed.",
+      LIMIT_FILE_COUNT: "Too many files. A maximum of 20 files can be uploaded at once.",
+    };
+    return res.status(400).json({ error: messages[err.code] || `Upload error: ${err.code}` });
+  }
   console.error("Unhandled error:", err.message);
   res.status(500).json({ error: "Internal server error." });
 });
 
 // Start listening for requests
-const startServer = async () => {
-  // Run startup migrations before accepting traffic
-  try {
-    await db.query(`
-      DO $$ BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM information_schema.columns
-          WHERE table_name = 'heritage_assets' AND column_name = 'deleted_at'
-        ) THEN
-          ALTER TABLE heritage_assets ADD COLUMN deleted_at timestamp DEFAULT NULL;
-          CREATE INDEX IF NOT EXISTS idx_ha_deleted_at ON heritage_assets (deleted_at) WHERE deleted_at IS NOT NULL;
-          CREATE INDEX IF NOT EXISTS idx_ha_active ON heritage_assets (id) WHERE deleted_at IS NULL;
-          console.log('added deleted_at column');
-        END IF;
-      END $$;
-    `);
-    console.log("✓ deleted_at column present.");
-  } catch (err) {
-    console.warn("⚠ deleted_at migration failed:", err.message);
-  }
-
-  try {
-    await db.query(`
-      DO $$ BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM information_schema.columns
-          WHERE table_name = 'heritage_assets' AND column_name = 'search_vector'
-        ) THEN
-          ALTER TABLE heritage_assets ADD COLUMN search_vector tsvector
-          GENERATED ALWAYS AS (
-            setweight(to_tsvector('english', coalesce(name, '')), 'A') ||
-            setweight(to_tsvector('english', coalesce(alternative_name, '')), 'A') ||
-            setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
-            setweight(to_tsvector('english', coalesce(region, '')), 'C') ||
-            setweight(to_tsvector('english', coalesce(district, '')), 'C') ||
-            setweight(to_tsvector('english', coalesce(community, '')), 'C') ||
-            setweight(to_tsvector('english', coalesce(asset_category, '')), 'C') ||
-            setweight(to_tsvector('english', coalesce(cultural_group, '')), 'D')
-          ) STORED;
-          CREATE INDEX IF NOT EXISTS idx_ha_search ON heritage_assets USING GIN (search_vector);
-          console.log('added search_vector column');
-        END IF;
-      END $$;
-    `);
-    console.log("✓ search_vector column present.");
-  } catch (err) {
-    console.warn("⚠ search_vector migration failed:", err.message);
-  }
-
-  try {
-    const enumCols = await db.query(`
-      SELECT column_name, udt_name
-      FROM information_schema.columns
-      WHERE table_name = 'heritage_assets'
-        AND udt_name IN ('enum_asset_type', 'enum_asset_category', 'enum_condition',
-                          'enum_conservation_status', 'enum_data_source',
-                          'enum_location_accuracy', 'enum_verification_status')
-    `);
-    for (const row of enumCols.rows) {
-      await db.query(`ALTER TABLE heritage_assets ALTER COLUMN ${row.column_name} TYPE text`);
-      console.log(`✓ Converted ${row.column_name} from ENUM to TEXT.`);
-    }
-  } catch (err) {
-    // no-op if columns already converted or don't exist
-  }
-
-  // Drop unused QGIS views, their triggers, and the orphaned trigger function
-  try {
-    await db.query(`DROP TRIGGER IF EXISTS tg_ha_lines_manage ON ha_lines`);
-    await db.query(`DROP TRIGGER IF EXISTS tg_ha_points_manage ON ha_points`);
-    await db.query(`DROP TRIGGER IF EXISTS tg_ha_polygons_manage ON ha_polygons`);
-    await db.query(`DROP VIEW IF EXISTS ha_lines`);
-    await db.query(`DROP VIEW IF EXISTS ha_points`);
-    await db.query(`DROP VIEW IF EXISTS ha_polygons`);
-    await db.query(`DROP FUNCTION IF EXISTS tg_heritage_assets_updatable()`);
-    console.log("✓ Dropped unused views/triggers/function.");
-  } catch (err) {
-    // no-op if already cleaned up
+const startServer = () => {
+  if (!ADMIN_PASSWORD) {
+    console.warn("⚠ Set ADMIN_PASSWORD in .env to enable admin write access.");
   }
 
   app.listen(PORT, () => {

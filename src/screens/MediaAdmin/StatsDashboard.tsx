@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiUrl } from "../../lib/api";
+import { adminFetch } from "../../lib/adminAuth";
 import type { AssetSummary } from "./types";
 
 export const StatsDashboard = (): JSX.Element => {
@@ -9,7 +10,7 @@ export const StatsDashboard = (): JSX.Element => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(apiUrl("/api/heritage-assets/summary"));
+        const res = await adminFetch(apiUrl("/api/heritage-assets/summary"));
         if (res.ok) setSummary(await res.json());
       } catch {
         // silent

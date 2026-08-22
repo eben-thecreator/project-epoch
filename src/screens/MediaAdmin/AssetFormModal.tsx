@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiUrl } from "../../lib/api";
+import { adminFetch } from "../../lib/adminAuth";
 import type { HeritageAsset } from "./types";
 
 interface AssetFormModalProps {
@@ -89,7 +90,7 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
       const url = isEditing ? apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}`) : apiUrl("/api/heritage-assets");
       const method = isEditing ? "PUT" : "POST";
 
-      const res = await fetch(url, {
+      const res = await adminFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
