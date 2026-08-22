@@ -1,16 +1,18 @@
 {
+  "name": "project-epoch",
   "version": "1.0.0",
-  "source": "./index.html",
   "type": "module",
-  "name": "anima-project",
-  "description": "A modern React web application for interactive 3D experiences.",
+  "description": "SCHIS - A PostGIS-powered spatial cultural heritage information system for Ghana's museums and monuments.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server/index.js",
     "server": "nodemon server/index.js",
     "migrate": "node-pg-migrate up",
     "migrate:down": "node-pg-migrate down",
-    "migrate:create": "node-pg-migrate create"
+    "migrate:create": "node-pg-migrate create",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit"
   },
   "dependencies": {
     "@react-three/drei": "^9.114.3",
@@ -22,7 +24,7 @@
     "framer-motion": "^12.42.2",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
-    "multer": "^1.4.5-lts.1",
+    "multer": "^2.0.2",
     "pg": "^8.22.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -31,8 +33,7 @@
     "sanitize-html": "^2.17.6",
     "tailwind-merge": "2.5.4",
     "tailwindcss-animate": "1.0.7",
-    "three": "^0.169.0",
-    "typescript": "^7.0.2"
+    "three": "^0.169.0"
   },
   "devDependencies": {
     "@types/leaflet": "^1.9.21",
@@ -45,6 +46,7 @@
     "node-pg-migrate": "^9.0.0",
     "nodemon": "^3.1.14",
     "tailwindcss": "3.4.16",
+    "typescript": "^7.0.2",
     "vite": "^6.4.1"
   }
 }
