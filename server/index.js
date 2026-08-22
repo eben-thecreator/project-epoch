@@ -361,6 +361,20 @@ app.get("/api/heritage-assets", async (req, res) => {
     addArrayFilter("district", req.query.district);
     addArrayFilter("conservation_status", req.query.conservation_status);
 
+    // Temporal range filter: an asset matches when its period overlaps [start, end].
+    const periodStart = parseInt(req.query.period_start, 10);
+    const periodEnd = parseInt(req.query.period_end, 10);
+    if (Number.isFinite(periodStart)) {
+      conditions.push(`COALESCE(ha.period_end, ha.period_start) >= $${paramIndex}`);
+      values.push(periodStart);
+      paramIndex++;
+    }
+    if (Number.isFinite(periodEnd)) {
+      conditions.push(`COALESCE(ha.period_start, ha.period_end) <= $${paramIndex}`);
+      values.push(periodEnd);
+      paramIndex++;
+    }
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
     const hasPagination = req.query.page !== undefined || req.query.limit !== undefined;

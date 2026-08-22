@@ -277,11 +277,10 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
     Object.entries(filters).forEach(([key, val]) => {
       if (val) params.set(key, val);
     });
-    if (yearRange[0] !== 1100)
-      params.set("period_start", String(yearRange[0]));
-    if (yearRange[1] !== 2026)
-      params.set("period_end", String(yearRange[1]));
     const qs = params.toString();
+    // Temporal (yearRange) slicing is intentionally client-side: the catalogue
+    // is fetched once and sliced in-browser so the time slider can animate
+    // without network churn.
     fetch(apiUrl(`/api/heritage-assets${qs ? `?${qs}` : ""}`))
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -296,7 +295,7 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
         setError(true);
       })
       .finally(() => setLoading(false));
-  }, [visible, filters, yearRange]);
+  }, [visible, filters]);
 
   const filteredAssets = useMemo(() => {
     return assets.filter((a) => {

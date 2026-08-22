@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { Header } from "../../components/Header";
-import { MapView, Basemap } from "./components/MapView";
+import { MapView, Basemap, FlyToTarget } from "./components/MapView";
 import { HeritageLayer, HeritageAsset } from "./components/HeritageLayer";
 import { ReferenceLayers } from "./components/ReferenceLayers";
 import { LayerControl } from "./components/LayerControl";
@@ -8,6 +8,8 @@ import { SearchBar } from "./components/SearchBar";
 import { SidePanel } from "./components/SidePanel";
 import { Legend } from "./components/Legend";
 import { CompassControl } from "./components/CompassControl";
+import { TimeSlider } from "./components/TimeSlider";
+import { geometryCenter, geometryBounds } from "../../lib/geometry";
 import { apiUrl } from "../../lib/api";
 import "./components/map.css";
 
@@ -55,7 +57,7 @@ export const MapScreen: React.FC = () => {
   }, []);
 
   const [periodRange, setPeriodRange] = useState({ min: 1100, max: 2026 });
-  const [flyTo, setFlyTo] = useState<{ center: [number, number]; zoom: number } | null>(null);
+  const [flyTo, setFlyTo] = useState<FlyToTarget | null>(null);
   const [assetCount, setAssetCount] = useState(0);
 
   useEffect(() => {
@@ -81,66 +83,13 @@ export const MapScreen: React.FC = () => {
 
   const handleSelectAsset = useCallback((asset: HeritageAsset) => {
     setSelectedAsset(asset);
-    if (asset.geometry?.coordinates) {
-      const coords = asset.geometry.coordinates;
-      if (asset.geometry.type === "Point" && Array.isArray(coords) && coords.length >= 2) {
-        const lat = coords[1] as number;
-        const lng = coords[0] as number;
-        if (!isNaN(lat) && !isNaN(lng)) {
-          setFlyTo({
-            center: [lat, lng],
-            zoom: 14,
-          });
-        }
-      } else if (
-        asset.geometry.type === "Polygon" &&
-        Array.isArray(coords[0]) &&
-        coords[0].length > 0
-      ) {
-        const ring = coords[0] as number[][];
-        let lngSum = 0,
-          latSum = 0,
-          validCount = 0;
-        ring.forEach((c) => {
-          if (Array.isArray(c) && c.length >= 2) {
-            lngSum += c[0];
-            latSum += c[1];
-            validCount++;
-          }
-        });
-        if (validCount > 0) {
-          setFlyTo({
-            center: [latSum / validCount, lngSum / validCount],
-            zoom: 13,
-          });
-        }
-      } else if (
-        asset.geometry.type === "MultiPolygon" &&
-        Array.isArray(coords[0]) &&
-        Array.isArray(coords[0][0])
-      ) {
-        const firstPoly = coords[0] as number[][][];
-        const ring = firstPoly[0];
-        let lngSum = 0,
-          latSum = 0,
-          validCount = 0;
-        ring.forEach((c) => {
-          if (Array.isArray(c) && c.length >= 2) {
-            lngSum += c[0];
-            latSum += c[1];
-            validCount++;
-          }
-        });
-        if (validCount > 0) {
-          setFlyTo({
-            center: [latSum / validCount, lngSum / validCount],
-            zoom: 13,
-          });
-        }
-      }
-    }
+    const bounds = geometryBounds(asset.geometry);
+    setFlyTo({
+      center: geometryCenter(asset.geometry) ?? [7.9465, -1.0232],
+      zoom: 14,
+      bounds,
+    });
   }, []);
-
   const handleClosePanel = useCallback(() => {
     setSelectedAsset(null);
   }, []);
@@ -182,56 +131,19 @@ export const MapScreen: React.FC = () => {
   const handleResetMap = useCallback(() => {
     setFilters(defaultFilters);
     setYearRange([periodRange.min, periodRange.max]);
-    setActiveRefLayers(["regions"]);
+    setActiveRefLayers(["regions", "protected_areas"]);
     setHeritageVisible(true);
     setSelectedAsset(null);
     setFlyTo({ center: [7.9465, -1.0232], zoom: 7 });
   }, [periodRange]);
 
   const handleZoomToAsset = useCallback((asset: HeritageAsset) => {
-    if (asset.geometry?.coordinates) {
-      const coords = asset.geometry.coordinates;
-      if (asset.geometry.type === "Point" && Array.isArray(coords) && coords.length >= 2) {
-        const lat = coords[1] as number;
-        const lng = coords[0] as number;
-        if (!isNaN(lat) && !isNaN(lng)) {
-          setFlyTo({
-            center: [lat, lng],
-            zoom: 14,
-          });
-        }
-      } else if (
-        (asset.geometry.type === "Polygon" || asset.geometry.type === "MultiPolygon") &&
-        Array.isArray(coords[0])
-      ) {
-        const firstRing =
-          asset.geometry.type === "MultiPolygon"
-            ? ((coords as unknown as number[][][][])[0]?.[0] ?? [])
-            : ((coords as unknown as number[][][])[0] ?? []);
-        if (firstRing.length > 0) {
-          let lngSum = 0,
-            latSum = 0,
-            validCount = 0;
-          for (const c of firstRing) {
-            if (
-              Array.isArray(c) &&
-              typeof c[0] === "number" &&
-              typeof c[1] === "number"
-            ) {
-              lngSum += c[0];
-              latSum += c[1];
-              validCount++;
-            }
-          }
-          if (validCount > 0) {
-            setFlyTo({
-              center: [latSum / validCount, lngSum / validCount],
-              zoom: 14,
-            });
-          }
-        }
-      }
-    }
+    const bounds = geometryBounds(asset.geometry);
+    setFlyTo({
+      center: geometryCenter(asset.geometry) ?? [7.9465, -1.0232],
+      zoom: 14,
+      bounds,
+    });
   }, []);
 
   const hasActiveFilters = Object.values(filters).some(Boolean);
@@ -314,6 +226,15 @@ export const MapScreen: React.FC = () => {
         <Legend
           visibleCategories={visibleCategories}
           categoryCounts={categoryCounts}
+          darkMode={darkMode}
+        />
+
+        {/* ZONE 5b: BOTTOM-CENTER TEMPORAL CONTROL */}
+        <TimeSlider
+          yearRange={yearRange}
+          onChange={setYearRange}
+          dataMin={periodRange.min}
+          dataMax={periodRange.max}
           darkMode={darkMode}
         />
 

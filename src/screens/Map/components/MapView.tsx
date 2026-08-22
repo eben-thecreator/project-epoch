@@ -10,13 +10,19 @@ import { CoordinateDisplay } from "./CoordinateDisplay";
 
 export type Basemap = "light" | "dark" | "satellite";
 
+export interface FlyToTarget {
+  center: [number, number];
+  zoom: number;
+  bounds?: [[number, number], [number, number]] | null;
+}
+
 interface MapViewProps {
   children?: React.ReactNode;
   center?: [number, number];
   zoom?: number;
   darkMode?: boolean;
   basemap?: Basemap;
-  flyTo?: { center: [number, number]; zoom: number } | null;
+  flyTo?: FlyToTarget | null;
 }
 
 function MapController() {
@@ -30,15 +36,28 @@ function MapController() {
   return null;
 }
 
-function MapFlyTo({
-  target,
-}: {
-  target: { center: [number, number]; zoom: number } | null;
-}) {
+function MapFlyTo({ target }: { target: FlyToTarget | null }) {
   const map = useMap();
   React.useEffect(() => {
+    if (!target) return;
+    // Prefer fitting the true extent of the geometry when available
+    if (target.bounds) {
+      const [[s, w], [n, e]] = target.bounds;
+      if (
+        Number.isFinite(s) && Number.isFinite(w) &&
+        Number.isFinite(n) && Number.isFinite(e)
+      ) {
+        map.flyToBounds(
+          [
+            [s, w],
+            [n, e],
+          ],
+          { duration: 1.2, padding: [48, 48], maxZoom: 17 }
+        );
+        return;
+      }
+    }
     if (
-      target &&
       Array.isArray(target.center) &&
       !isNaN(target.center[0]) &&
       !isNaN(target.center[1])
@@ -103,7 +122,6 @@ export const MapView: React.FC<MapViewProps> = ({
         url={tile.url}
         attribution={tile.attribution}
         subdomains={(tile.subdomains as any) ?? "abc"}
-        maxZoom={20}
       />
       <ScaleControl imperial={false} position="bottomright" />
       {children}
