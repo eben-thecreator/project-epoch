@@ -96,6 +96,8 @@ export const MapScreen: React.FC = () => {
   /** Derive dynamic filter options from the loaded catalogue. */
   const handleAssetsLoaded = useCallback((assets: HeritageAsset[]) => {
     const fields = [
+      "region",
+      "district",
       "period",
       "condition",
       "ownership",

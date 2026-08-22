@@ -57,9 +57,16 @@ interface RollingBannerProps {
   pinned?: boolean;
 }
 
+/** Only exhibitions that have not ended are advertised. */
+const ACTIVE_EXHIBITIONS = (): Exhibition[] => {
+  const today = new Date().toISOString().slice(0, 10);
+  return EXHIBITIONS.filter((e) => e.endDate >= today);
+};
+
 export const RollingBanner: React.FC<RollingBannerProps> = ({ pinned = false }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [duration, setDuration] = useState(30); // Default duration
+  const exhibitions = ACTIVE_EXHIBITIONS();
 
   useEffect(() => {
     const calculateDuration = () => {
@@ -76,6 +83,8 @@ export const RollingBanner: React.FC<RollingBannerProps> = ({ pinned = false }) 
     return () => window.removeEventListener('resize', calculateDuration);
   }, []);
 
+  if (exhibitions.length === 0) return null;
+
   return (
     <div className={`${pinned ? "relative" : "fixed top-0 left-0 z-[1060]"} bg-[#000] h-[40px] flex items-center overflow-hidden text-white transition-all duration-300 w-full`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
@@ -87,7 +96,7 @@ export const RollingBanner: React.FC<RollingBannerProps> = ({ pinned = false }) 
             width: 'fit-content'
           }}
         >
-          {EXHIBITIONS.map((exhibition) => (
+          {exhibitions.map((exhibition) => (
             <div key={`${exhibition.id}-1`} className="flex items-center whitespace-nowrap mx-6 text-[10px] font-bold tracking-widest uppercase">
               <span>{exhibition.title} | {exhibition.location} | {exhibition.startDate} to {exhibition.endDate}</span>
               <span className="mx-4 text-white/45">•</span>
@@ -95,7 +104,7 @@ export const RollingBanner: React.FC<RollingBannerProps> = ({ pinned = false }) 
             </div>
           ))}
           {/* Duplicate items for seamless looping */}
-          {EXHIBITIONS.map((exhibition) => (
+          {exhibitions.map((exhibition) => (
             <div key={`${exhibition.id}-2`} className="flex items-center whitespace-nowrap mx-6 text-[10px] font-bold tracking-widest uppercase">
               <span>{exhibition.title} | {exhibition.location} | {exhibition.startDate} to {exhibition.endDate}</span>
               <span className="mx-4 text-white/45">•</span>

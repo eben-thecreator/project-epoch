@@ -6,19 +6,26 @@ import type { AssetSummary } from "./types";
 export const StatsDashboard = (): JSX.Element => {
   const [summary, setSummary] = useState<AssetSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
       try {
         const res = await adminFetch(apiUrl("/api/heritage-assets/summary"));
+        if (cancelled) return;
         if (res.ok) setSummary(await res.json());
+        else setFailed(true);
       } catch {
-        // silent
+        if (!cancelled) setFailed(true);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const cards = summary
@@ -53,7 +60,13 @@ export const StatsDashboard = (): JSX.Element => {
                 <div className="h-7 w-12 bg-black/5 rounded" />
               </div>
             ))
-          : cards.map((card) => (
+          : failed
+            ? (
+              <div className="col-span-full bg-white rounded-xl border border-black/5 p-5 text-xs text-black/50">
+                Statistics are unavailable right now — the summary endpoint could not be reached.
+              </div>
+            )
+            : cards.map((card) => (
               <div key={card.label} className="bg-white rounded-xl border border-black/5 p-5 hover:shadow-md transition-shadow">
                 <p className="text-[10px] uppercase font-bold text-black/40 mb-2">{card.label}</p>
                 <p className={`text-3xl font-black ${card.color}`}>{card.value.toLocaleString()}</p>

@@ -16,6 +16,34 @@ interface FilterSection {
 
 const STATIC_FILTER_SECTIONS: FilterSection[] = [
   {
+    key: "region",
+    label: "Region",
+    options: [
+      "Ahafo",
+      "Ashanti",
+      "Bono",
+      "Bono East",
+      "Central",
+      "Eastern",
+      "Greater Accra",
+      "North East",
+      "Northern",
+      "Oti",
+      "Savannah",
+      "Upper East",
+      "Upper West",
+      "Volta",
+      "Western",
+      "Western North",
+    ],
+  },
+  {
+    // No curated base — populated entirely from values present in the data
+    key: "district",
+    label: "District",
+    options: [],
+  },
+  {
     key: "period",
     label: "Historical Era",
     options: [
