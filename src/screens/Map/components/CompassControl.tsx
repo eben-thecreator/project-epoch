@@ -109,7 +109,7 @@ export const CompassControl: React.FC<CompassControlProps> = ({
                       ${text}
                     `}
                   >
-                    <span className={isActive ? (darkMode ? "text-[#FF6B6B]" : "text-[#E4002B]") : muted}>
+                    <span className={isActive ? (darkMode ? "text-[#FF6B6B]" : "text-brand") : muted}>
                       {opt.icon}
                     </span>
                     <span className={`text-[10px] uppercase tracking-wider font-semibold ${isActive ? "font-bold" : ""}`}>

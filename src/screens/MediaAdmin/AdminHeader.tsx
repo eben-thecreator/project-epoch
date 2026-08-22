@@ -9,7 +9,7 @@ export const AdminHeader = ({ breadcrumb }: AdminHeaderProps): JSX.Element => {
     <header className="fixed top-0 left-0 right-0 h-14 bg-[#1A1A1A] z-[100] flex items-center px-6 border-b border-white/10">
       <div className="flex items-center gap-4 w-full">
         <Link to="/" className="flex items-center gap-2 shrink-0">
-          <span className="font-black text-base text-[#E4002B]">SCHIS</span>
+          <span className="font-black text-base text-brand">SCHIS</span>
         </Link>
 
         <div className="h-4 w-px bg-white/20" />

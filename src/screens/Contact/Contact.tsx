@@ -19,7 +19,7 @@ export const Contact = (): JSX.Element => {
   };
 
   const inputClass =
-    "w-full px-3 py-2.5 text-sm bg-black/[0.03] rounded-lg border border-black/10 outline-none focus:border-[#E4002B] transition-colors";
+    "w-full px-3 py-2.5 text-sm bg-black/[0.03] rounded-lg border border-black/10 outline-none focus:border-brand transition-colors";
   const labelClass = "block text-[10px] font-bold uppercase tracking-wider text-black/50 mb-1.5";
 
   return (
@@ -28,7 +28,7 @@ export const Contact = (): JSX.Element => {
 
       <main className="pt-20 pb-16">
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#E4002B] mb-2">
+          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-brand mb-2">
             Get in Touch
           </p>
           <h1 className="text-3xl sm:text-4xl font-bold text-black tracking-tight">
@@ -44,13 +44,13 @@ export const Contact = (): JSX.Element => {
             <div className="lg:col-span-3">
               {sent ? (
                 <div className="rounded-xl border border-black/10 bg-black/[0.02] p-8 text-center">
-                  <svg className="w-10 h-10 mx-auto text-[#E4002B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-10 h-10 mx-auto text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                   <h2 className="text-lg font-bold text-black mt-4">Your email client is opening</h2>
                   <p className="text-sm text-gray-600 mt-2">
                     If nothing happened, write to us directly at{" "}
-                    <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#E4002B] font-semibold hover:underline">
+                    <a href={`mailto:${CONTACT_EMAIL}`} className="text-brand font-semibold hover:underline">
                       {CONTACT_EMAIL}
                     </a>
                   </p>
@@ -77,7 +77,7 @@ export const Contact = (): JSX.Element => {
                   </div>
                   <button
                     type="submit"
-                    className="w-full sm:w-auto px-6 py-3 bg-[#E4002B] hover:bg-[#CC0026] text-white text-[11px] uppercase font-mono font-bold tracking-wider transition-colors"
+                    className="w-full sm:w-auto px-6 py-3 bg-brand hover:bg-brand-dark text-white text-[11px] uppercase font-mono font-bold tracking-wider transition-colors"
                   >
                     Send Message
                   </button>
@@ -97,7 +97,7 @@ export const Contact = (): JSX.Element => {
               <div className="rounded-xl border border-black/10 p-6 space-y-4">
                 <div>
                   <p className="text-[9px] uppercase font-mono tracking-wider text-gray-400">Email</p>
-                  <a href={`mailto:${CONTACT_EMAIL}`} className="text-sm text-[#E4002B] font-semibold hover:underline">
+                  <a href={`mailto:${CONTACT_EMAIL}`} className="text-sm text-brand font-semibold hover:underline">
                     {CONTACT_EMAIL}
                   </a>
                 </div>

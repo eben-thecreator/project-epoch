@@ -223,7 +223,7 @@ const abortRef = useRef<AbortController>();
                     .join(" \u00B7 ")}
                 </div>
               </div>
-              <span className={`text-[9px] font-mono uppercase ${darkMode ? "text-[#FF6B6B]" : "text-[#E4002B]"}`}>
+              <span className={`text-[9px] font-mono uppercase ${darkMode ? "text-[#FF6B6B]" : "text-brand"}`}>
                 VIEW ↗
               </span>
             </button>

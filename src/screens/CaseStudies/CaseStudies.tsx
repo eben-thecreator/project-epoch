@@ -163,7 +163,7 @@ export const CaseStudies = (): JSX.Element => {
               onClick={() => navigate(collection.route)}
             >
               {/* Image Container */}
-              <div className={`relative ${collection.aspectRatio} w-full flex-1 min-h-0 overflow-hidden mb-1.5 bg-gray-100 outline outline-2 outline-transparent group-hover:outline-[#E4002B] group-hover:outline-offset-4 transition-all duration-500 ease-out`}>
+              <div className={`relative ${collection.aspectRatio} w-full flex-1 min-h-0 overflow-hidden mb-1.5 bg-gray-100 outline outline-2 outline-transparent group-hover:outline-brand group-hover:outline-offset-4 transition-all duration-500 ease-out`}>
                 <motion.img
                   initial={{ scale: 1.08, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -175,7 +175,7 @@ export const CaseStudies = (): JSX.Element => {
               </div>
 
               {/* Title */}
-              <h3 className="text-[13px] font-bold text-black mb-2 transition-colors duration-300 group-hover:text-[#E4002B] shrink-0">
+              <h3 className="text-[13px] font-bold text-black mb-2 transition-colors duration-300 group-hover:text-brand shrink-0">
                 {collection.title}
               </h3>
 
@@ -183,7 +183,7 @@ export const CaseStudies = (): JSX.Element => {
               <div className="w-full text-[10px] tracking-tight leading-normal shrink-0">
                 <div className="flex justify-between w-full text-black py-0.5 border-b border-black/5 last:border-b-0">
                   <span className="text-[#555555] font-normal pr-2 truncate group-hover:text-black transition-colors duration-300">Documented Assets</span>
-                  <span className="font-mono font-semibold text-right shrink-0 group-hover:text-[#E4002B] transition-colors duration-300">
+                  <span className="font-mono font-semibold text-right shrink-0 group-hover:text-brand transition-colors duration-300">
                     {collection.count ?? "—"}
                   </span>
                 </div>

@@ -219,7 +219,7 @@ export const LayerControl: React.FC<LayerControlProps> = ({
                     type="checkbox"
                     checked={layer.active}
                     onChange={() => onToggle(layer.key)}
-                    className={`w-3 h-3 border rounded-none cursor-pointer ${darkMode ? "border-white/30 accent-[#FF6B6B]" : "border-black/30 accent-[#E4002B]"}`}
+                    className={`w-3 h-3 border rounded-none cursor-pointer ${darkMode ? "border-white/30 accent-[#FF6B6B]" : "border-black/30 accent-brand"}`}
                   />
                   <span
                     className={`text-[10px] uppercase font-semibold ${layer.active ? text : muted} group-hover:text-inherit`}
@@ -228,7 +228,7 @@ export const LayerControl: React.FC<LayerControlProps> = ({
                   </span>
                 </div>
                 {layer.key === "__heritage__" && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#E4002B]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                 )}
               </label>
             ))}
@@ -260,7 +260,7 @@ export const LayerControl: React.FC<LayerControlProps> = ({
           </div>
           <div className="flex items-center gap-2">
             {activeFilterCount > 0 && (
-              <span className="bg-[#E4002B] text-white text-[9px] font-mono px-1.5 py-0.5 font-bold">
+              <span className="bg-brand text-white text-[9px] font-mono px-1.5 py-0.5 font-bold">
                 {activeFilterCount}
               </span>
             )}
@@ -286,7 +286,7 @@ export const LayerControl: React.FC<LayerControlProps> = ({
         <div className="flex-1 overflow-y-auto min-h-0 divide-y divide-white/5">
           {activeFilterCount > 0 && (
             <div className="px-3 py-1.5 flex justify-between items-center bg-red-500/5">
-              <span className="text-[9px] uppercase font-mono text-[#E4002B]">
+              <span className="text-[9px] uppercase font-mono text-brand">
                 {activeFilterCount} FILTER{activeFilterCount > 1 ? "S" : ""} ACTIVE
               </span>
               <button
@@ -312,11 +312,11 @@ export const LayerControl: React.FC<LayerControlProps> = ({
                   }
                   className={`w-full flex items-center justify-between px-3 py-2 ${hoverBg} transition-colors`}
                 >
-                  <span className={`text-[10px] uppercase font-semibold ${selectedValues.length > 0 ? (darkMode ? "text-[#FF6B6B]" : "text-[#E4002B]") : labelText}`}>
+                  <span className={`text-[10px] uppercase font-semibold ${selectedValues.length > 0 ? (darkMode ? "text-[#FF6B6B]" : "text-brand") : labelText}`}>
                     {section.label}
                   </span>
                   {selectedValues.length > 0 ? (
-                    <span className="text-[9px] font-mono font-bold bg-[#E4002B] text-white px-1.5 py-0.5">
+                    <span className="text-[9px] font-mono font-bold bg-brand text-white px-1.5 py-0.5">
                       {selectedValues.length}
                     </span>
                   ) : (
@@ -338,7 +338,7 @@ export const LayerControl: React.FC<LayerControlProps> = ({
                             type="checkbox"
                             checked={selected}
                             onChange={() => toggleFilter(section.key, opt)}
-                            className={`w-3 h-3 border rounded-none cursor-pointer ${darkMode ? "border-white/30 accent-[#FF6B6B]" : "border-black/30 accent-[#E4002B]"}`}
+                            className={`w-3 h-3 border rounded-none cursor-pointer ${darkMode ? "border-white/30 accent-[#FF6B6B]" : "border-black/30 accent-brand"}`}
                           />
                           <span
                             className={`text-[10px] font-medium ${selected ? text : muted} group-hover:text-inherit`}

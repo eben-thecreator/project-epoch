@@ -55,7 +55,7 @@ export const Reconstruction = (): JSX.Element => {
       <main className="pt-20 pb-16">
         {/* Hero */}
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#E4002B] mb-2">
+          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-brand mb-2">
             Reconstruction & Technical Insights
           </p>
           <h1 className="text-3xl sm:text-4xl font-bold text-black tracking-tight">
@@ -98,7 +98,7 @@ export const Reconstruction = (): JSX.Element => {
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-14">
           <div className="flex items-end justify-between flex-wrap gap-3 mb-4">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#E4002B] mb-1">
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-brand mb-1">
                 Interactive Result
               </p>
               <h2 className="text-xl sm:text-2xl font-bold text-black">Explore a Reconstruction</h2>
@@ -110,7 +110,7 @@ export const Reconstruction = (): JSX.Element => {
                   onClick={() => setActiveModel(m.url)}
                   className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors ${
                     activeModel === m.url
-                      ? "bg-[#E4002B] text-white"
+                      ? "bg-brand text-white"
                       : "bg-black/[0.05] text-gray-700 hover:bg-black/10"
                   }`}
                 >

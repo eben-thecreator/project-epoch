@@ -252,7 +252,7 @@ export const Gallery = (): JSX.Element => {
               <div className="col-span-1 md:col-span-4 p-6 flex flex-col justify-between space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-1">
-                    <span className="text-[8px] uppercase tracking-[0.25em] text-[#E4002B] font-bold">
+                    <span className="text-[8px] uppercase tracking-[0.25em] text-brand font-bold">
                       {activeMedia.assetCategory}
                     </span>
                     <h2 className="text-base font-black uppercase text-white leading-tight">

@@ -92,7 +92,7 @@ export const Legend: React.FC<LegendProps> = ({
         className={`w-full px-3.5 py-2.5 flex items-center justify-between gap-3 text-[12px] uppercase font-bold tracking-wider ${text} ${hoverBg} transition-colors`}
       >
         <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#E4002B]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-brand" />
           <span>MAP LEGEND</span>
           <span className={`text-[9px] font-mono ${muted}`}>
             ({visibleCategories.length})

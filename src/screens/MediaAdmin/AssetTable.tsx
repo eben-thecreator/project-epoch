@@ -93,7 +93,7 @@ export const AssetTable = ({
   };
 
   const SortIcon = ({ field }: { field: SortField }) => (
-    <svg className={`w-3 h-3 inline-block ml-1 ${sortField === field ? "text-[#E4002B]" : "text-black/20"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className={`w-3 h-3 inline-block ml-1 ${sortField === field ? "text-brand" : "text-black/20"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={sortField === field && sortDir === "desc" ? "M19 9l-7 7-7-7" : "M5 15l7-7 7 7"} />
     </svg>
   );
@@ -112,7 +112,7 @@ export const AssetTable = ({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search assets..."
-                className="w-full pl-9 pr-3 py-2 text-xs bg-black/5 rounded-lg border-0 outline-none focus:ring-2 focus:ring-[#E4002B]/30 transition-all"
+                className="w-full pl-9 pr-3 py-2 text-xs bg-black/5 rounded-lg border-0 outline-none focus:ring-2 focus:ring-brand/30 transition-all"
               />
             </div>
             <select
@@ -148,7 +148,7 @@ export const AssetTable = ({
             <button
               type="button"
               onClick={onCreateAsset}
-              className="text-[10px] font-bold uppercase px-4 py-2 bg-[#E4002B] text-white rounded-lg hover:bg-[#C40025] transition-colors flex items-center gap-1.5"
+              className="text-[10px] font-bold uppercase px-4 py-2 bg-brand text-white rounded-lg hover:bg-[#C40025] transition-colors flex items-center gap-1.5"
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -169,7 +169,7 @@ export const AssetTable = ({
                   type="checkbox"
                   checked={selectedIds.size === filtered.length && filtered.length > 0}
                   onChange={toggleSelectAll}
-                  className="w-3.5 h-3.5 rounded border-black/20 text-[#E4002B] focus:ring-[#E4002B]/30 cursor-pointer"
+                  className="w-3.5 h-3.5 rounded border-black/20 text-brand focus:ring-brand/30 cursor-pointer"
                 />
               </th>
               {[
@@ -218,7 +218,7 @@ export const AssetTable = ({
                     key={asset.id}
                     onClick={() => onSelectAsset(asset.id)}
                     className={`border-b border-black/5 cursor-pointer transition-colors ${
-                      isSelected ? "bg-[#E4002B]/5" : "hover:bg-black/[0.02]"
+                      isSelected ? "bg-brand/5" : "hover:bg-black/[0.02]"
                     }`}
                   >
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
@@ -226,7 +226,7 @@ export const AssetTable = ({
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => toggleSelect(asset.id)}
-                        className="w-3.5 h-3.5 rounded border-black/20 text-[#E4002B] focus:ring-[#E4002B]/30 cursor-pointer"
+                        className="w-3.5 h-3.5 rounded border-black/20 text-brand focus:ring-brand/30 cursor-pointer"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -299,7 +299,7 @@ export const AssetTable = ({
           {filtered.length} of {assets.length} assets
         </p>
         {selectedIds.size > 0 && (
-          <p className="text-[10px] font-bold uppercase text-[#E4002B]">
+          <p className="text-[10px] font-bold uppercase text-brand">
             {selectedIds.size} selected
           </p>
         )}

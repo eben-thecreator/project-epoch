@@ -6,6 +6,7 @@ import {
   Outlet,
 } from "react-router-dom";
 import { ErrorPage } from "./screens/ErrorPage";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Route-level code splitting: each screen ships as its own chunk so the
 // heavy three.js / leaflet bundles only load where they are used.
@@ -46,9 +47,11 @@ const MapScreen = lazy(() => import("./screens/Map/Map").then((m) => ({ default:
 /** Shared layout for every route: single error boundary + suspense gate. */
 function RootLayout() {
   return (
-    <Suspense fallback={<RouteLoader />}>
-      <Outlet />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<RouteLoader />}>
+        <Outlet />
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 
@@ -56,7 +59,7 @@ function RouteLoader() {
   return (
     <div className="min-h-screen w-full bg-white flex items-center justify-center">
       <div
-        className="w-8 h-8 border-2 border-[#E4002B] border-t-transparent rounded-full animate-spin"
+        className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin"
         role="status"
         aria-label="Loading page"
       />

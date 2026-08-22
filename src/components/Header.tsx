@@ -55,7 +55,7 @@ export const Header = (): JSX.Element => {
   return (
     <>
       <header
-        className="fixed left-0 top-0 w-full z-[1050] bg-[#E4002B] transition-all duration-300"
+        className="fixed left-0 top-0 w-full z-[1050] bg-brand transition-all duration-300"
         style={{ height: "64px" }}
       >
         <div className="h-full flex items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -147,7 +147,7 @@ export const Header = (): JSX.Element => {
                   <Link
                     key={to}
                     to={to}
-                    className="block px-5 py-3 text-[10px] font-bold uppercase text-white/80 hover:text-white hover:bg-[#E4002B] transition-colors duration-200"
+                    className="block px-5 py-3 text-[10px] font-bold uppercase text-white/80 hover:text-white hover:bg-brand transition-colors duration-200"
                     onClick={() => setIsMenuDropdownOpen(false)}
                   >
                     {label}
@@ -182,7 +182,7 @@ export const Header = (): JSX.Element => {
 
       {/* Mobile Full-Screen Overlay */}
       <div
-        className={`md:hidden fixed inset-0 z-[1001] bg-[#E4002B] transition-opacity duration-300 ${isMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        className={`md:hidden fixed inset-0 z-[1001] bg-brand transition-opacity duration-300 ${isMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           }`}
       >
         <nav className="flex flex-col justify-center items-start h-full px-8 gap-6">

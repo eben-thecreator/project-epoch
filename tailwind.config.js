@@ -5,6 +5,11 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        brand: {
+          DEFAULT: "#E4002B",
+          dark: "#CC0026",
+          light: "#FF4D4D",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -39,6 +44,14 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+      zIndex: {
+        header: "1050",
+        banner: "1060",
+        "map-widget": "1000",
+        "map-panel": "1002",
+        modal: "2000",
+        toast: "9999",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -46,6 +59,7 @@ module.exports = {
       },
       fontFamily: {
         sans: [
+          "Inter",
           "Helvetica",
           "Arial",
           "sans-serif",

@@ -114,10 +114,10 @@ export const TimeSlider: React.FC<TimeSliderProps> = ({
   const border = darkMode ? "border-white/15" : "border-black/15";
   const muted = darkMode ? "text-white/40" : "text-black/40";
   const trackBg = darkMode ? "bg-white/10" : "bg-black/10";
-  const trackActive = darkMode ? "bg-[#FF6B6B]" : "bg-[#E4002B]";
+  const trackActive = darkMode ? "bg-[#FF6B6B]" : "bg-brand";
   const thumbClasses = darkMode
     ? "[&::-webkit-slider-thumb]:bg-white [&::-moz-range-thumb]:bg-white [&::-webkit-slider-thumb]:border-[#FF6B6B]"
-    : "[&::-webkit-slider-thumb]:bg-black [&::-moz-range-thumb]:bg-black [&::-webkit-slider-thumb]:border-[#E4002B]";
+    : "[&::-webkit-slider-thumb]:bg-black [&::-moz-range-thumb]:bg-black [&::-webkit-slider-thumb]:border-brand";
   const presetIdle = `${border} ${muted} hover:bg-black/5 ${darkMode ? "hover:bg-white/10 hover:text-white" : "hover:text-black"}`;
 
   const presets = [
@@ -145,7 +145,7 @@ export const TimeSlider: React.FC<TimeSliderProps> = ({
           title={playing ? "Pause temporal sweep" : "Play temporal sweep"}
           aria-label={playing ? "Pause temporal sweep" : "Play temporal sweep"}
           className={`w-7 h-7 shrink-0 flex items-center justify-center rounded-full transition-colors ${
-            playing ? "bg-[#E4002B] text-white" : `${trackBg} ${muted} hover:text-[#E4002B]`
+            playing ? "bg-brand text-white" : `${trackBg} ${muted} hover:text-brand`
           }`}
         >
           {playing ? (
@@ -172,7 +172,7 @@ export const TimeSlider: React.FC<TimeSliderProps> = ({
                 onClick={() => setPreset(p.min, p.max)}
                 className={`text-[8px] font-mono font-semibold uppercase px-1.5 py-0.5 border transition-colors whitespace-nowrap ${
                   isActive
-                    ? "bg-[#E4002B] border-[#E4002B] text-white"
+                    ? "bg-brand border-brand text-white"
                     : presetIdle
                 }`}
               >

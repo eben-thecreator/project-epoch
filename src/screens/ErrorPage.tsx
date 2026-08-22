@@ -35,7 +35,7 @@ export const ErrorPage = (): JSX.Element => {
       <main className="flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-24 pb-16">
         <div className="max-w-lg mx-auto text-center">
           <div className="mb-8">
-            <span className="inline-block text-[120px] sm:text-[160px] font-black text-[#E4002B]/10 leading-none select-none">
+            <span className="inline-block text-[120px] sm:text-[160px] font-black text-brand/10 leading-none select-none">
               {statusCode}
             </span>
           </div>
@@ -50,7 +50,7 @@ export const ErrorPage = (): JSX.Element => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 bg-[#E4002B] text-white text-[11px] uppercase font-bold tracking-wider px-6 py-3 hover:bg-[#C0392B] transition-colors"
+              className="inline-flex items-center gap-2 bg-brand text-white text-[11px] uppercase font-bold tracking-wider px-6 py-3 hover:bg-[#C0392B] transition-colors"
             >
               <svg
                 className="w-3.5 h-3.5"
@@ -104,7 +104,7 @@ export const ErrorPage = (): JSX.Element => {
                   <Link
                     key={link.to}
                     to={link.to}
-                    className="text-[11px] uppercase font-bold text-black/40 hover:text-[#E4002B] transition-colors"
+                    className="text-[11px] uppercase font-bold text-black/40 hover:text-brand transition-colors"
                   >
                     {link.label}
                   </Link>

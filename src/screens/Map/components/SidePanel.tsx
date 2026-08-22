@@ -420,7 +420,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                         </div>
                         <div className={`h-1 w-full ${darkMode ? "bg-white/10" : "bg-black/10"}`}>
                           <div
-                            className="h-full bg-[#E4002B]"
+                            className="h-full bg-brand"
                             style={{ width: `${Math.min(100, Math.max(0, completeness))}%` }}
                           />
                         </div>
@@ -456,7 +456,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           >
             <button
               onClick={handleViewMore}
-              className="w-full flex items-center justify-center gap-2 bg-[#E4002B] hover:bg-[#CC0026] text-white py-3 transition-colors"
+              className="w-full flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white py-3 transition-colors"
             >
               <span className="text-[11px] uppercase font-mono font-bold tracking-wider">
                 View Full Details

@@ -31,11 +31,17 @@ interface ReferenceLayerProps {
 
 export const ReferenceLayers: React.FC<ReferenceLayerProps> = ({ activeLayers, darkMode = false }) => {
   const cacheRef = useRef<Record<string, GeoJSONData>>({});
+  const failedRef = useRef<Set<string>>(new Set());
   const [cache, setCache] = useState<Record<string, GeoJSONData>>({});
 
   useEffect(() => {
     activeLayers.forEach((key) => {
       if (cacheRef.current[key]) return;
+      // A previous transient failure should not permanently disable the layer:
+      // retry on subsequent activation passes (e.g. after a toggle or manual retry).
+      if (failedRef.current.has(key)) {
+        failedRef.current.delete(key);
+      }
       fetch(apiUrl(`/api/map/reference/${key}`))
         .then((r) => {
           if (!r.ok) throw new Error("Layer not available");
@@ -45,10 +51,11 @@ export const ReferenceLayers: React.FC<ReferenceLayerProps> = ({ activeLayers, d
           cacheRef.current[key] = data;
           setCache((prev) => ({ ...prev, [key]: data }));
         })
-        .catch(() => {
-          const empty: GeoJSONData = { type: "FeatureCollection", features: [] };
-          cacheRef.current[key] = empty;
-          setCache((prev) => ({ ...prev, [key]: empty }));
+        .catch((err: unknown) => {
+          if (err instanceof DOMException && err.name === "AbortError") return;
+          // Mark as failed but do NOT cache an empty collection — the layer
+          // stays eligible for retry.
+          failedRef.current.add(key);
         });
     });
   }, [activeLayers]);

@@ -180,7 +180,7 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
                 <div
                   key={m.id}
                   className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer group border-2 transition-colors ${
-                    previewMedia?.id === m.id ? "border-[#E4002B]" : "border-transparent hover:border-black/10"
+                    previewMedia?.id === m.id ? "border-brand" : "border-transparent hover:border-black/10"
                   }`}
                   onClick={() => setPreviewMedia(m)}
                 >
@@ -212,7 +212,7 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
                   )}
 
                   {m.isPrimary && m.mediaType === "image" && (
-                    <div className="absolute top-1 left-1 bg-[#E4002B] text-white text-[7px] font-bold uppercase px-1.5 py-0.5 rounded">
+                    <div className="absolute top-1 left-1 bg-brand text-white text-[7px] font-bold uppercase px-1.5 py-0.5 rounded">
                       Primary
                     </div>
                   )}
@@ -227,7 +227,7 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
                           className="p-1.5 bg-white/90 rounded-md hover:bg-white transition-colors"
                           title="Set as primary"
                         >
-                          <svg className="w-3 h-3 text-[#E4002B]" fill="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3 h-3 text-brand" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                           </svg>
                         </button>
@@ -330,14 +330,14 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
                   placeholder="Caption (optional)"
-                  className="w-full px-3 py-2 text-xs bg-black/5 rounded-lg border-0 outline-none focus:ring-2 focus:ring-[#E4002B]/30"
+                  className="w-full px-3 py-2 text-xs bg-black/5 rounded-lg border-0 outline-none focus:ring-2 focus:ring-brand/30"
                 />
                 <label className="flex items-center gap-2 text-[10px] font-bold uppercase cursor-pointer">
                   <input
                     type="checkbox"
                     checked={markFirstPrimary}
                     onChange={(e) => setMarkFirstPrimary(e.target.checked)}
-                    className="w-3.5 h-3.5 rounded border-black/20 text-[#E4002B] focus:ring-[#E4002B]/30"
+                    className="w-3.5 h-3.5 rounded border-black/20 text-brand focus:ring-brand/30"
                   />
                   Mark first as primary
                 </label>
@@ -355,7 +355,7 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
                   type="button"
                   onClick={handleUpload}
                   disabled={uploading}
-                  className="flex-1 px-3 py-2 text-[10px] font-bold uppercase bg-[#E4002B] text-white rounded-lg hover:bg-[#C40025] transition-colors disabled:opacity-50"
+                  className="flex-1 px-3 py-2 text-[10px] font-bold uppercase bg-brand text-white rounded-lg hover:bg-[#C40025] transition-colors disabled:opacity-50"
                 >
                   {uploading ? "Uploading..." : "Upload"}
                 </button>

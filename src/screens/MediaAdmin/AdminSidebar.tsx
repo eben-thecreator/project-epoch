@@ -50,7 +50,7 @@ export const AdminSidebar = ({ activeTab, onTabChange }: AdminSidebarProps): JSX
                 onClick={() => onTabChange(item.tab)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all ${
                   isActive
-                    ? "bg-[#E4002B] text-white"
+                    ? "bg-brand text-white"
                     : "text-white/50 hover:text-white hover:bg-white/5"
                 }`}
               >

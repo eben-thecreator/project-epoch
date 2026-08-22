@@ -49,12 +49,10 @@ export const MapScreen: React.FC = () => {
     return stored ?? (localStorage.getItem("schis-map-theme") === "dark" ? "dark" : "light");
   });
 
-  const handleBasemapChange = useCallback((bm: Basemap) => {
-    setBasemap(bm);
-    localStorage.setItem("schis-map-basemap", bm);
-    if (bm === "dark") setDarkMode(true);
-    if (bm === "light") setDarkMode(false);
-  }, []);
+    const handleBasemapChange = useCallback((bm: Basemap) => {
+      setBasemap(bm);
+      localStorage.setItem("schis-map-basemap", bm);
+    }, []);
 
   const [periodRange, setPeriodRange] = useState({ min: 1100, max: 2026 });
   const [flyTo, setFlyTo] = useState<FlyToTarget | null>(null);
@@ -219,7 +217,7 @@ export const MapScreen: React.FC = () => {
               className={`${badgeBg} border ${border} shadow-md px-3.5 py-1.5 flex items-center gap-3 select-none`}
             >
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#E4002B]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                 <span
                   className={`text-[10px] font-mono uppercase font-bold tracking-wider ${badgeText}`}
                 >
@@ -228,7 +226,7 @@ export const MapScreen: React.FC = () => {
               </div>
               <button
                 onClick={handleResetMap}
-                className="text-[9px] uppercase font-mono font-bold tracking-wider text-[#E4002B] hover:text-[#FF4D4D] border-l border-white/10 pl-3 transition-colors"
+                className="text-[9px] uppercase font-mono font-bold tracking-wider text-brand hover:text-[#FF4D4D] border-l border-white/10 pl-3 transition-colors"
               >
                 RESET ALL
               </button>

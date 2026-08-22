@@ -54,12 +54,12 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onAuthenticated }) => {
             onChange={(e) => setPassword(e.target.value)}
             autoFocus
             autoComplete="current-password"
-            className="w-full px-3 py-2.5 border border-black/15 bg-white text-sm text-black focus:outline-none focus:border-[#E4002B] transition-colors"
+            className="w-full px-3 py-2.5 border border-black/15 bg-white text-sm text-black focus:outline-none focus:border-brand transition-colors"
             placeholder="Enter admin password"
           />
 
           {error && (
-            <p role="alert" className="mt-3 text-xs text-[#E4002B] font-semibold">
+            <p role="alert" className="mt-3 text-xs text-brand font-semibold">
               {error}
             </p>
           )}
@@ -67,7 +67,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onAuthenticated }) => {
           <button
             type="submit"
             disabled={submitting || !password}
-            className="w-full mt-5 py-3 bg-[#E4002B] hover:bg-[#CC0026] disabled:bg-black/20 text-white text-[11px] uppercase font-mono font-bold tracking-wider transition-colors"
+            className="w-full mt-5 py-3 bg-brand hover:bg-brand-dark disabled:bg-black/20 text-white text-[11px] uppercase font-mono font-bold tracking-wider transition-colors"
           >
             {submitting ? "Verifying…" : "Sign In"}
           </button>

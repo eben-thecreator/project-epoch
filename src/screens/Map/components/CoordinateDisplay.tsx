@@ -59,7 +59,7 @@ export const CoordinateDisplay: React.FC<CoordinateDisplayProps> = ({
       className={`absolute bottom-4 left-4 z-[1000] ${bg} border ${border} px-3 py-1.5 flex items-center gap-3 shadow-md pointer-events-none select-none`}
     >
       <div className="flex items-center gap-1.5">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#E4002B] animate-pulse" />
+        <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
         <span className={`text-[9px] uppercase font-mono tracking-widest ${muted}`}>
           GPS
         </span>

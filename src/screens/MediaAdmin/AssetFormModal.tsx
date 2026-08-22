@@ -236,7 +236,7 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
     }
   };
 
-  const inputClass = "w-full px-3 py-2 text-xs bg-black/5 rounded-lg border-0 outline-none focus:ring-2 focus:ring-[#E4002B]/30 transition-all";
+  const inputClass = "w-full px-3 py-2 text-xs bg-black/5 rounded-lg border-0 outline-none focus:ring-2 focus:ring-brand/30 transition-all";
   const labelClass = "text-[10px] font-bold uppercase tracking-wider text-black/50 mb-1.5 block";
   const hasStoredNonPoint = isEditing && !!initialGeometryRef.current && initialGeometryRef.current.type !== "Point";
 
@@ -261,7 +261,7 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
           <div className="space-y-5">
             {/* Basic Info */}
             <div>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-[#E4002B] mb-3">Basic Information</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-brand mb-3">Basic Information</p>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className={labelClass}>Name *</label>
@@ -292,7 +292,7 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
 
             {/* Location */}
             <div>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-[#E4002B] mb-3">Location</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-brand mb-3">Location</p>
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className={labelClass}>Region</label>
@@ -322,7 +322,7 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
                   <span className="text-[10px] font-bold uppercase tracking-wider text-black/50">
                     Map Location *
                   </span>
-                  <span className={`text-[10px] font-mono ${point ? "text-black/60" : "text-[#E4002B]"}`}>
+                  <span className={`text-[10px] font-mono ${point ? "text-black/60" : "text-brand"}`}>
                     {point ? `${latInput}, ${lngInput}` : "Click the map to place"}
                   </span>
                 </div>
@@ -335,7 +335,7 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
                       step="any"
                       value={latInput}
                       onChange={(e) => handleLatLangInput("lat", e.target.value)}
-                      className="w-full px-2 py-1.5 text-xs font-mono bg-white rounded-lg border border-black/10 outline-none focus:border-[#E4002B]"
+                      className="w-full px-2 py-1.5 text-xs font-mono bg-white rounded-lg border border-black/10 outline-none focus:border-brand"
                       placeholder="7.9465"
                     />
                   </div>
@@ -346,14 +346,14 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
                       step="any"
                       value={lngInput}
                       onChange={(e) => handleLatLangInput("lng", e.target.value)}
-                      className="w-full px-2 py-1.5 text-xs font-mono bg-white rounded-lg border border-black/10 outline-none focus:border-[#E4002B]"
+                      className="w-full px-2 py-1.5 text-xs font-mono bg-white rounded-lg border border-black/10 outline-none focus:border-brand"
                       placeholder="-1.0232"
                     />
                   </div>
                 </div>
               </div>
               {!isEditing && !point && (
-                <p className="mt-2 text-[10px] text-[#E4002B]/80 font-semibold">
+                <p className="mt-2 text-[10px] text-brand/80 font-semibold">
                   A map position is required so the asset appears in the GIS viewer.
                 </p>
               )}
@@ -367,7 +367,7 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
 
             {/* Material & Condition */}
             <div>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-[#E4002B] mb-3">Material & Condition</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-brand mb-3">Material & Condition</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>Material</label>
@@ -398,7 +398,7 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
 
             {/* Period */}
             <div>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-[#E4002B] mb-3">Period</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-brand mb-3">Period</p>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className={labelClass}>Period Label</label>
@@ -417,7 +417,7 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
 
             {/* Notes */}
             <div>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-[#E4002B] mb-3">Additional</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-brand mb-3">Additional</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>Data Source</label>
@@ -445,7 +445,7 @@ export const AssetFormModal = ({ asset, onClose, onSave, onToast }: AssetFormMod
           <button
             type="submit"
             disabled={saving}
-            className="px-5 py-2 text-[10px] font-bold uppercase rounded-lg bg-[#E4002B] text-white hover:bg-[#C40025] transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            className="px-5 py-2 text-[10px] font-bold uppercase rounded-lg bg-brand text-white hover:bg-[#C40025] transition-colors disabled:opacity-50 flex items-center gap-1.5"
           >
             {saving ? "Saving..." : isEditing ? "Update" : "Create"}
             {!saving && (

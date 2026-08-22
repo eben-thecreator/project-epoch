@@ -23,7 +23,7 @@ export const StatsDashboard = (): JSX.Element => {
 
   const cards = summary
     ? [
-        { label: "Total Assets", value: summary.total_assets, color: "text-[#E4002B]" },
+        { label: "Total Assets", value: summary.total_assets, color: "text-brand" },
         { label: "With Geometry", value: summary.assets_with_geometry, color: "text-emerald-500" },
         { label: "Point Features", value: summary.point_assets, color: "text-blue-400" },
         { label: "Line Features", value: summary.line_assets, color: "text-amber-400" },
