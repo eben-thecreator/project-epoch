@@ -16,6 +16,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [results, setResults] = useState<HeritageAsset[]>([]);
   const [loading, setLoading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
+const abortRef = useRef<AbortController>();
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -60,18 +61,22 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   const search = useCallback((term: string) => {
     clearTimeout(timerRef.current);
+    abortRef.current?.abort();
     if (term.trim().length < 2) {
       setResults([]);
       return;
     }
     timerRef.current = setTimeout(() => {
       setLoading(true);
+      const controller = new AbortController();
+      abortRef.current = controller;
       fetch(
         apiUrl(
           `/api/heritage-assets?search=${encodeURIComponent(
             term.trim()
           )}`
-        )
+        ),
+        { signal: controller.signal }
       )
         .then((r) => {
           if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -80,7 +85,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         .then((data: unknown) => {
           setResults(Array.isArray(data) ? (data as HeritageAsset[]).slice(0, 12) : []);
         })
-        .catch(() => setResults([]))
+        .catch((err: unknown) => {
+          if (err instanceof DOMException && err.name === "AbortError") return;
+          setResults([]);
+        })
         .finally(() => setLoading(false));
     }, 300);
   }, []);

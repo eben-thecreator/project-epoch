@@ -23,8 +23,18 @@ export const CoordinateDisplay: React.FC<CoordinateDisplayProps> = ({
   const [zoom, setZoom] = useState<number>(map.getZoom());
 
   useEffect(() => {
+    let rafId: number | null = null;
+    let latest: { lat: number; lng: number } | null = null;
+
+    const flush = () => {
+      rafId = null;
+      if (latest) setCoords(latest);
+    };
     const handleMouseMove = (e: L.LeafletMouseEvent) => {
-      setCoords({ lat: e.latlng.lat, lng: e.latlng.lng });
+      // Throttle to one render per animation frame (~60 Hz mousemove → ~60 fps cap,
+      // but coalesced so React re-renders at most once per frame)
+      latest = { lat: e.latlng.lat, lng: e.latlng.lng };
+      if (rafId === null) rafId = requestAnimationFrame(flush);
     };
     const handleZoomEnd = () => {
       setZoom(map.getZoom());
@@ -33,6 +43,7 @@ export const CoordinateDisplay: React.FC<CoordinateDisplayProps> = ({
     map.on("mousemove", handleMouseMove);
     map.on("zoomend", handleZoomEnd);
     return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
       map.off("mousemove", handleMouseMove);
       map.off("zoomend", handleZoomEnd);
     };

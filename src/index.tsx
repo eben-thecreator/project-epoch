@@ -1,103 +1,92 @@
-import { StrictMode } from "react";
+import { StrictMode, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import {
   createBrowserRouter,
   RouterProvider,
+  Outlet,
 } from "react-router-dom";
-import { Home } from "./screens/Home";
-import { About } from "./screens/About";
-import { Contact } from "./screens/Contact";
-import {
-  CaseStudies,
-  Artifacts,
-  ArtifactDetail,
-  Museum,
-  Textiles,
-  Documents,
-} from "./screens/CaseStudies";
-import { Reconstruction } from "./screens/Reconstruction";
-import { Gallery } from "./screens/Gallery";
-import { Research } from "./screens/Research";
-import { Blog } from "./screens/Blog";
-import { MediaAdmin } from "./screens/MediaAdmin";
-import { MapScreen } from "./screens/Map/Map";
 import { ErrorPage } from "./screens/ErrorPage";
+
+// Route-level code splitting: each screen ships as its own chunk so the
+// heavy three.js / leaflet bundles only load where they are used.
+const Home = lazy(() =>
+  import("./screens/Home").then((m) => ({ default: m.Home }))
+);
+const About = lazy(() => import("./screens/About").then((m) => ({ default: m.About })));
+const Contact = lazy(() => import("./screens/Contact").then((m) => ({ default: m.Contact })));
+const CaseStudies = lazy(() =>
+  import("./screens/CaseStudies").then((m) => ({ default: m.CaseStudies }))
+);
+const Artifacts = lazy(() =>
+  import("./screens/CaseStudies").then((m) => ({ default: m.Artifacts }))
+);
+const ArtifactDetail = lazy(() =>
+  import("./screens/CaseStudies").then((m) => ({ default: m.ArtifactDetail }))
+);
+const Museum = lazy(() =>
+  import("./screens/CaseStudies").then((m) => ({ default: m.Museum }))
+);
+const Textiles = lazy(() =>
+  import("./screens/CaseStudies").then((m) => ({ default: m.Textiles }))
+);
+const Documents = lazy(() =>
+  import("./screens/CaseStudies").then((m) => ({ default: m.Documents }))
+);
+const MediaAdmin = lazy(() =>
+  import("./screens/MediaAdmin").then((m) => ({ default: m.MediaAdmin }))
+);
+const Reconstruction = lazy(() =>
+  import("./screens/Reconstruction").then((m) => ({ default: m.Reconstruction }))
+);
+const Gallery = lazy(() => import("./screens/Gallery").then((m) => ({ default: m.Gallery })));
+const Research = lazy(() => import("./screens/Research").then((m) => ({ default: m.Research })));
+const Blog = lazy(() => import("./screens/Blog").then((m) => ({ default: m.Blog })));
+const MapScreen = lazy(() => import("./screens/Map/Map").then((m) => ({ default: m.MapScreen })));
+
+/** Shared layout for every route: single error boundary + suspense gate. */
+function RootLayout() {
+  return (
+    <Suspense fallback={<RouteLoader />}>
+      <Outlet />
+    </Suspense>
+  );
+}
+
+function RouteLoader() {
+  return (
+    <div className="min-h-screen w-full bg-white flex items-center justify-center">
+      <div
+        className="w-8 h-8 border-2 border-[#E4002B] border-t-transparent rounded-full animate-spin"
+        role="status"
+        aria-label="Loading page"
+      />
+    </div>
+  );
+}
 
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <Home />,
+    element: <RootLayout />,
     errorElement: <ErrorPage />,
-  },
-  {
-    path: "/about",
-    element: <About />,
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "/contact",
-    element: <Contact />,
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "/case-studies",
-    element: <CaseStudies />,
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "/case-studies/artifacts",
-    element: <Artifacts />,
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "/case-studies/artifacts/:id",
-    element: <ArtifactDetail />,
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "/case-studies/museums",
-    element: <Museum />,
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "/case-studies/textiles",
-    element: <Textiles />,
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "/case-studies/documents",
-    element: <Documents />,
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "/admin/media",
-    element: <MediaAdmin />,
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "/reconstruction",
-    element: <Reconstruction />,
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "/gallery",
-    element: <Gallery />,
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "/research",
-    element: <Research />,
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "/blog",
-    element: <Blog />,
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "/map",
-    element: <MapScreen />,
-    errorElement: <ErrorPage />,
+    children: [
+      { path: "/", element: <Home /> },
+      { path: "/about", element: <About /> },
+      { path: "/contact", element: <Contact /> },
+      { path: "/case-studies", element: <CaseStudies /> },
+      { path: "/case-studies/artifacts", element: <Artifacts /> },
+      { path: "/case-studies/artifacts/:id", element: <ArtifactDetail /> },
+      { path: "/case-studies/museums", element: <Museum /> },
+      { path: "/case-studies/museums/:id", element: <Museum /> },
+      { path: "/case-studies/textiles", element: <Textiles /> },
+      { path: "/case-studies/documents", element: <Documents /> },
+      { path: "/admin/media", element: <MediaAdmin /> },
+      { path: "/reconstruction", element: <Reconstruction /> },
+      { path: "/gallery", element: <Gallery /> },
+      { path: "/research", element: <Research /> },
+      { path: "/blog", element: <Blog /> },
+      { path: "/map", element: <MapScreen /> },
+      { path: "*", element: <ErrorPage /> },
+    ],
   },
 ]);
 

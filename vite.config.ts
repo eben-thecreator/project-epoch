@@ -5,10 +5,23 @@ import { defineConfig } from "vite";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: "./",
+  // Absolute base so BrowserRouter deep links (e.g. /case-studies/artifacts/3)
+  // resolve assets correctly at any route depth.
+  base: "/",
   css: {
     postcss: {
       plugins: [tailwind()],
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ["three", "@react-three/fiber", "@react-three/drei"],
+          leaflet: ["leaflet", "react-leaflet", "leaflet.markercluster"],
+          vendor: ["react", "react-dom", "react-router-dom", "framer-motion"],
+        },
+      },
     },
   },
   server: {

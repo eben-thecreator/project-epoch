@@ -244,10 +244,13 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
       if (val) params.set(key, val);
     });
     const qs = params.toString();
+    const controller = new AbortController();
     // Temporal (yearRange) slicing is intentionally client-side: the catalogue
     // is fetched once and sliced in-browser so the time slider can animate
     // without network churn.
-    fetch(apiUrl(`/api/heritage-assets${qs ? `?${qs}` : ""}`))
+    fetch(apiUrl(`/api/heritage-assets${qs ? `?${qs}` : ""}`), {
+      signal: controller.signal,
+    })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -258,12 +261,14 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
         onAssetsLoaded?.(list);
         setError(false);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         setAssets([]);
         setError(true);
       })
       .finally(() => setLoading(false));
-  }, [visible, filters]);
+    return () => controller.abort();
+  }, [visible, filters, onAssetsLoaded]);
 
   const filteredAssets = useMemo(() => {
     return assets.filter((a) => {
@@ -297,6 +302,36 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
           a.geometry?.type === "MultiLineString"
       ),
     [filteredAssets]
+  );
+
+  // Stable GeoJSON feature objects: react-leaflet tears down and rebuilds a
+  // vector layer whenever the `data` prop identity changes, so these must be
+  // memoised or every parent re-render (e.g. each zoom gesture) would redraw
+  // the entire layer.
+  const polygonFeatures = useMemo(
+    () =>
+      polygonAssets.map((asset) => ({
+        asset,
+        feature: {
+          type: "Feature",
+          geometry: asset.geometry,
+          properties: { asset_category: asset.asset_category },
+        } as GeoJSON.Feature,
+      })),
+    [polygonAssets]
+  );
+
+  const lineFeatures = useMemo(
+    () =>
+      lineAssets.map((asset) => ({
+        asset,
+        feature: {
+          type: "Feature",
+          geometry: asset.geometry,
+          properties: { asset_category: asset.asset_category },
+        } as GeoJSON.Feature,
+      })),
+    [lineAssets]
   );
 
   useEffect(() => {
@@ -354,18 +389,14 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
         />
       )}
 
-      {polygonAssets.map((asset) => {
+      {polygonFeatures.map(({ asset, feature }) => {
         const centroid = getPolygonCentroid(asset.geometry!);
         const catColor = categoryColor(asset.asset_category, darkMode);
         return (
           <React.Fragment key={`poly-group-${asset.id}`}>
             <GeoJSON
               key={`poly-${asset.id}`}
-              data={{
-                type: "Feature",
-                geometry: asset.geometry,
-                properties: { asset_category: asset.asset_category },
-              } as GeoJSON.Feature}
+              data={feature}
               style={() => getPolygonStyle(asset.asset_category, darkMode)}
               eventHandlers={{
                 click: () => onSelectAsset(asset),
@@ -421,18 +452,14 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
         );
       })}
 
-      {lineAssets.map((asset) => {
+      {lineFeatures.map(({ asset, feature }) => {
         const midpoint = getLineMidpoint(asset.geometry!);
         const catColor = categoryColor(asset.asset_category, darkMode);
         return (
           <React.Fragment key={`line-group-${asset.id}`}>
             <GeoJSON
               key={`line-${asset.id}`}
-              data={{
-                type: "Feature",
-                geometry: asset.geometry,
-                properties: { asset_category: asset.asset_category },
-              } as GeoJSON.Feature}
+              data={feature}
               style={{
                 color: catColor,
                 weight: 2.5,
