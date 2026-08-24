@@ -1,11 +1,13 @@
-import { useState, useRef, useCallback } from "react";
+import { useRef, useState } from "react";
+import { cn } from "../../lib/utils";
 import { apiUrl, mediaUrl } from "../../lib/api";
 import { adminFetch, getAdminToken, clearAdminToken } from "../../lib/adminAuth";
 import { ModelViewer } from "../../components/ModelViewer";
+import { ConfirmModal } from "./ConfirmModal";
 import type { HeritageAsset, MediaItem } from "./types";
 
 interface MediaManagerProps {
-  asset: HeritageAsset | null;
+  asset: HeritageAsset;
   onRefresh: () => void;
   onToast: (type: "success" | "error", message: string) => void;
 }
@@ -19,7 +21,14 @@ const isModelFile = (file: File) => {
   return ext === "glb" || ext === "gltf";
 };
 
-const getMaxFileSize = (file: File) => isModelFile(file) ? MAX_FILE_SIZE_MODEL : MAX_FILE_SIZE;
+const getMaxFileSize = (file: File) => (isModelFile(file) ? MAX_FILE_SIZE_MODEL : MAX_FILE_SIZE);
+
+const formatBytes = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+};
 
 export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): JSX.Element => {
   const [uploading, setUploading] = useState(false);
@@ -29,25 +38,45 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
   const [markFirstPrimary, setMarkFirstPrimary] = useState(true);
   const [previewMedia, setPreviewMedia] = useState<MediaItem | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragDepth = useRef(0);
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(e.target.files || []);
-    const valid = selected.filter((f) => f.size <= getMaxFileSize(f)).slice(0, MAX_FILES);
-    const skipped = selected.length - valid.length;
-    if (skipped > 0) {
-      onToast("error", `${skipped} file(s) skipped ΓÇö too large. 3D models up to 500 MB, other files up to 50 MB.`);
-    }
-    setPendingFiles(valid);
+  const ingestFiles = (incoming: File[]) => {
+    if (!incoming.length) return;
+    const oversized = incoming.filter((f) => f.size > getMaxFileSize(f));
+    const candidates = incoming.filter((f) => f.size <= getMaxFileSize(f));
+    const seen = new Set(pendingFiles.map((f) => `${f.name}:${f.size}`));
+    const deduped = candidates.filter((f) => !seen.has(`${f.name}:${f.size}`));
+    const room = Math.max(0, MAX_FILES - pendingFiles.length);
+    const accepted = deduped.slice(0, room);
+    setPendingFiles([...pendingFiles, ...accepted]);
+
+    const notes: string[] = [];
+    if (oversized.length > 0)
+      notes.push(`${oversized.length} file${oversized.length > 1 ? "s" : ""} skipped — too large`);
+    const duplicates = candidates.length - deduped.length;
+    if (duplicates > 0) notes.push(`${duplicates} duplicate${duplicates > 1 ? "s" : ""} skipped`);
+    const capped = deduped.length - accepted.length;
+    if (capped > 0) notes.push(`${capped} skipped — ${MAX_FILES}-file limit`);
+    if (notes.length > 0)
+      onToast("error", `${notes.join("; ")}. Models up to 500 MB, other files up to 50 MB.`);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    ingestFiles(Array.from(e.target.files || []));
     e.target.value = "";
-  }, [onToast]);
+  };
+
+  const removePendingFile = (target: File) => {
+    setPendingFiles((prev) => prev.filter((f) => f !== target));
+  };
 
   const handleUpload = () => {
     if (!asset || pendingFiles.length === 0 || uploading) return;
     setUploading(true);
     setUploadProgress(0);
 
-    // XHR instead of fetch so multi-hundred-MB model uploads show progress
     const formData = new FormData();
     pendingFiles.forEach((f) => formData.append("files", f));
     formData.append("caption", caption);
@@ -82,7 +111,7 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
       try {
         body = JSON.parse(xhr.responseText);
       } catch {
-        /* non-JSON error */
+        body = {};
       }
       if (xhr.status >= 200 && xhr.status < 300) {
         finish(`Uploaded ${pendingFiles.length} file${pendingFiles.length > 1 ? "s" : ""}.`, "success");
@@ -98,7 +127,6 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
   };
 
   const handleDeleteMedia = async (mediaId: string) => {
-    if (!asset) return;
     try {
       const res = await adminFetch(apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}/media/${mediaId}`), {
         method: "DELETE",
@@ -114,7 +142,6 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
   };
 
   const handleSetPrimary = async (mediaId: string) => {
-    if (!asset) return;
     try {
       const res = await adminFetch(apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}/media/${mediaId}`), {
         method: "PATCH",
@@ -129,16 +156,13 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
     }
   };
 
-  const handleReorder = async (mediaId: string, direction: "up" | "down") => {
-    if (!asset) return;
+  const handleReorder = async (mediaId: string, direction: "earlier" | "later") => {
     const media = asset.media || [];
     const idx = media.findIndex((m) => m.id === mediaId);
     if (idx === -1) return;
-    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+    const targetIdx = direction === "earlier" ? idx - 1 : idx + 1;
     if (targetIdx < 0 || targetIdx >= media.length) return;
 
-    // Single transactional request — two sequential PATCHes could corrupt
-    // sortOrder if one failed midway.
     try {
       const res = await adminFetch(
         apiUrl(`/api/heritage-assets/${encodeURIComponent(asset.id)}/media/reorder`),
@@ -160,25 +184,44 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
     }
   };
 
-  if (!asset) {
-    return (
-      <div className="bg-white rounded-xl border border-black/5 p-12 text-center">
-        <p className="text-xs text-black/40 uppercase">Select an asset to manage its media</p>
-      </div>
-    );
-  }
+  const openPreview = (m: MediaItem) => setPreviewMedia(m);
 
-  const media = asset.media || [];
+  const previewIdx = previewMedia ? (asset.media || []).findIndex((m) => m.id === previewMedia.id) : -1;
 
   return (
-    <div className="bg-white rounded-xl border border-black/5 overflow-hidden">
-      {/* Header */}
-      <div className="p-4 border-b border-black/5 flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-black text-[#111]">Media Manager</h3>
-          <p className="text-[10px] text-black/40 mt-0.5">{asset.name || "Untitled"} — {media.length} file{media.length !== 1 ? "s" : ""}</p>
+    <div
+      className="relative bg-white border border-hairline"
+      onDragEnter={(e) => {
+        e.preventDefault();
+        dragDepth.current += 1;
+        setDragOver(true);
+      }}
+      onDragOver={(e) => e.preventDefault()}
+      onDragLeave={() => {
+        dragDepth.current = Math.max(0, dragDepth.current - 1);
+        if (dragDepth.current === 0) setDragOver(false);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        dragDepth.current = 0;
+        setDragOver(false);
+        ingestFiles(Array.from(e.dataTransfer.files || []));
+      }}
+    >
+      {dragOver && (
+        <div className="absolute inset-0 z-20 bg-white/90 border border-dashed border-ink flex items-center justify-center pointer-events-none">
+          <p className="text-[13px] font-medium text-ink">Drop files to stage for upload</p>
         </div>
-        <label className="cursor-pointer text-[10px] font-bold uppercase px-3 py-2 bg-black/5 rounded-lg hover:bg-black/10 transition-colors flex items-center gap-1.5">
+      )}
+
+      <div className="p-4 border-b border-hairline flex items-center justify-between gap-4">
+        <div>
+          <h3 className="f-heading-5 text-ink">Media Manager</h3>
+          <p className="text-[12px] tabular-nums text-ink-soft mt-0.5">
+            {(asset.media || []).length} file{(asset.media || []).length !== 1 ? "s" : ""}
+          </p>
+        </div>
+        <label className="cursor-pointer f-caption px-3 py-2 border border-ink/15 hover:border-ink transition-colors duration-200 ease-house flex items-center gap-2 shrink-0">
           <input
             type="file"
             multiple
@@ -188,88 +231,135 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
             ref={fileInputRef}
           />
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            <path strokeLinecap="round" strokeWidth={1.5} d="M12 5v14M5 12h14" />
           </svg>
           Add Files
         </label>
       </div>
 
       <div className="flex flex-col lg:flex-row">
-        {/* Media Grid */}
         <div className="flex-1 p-4">
-          {media.length === 0 && pendingFiles.length === 0 ? (
+          {(asset.media || []).length === 0 && pendingFiles.length === 0 ? (
             <div className="py-16 text-center">
-              <svg className="w-10 h-10 mx-auto text-black/10 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <svg className="w-9 h-9 mx-auto text-ink/15 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
               </svg>
-              <p className="text-xs text-black/40">No media files yet</p>
+              <p className="f-caption text-ink">No media files yet</p>
+              <p className="mt-1.5 text-[13px] text-ink-soft">Add files or drop them anywhere on this panel.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {media.map((m) => (
+            <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-5 gap-2">
+              {(asset.media || []).map((m) => (
                 <div
                   key={m.id}
-                  className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer group border-2 transition-colors ${
-                    previewMedia?.id === m.id ? "border-brand" : "border-transparent hover:border-black/10"
-                  }`}
-                  onClick={() => setPreviewMedia(m)}
-                >
-                  {m.mediaType === "image" ? (
-                    <img src={mediaUrl(m.filePath)} alt={m.caption || ""} className="w-full h-full object-cover" />
-                  ) : m.mediaType === "video" ? (
-                    <div className="w-full h-full bg-[#1A1A1A] flex items-center justify-center">
-                      <svg className="w-6 h-6 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                  ) : m.mediaType === "audio" ? (
-                    <div className="w-full h-full bg-purple-900 flex items-center justify-center">
-                      <svg className="w-6 h-6 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                      </svg>
-                    </div>
-                  ) : m.mediaType === "model" ? (
-                    <div className="w-full h-full bg-blue-900 flex items-center justify-center">
-                      <span className="text-[9px] font-bold text-white/50 uppercase">3D</span>
-                    </div>
-                  ) : (
-                    <div className="w-full h-full bg-black/10 flex items-center justify-center">
-                      <svg className="w-6 h-6 text-black/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => openPreview(m)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      openPreview(m);
+                    }
+                  }}
+                  title={m.fileName || m.caption || m.mediaType}
+                  className={cn(
+                    "relative aspect-square overflow-hidden cursor-pointer group border transition-colors duration-200 ease-house outline-none",
+                    previewMedia?.id === m.id
+                      ? "border-brand"
+                      : "border-transparent [@media(hover:hover)]:hover:border-ink/25 focus-visible:border-ink"
                   )}
+                >
+                  <div className="absolute inset-0 bg-paper-deep flex items-center justify-center">
+                    {m.mediaType === "image" ? (
+                      <img
+                        src={mediaUrl(m.filePath)}
+                        alt={m.caption || ""}
+                        loading="lazy"
+                        className="relative w-full h-full object-cover"
+                      />
+                    ) : m.mediaType === "video" ? (
+                      <svg className="w-6 h-6 text-ink/30 relative" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                        />
+                        <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
+                      </svg>
+                    ) : m.mediaType === "audio" ? (
+                      <span className="text-[12px] text-ink/40">Audio</span>
+                    ) : m.mediaType === "model" ? (
+                      <span className="text-[12px] text-ink/40">3D</span>
+                    ) : (
+                      <svg className="w-6 h-6 text-ink/30 relative" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    )}
+                  </div>
 
                   {m.isPrimary && m.mediaType === "image" && (
-                    <div className="absolute top-1 left-1 bg-brand text-white text-[7px] font-bold uppercase px-1.5 py-0.5 rounded">
-                      Primary
+                    <div className="absolute top-1.5 left-1.5 bg-white/95 pl-1 pr-1.5 py-0.5 flex items-center gap-1">
+                      <span aria-hidden="true" className="block w-1.5 h-1.5 rounded-full bg-brand" />
+                      <span className="text-[10px] leading-none text-ink">Primary</span>
                     </div>
                   )}
 
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <div
+                    className={cn(
+                      "absolute inset-0 bg-ink/45 flex items-center justify-center transition-opacity duration-200 ease-house",
+                      previewMedia?.id === m.id
+                        ? "opacity-100"
+                        : "opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
+                    )}
+                  >
                     <div className="flex gap-1">
                       {m.mediaType === "image" && (
                         <button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); handleSetPrimary(m.id); }}
-                          className="p-1.5 bg-white/90 rounded-md hover:bg-white transition-colors"
-                          title="Set as primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSetPrimary(m.id);
+                          }}
+                          disabled={m.isPrimary}
+                          className="p-1.5 bg-white hover:bg-paper-deep transition-colors duration-200 ease-house disabled:opacity-40 disabled:cursor-not-allowed"
+                          title={m.isPrimary ? "Current primary" : "Set as primary"}
                         >
-                          <svg className="w-3 h-3 text-brand" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                          <svg className="w-3 h-3 text-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinejoin="round"
+                              strokeWidth={1.5}
+                              d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                            />
                           </svg>
                         </button>
                       )}
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm(m.id); }}
-                        className="p-1.5 bg-white/90 rounded-md hover:bg-white transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirm(m.id);
+                        }}
+                        className="p-1.5 bg-white hover:bg-paper-deep transition-colors duration-200 ease-house"
                         title="Delete"
                       >
-                        <svg className="w-3 h-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        <svg className="w-3 h-3 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
                         </svg>
                       </button>
                     </div>
@@ -280,77 +370,117 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
           )}
         </div>
 
-        {/* Preview / Upload Panel */}
-        <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-black/5 p-4">
+        <div className="w-full lg:w-72 shrink-0 border-t lg:border-t-0 lg:border-l border-hairline p-4">
           {previewMedia ? (
             <div>
               <div className="flex items-center justify-between mb-3">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-black/50">Preview</p>
-                <button type="button" onClick={() => setPreviewMedia(null)} className="text-black/30 hover:text-black/60 transition-colors">
+                <p className="text-[13px] font-medium text-ink">Preview</p>
+                <button
+                  type="button"
+                  onClick={() => setPreviewMedia(null)}
+                  aria-label="Close preview"
+                  className="text-ink/35 hover:text-ink transition-colors duration-200 ease-house"
+                >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
-              <div className="aspect-[4/3] bg-black/5 rounded-lg overflow-hidden mb-3">
+              <div className="aspect-[4/3] bg-paper-deep overflow-hidden mb-4 flex items-center justify-center">
                 {previewMedia.mediaType === "image" ? (
                   <img src={mediaUrl(previewMedia.filePath)} alt="" className="w-full h-full object-contain" />
                 ) : previewMedia.mediaType === "model" ? (
-                  <ModelViewer modelUrl={mediaUrl(previewMedia.filePath)} backgroundColor="#f9fafb" autoRotate={false} />
+                  <ModelViewer modelUrl={mediaUrl(previewMedia.filePath)} backgroundColor="#F5F5F5" autoRotate={false} />
+                ) : previewMedia.mediaType === "video" ? (
+                  <video src={mediaUrl(previewMedia.filePath)} controls className="w-full h-full object-contain" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-[10px] uppercase text-black/30">{previewMedia.mediaType}</span>
-                  </div>
+                  <span className="text-[13px] text-ink/40">{previewMedia.mediaType}</span>
                 )}
               </div>
 
-              <div className="space-y-2 text-[10px]">
-                <div className="flex justify-between">
-                  <span className="text-black/40 uppercase font-bold">Type</span>
-                  <span className="font-bold">{previewMedia.mediaType}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-black/40 uppercase font-bold">Caption</span>
-                  <span className="font-bold text-right max-w-[140px] truncate">{previewMedia.caption || "—"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-black/40 uppercase font-bold">Order</span>
-                  <span className="font-bold">{previewMedia.sortOrder}</span>
-                </div>
-                {previewMedia.mediaType === "image" && (
-                  <div className="flex justify-between">
-                    <span className="text-black/40 uppercase font-bold">Primary</span>
-                    <span className="font-bold">{previewMedia.isPrimary ? "Yes" : "No"}</span>
+              <dl>
+                {[
+                  { label: "Type", value: previewMedia.mediaType },
+                  ...(previewMedia.fileName ? [{ label: "File", value: previewMedia.fileName }] : []),
+                  { label: "Caption", value: previewMedia.caption || "—" },
+                  { label: "Order", value: String(previewMedia.sortOrder) },
+                  ...(previewMedia.mediaType === "image"
+                    ? [{ label: "Primary", value: previewMedia.isPrimary ? "Yes" : "No" }]
+                    : []),
+                ].map((row) => (
+                  <div key={row.label} className="flex items-baseline justify-between gap-6 py-2 border-b border-ink/10 last:border-0">
+                    <dt className="shrink-0 text-[12px] text-ink-soft">{row.label}</dt>
+                    <dd className="text-right text-[13px] leading-snug min-w-0 break-words text-ink">{row.value}</dd>
                   </div>
-                )}
-              </div>
+                ))}
+              </dl>
 
-              <div className="mt-4 flex gap-1">
+              <div className="mt-4 grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => handleReorder(previewMedia.id, "up")}
-                  className="flex-1 px-2 py-1.5 text-[9px] font-bold uppercase bg-black/5 rounded-md hover:bg-black/10 transition-colors"
+                  onClick={() => handleReorder(previewMedia.id, "earlier")}
+                  disabled={previewIdx <= 0}
+                  className="px-2 py-1.5 text-[12px] border border-ink/15 hover:border-ink text-ink transition-colors duration-200 ease-house disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:border-ink/15"
                 >
-                  ← Move Left
+                  ← Earlier
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleReorder(previewMedia.id, "down")}
-                  className="flex-1 px-2 py-1.5 text-[9px] font-bold uppercase bg-black/5 rounded-md hover:bg-black/10 transition-colors"
+                  onClick={() => handleReorder(previewMedia.id, "later")}
+                  disabled={previewIdx === -1 || previewIdx >= (asset.media || []).length - 1}
+                  className="px-2 py-1.5 text-[12px] border border-ink/15 hover:border-ink text-ink transition-colors duration-200 ease-house disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:border-ink/15"
                 >
-                  Move Right →
+                  Later →
+                </button>
+                {previewMedia.mediaType === "image" && (
+                  <button
+                    type="button"
+                    onClick={() => handleSetPrimary(previewMedia.id)}
+                    disabled={previewMedia.isPrimary}
+                    className="px-2 py-1.5 text-[12px] border border-ink/15 hover:border-ink text-ink transition-colors duration-200 ease-house disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:border-ink/15"
+                  >
+                    Set primary
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirm(previewMedia.id)}
+                  className="px-2 py-1.5 text-[12px] border border-brand/40 hover:border-brand text-brand transition-colors duration-200 ease-house"
+                >
+                  Delete
                 </button>
               </div>
             </div>
           ) : pendingFiles.length > 0 ? (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-black/50 mb-3">Pending Upload</p>
-              <div className="space-y-1.5 mb-4 max-h-48 overflow-y-auto">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[13px] font-medium text-ink">Staged</p>
+                <p className="text-[12px] tabular-nums text-ink-soft">
+                  {pendingFiles.length}/{MAX_FILES}
+                </p>
+              </div>
+              <div className="mb-4 max-h-48 overflow-y-auto">
                 {pendingFiles.map((f) => (
-                  <div key={`${f.name}-${f.lastModified}`} className="flex items-center justify-between text-[10px] py-1.5 border-b border-black/5 last:border-0">
-                    <span className="truncate pr-2 font-medium">{f.name}</span>
-                    <span className="text-black/30 shrink-0">{(f.size / 1024).toFixed(0)} KB</span>
+                  <div
+                    key={`${f.name}-${f.lastModified}`}
+                    className="group flex items-center gap-2 py-1.5 border-b border-ink/10 last:border-0"
+                  >
+                    <span className="text-[13px] text-ink truncate min-w-0 flex-1" title={f.name}>
+                      {f.name}
+                    </span>
+                    <span className="text-[12px] tabular-nums text-ink-soft shrink-0">{formatBytes(f.size)}</span>
+                    <button
+                      type="button"
+                      onClick={() => removePendingFile(f)}
+                      disabled={uploading}
+                      aria-label={`Remove ${f.name}`}
+                      className="shrink-0 p-0.5 text-ink/30 hover:text-brand transition-colors duration-200 ease-house disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
                 ))}
               </div>
@@ -360,26 +490,27 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
                   placeholder="Caption (optional)"
-                  className="w-full px-3 py-2 text-xs bg-black/5 rounded-lg border-0 outline-none focus:ring-2 focus:ring-brand/30"
+                  aria-label="Caption for staged files"
+                  className="w-full px-3 py-2 f-caption bg-transparent border border-ink/15 rounded-none outline-none focus:border-ink transition-colors duration-200 placeholder:text-ink/40 text-ink"
                 />
-                <label className="flex items-center gap-2 text-[10px] font-bold uppercase cursor-pointer">
+                <label className="flex items-center gap-2.5 f-caption text-ink cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={markFirstPrimary}
                     onChange={(e) => setMarkFirstPrimary(e.target.checked)}
-                    className="w-3.5 h-3.5 rounded border-black/20 text-brand focus:ring-brand/30"
+                    className="w-3.5 h-3.5 accent-brand"
                   />
-                  Mark first as primary
+                  Mark first image as primary
                 </label>
               </div>
 
               {uploading && (
-                <div className="mb-2">
-                  <div className="flex justify-between text-[9px] uppercase font-mono text-black/40 mb-1">
-                    <span>Uploading</span>
+                <div className="mb-3">
+                  <div className="flex justify-between text-[12px] tabular-nums text-ink-soft mb-1.5">
+                    <span>Uploading…</span>
                     <span>{uploadProgress}%</span>
                   </div>
-                  <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
+                  <div className="h-[3px] w-full bg-paper-deep overflow-hidden">
                     <div
                       className="h-full bg-brand transition-all duration-200"
                       style={{ width: `${uploadProgress}%` }}
@@ -393,7 +524,7 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
                   type="button"
                   onClick={() => setPendingFiles([])}
                   disabled={uploading}
-                  className="flex-1 px-3 py-2 text-[10px] font-bold uppercase bg-black/5 rounded-lg hover:bg-black/10 transition-colors disabled:opacity-50"
+                  className="flex-1 px-3 py-2 f-caption border border-ink/15 hover:border-ink text-ink transition-colors duration-200 ease-house disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Clear
                 </button>
@@ -401,39 +532,36 @@ export const MediaManager = ({ asset, onRefresh, onToast }: MediaManagerProps): 
                   type="button"
                   onClick={handleUpload}
                   disabled={uploading}
-                  className="flex-1 px-3 py-2 text-[10px] font-bold uppercase bg-brand text-white rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50"
+                  className="flex-1 px-3 py-2 f-caption bg-ink text-white hover:bg-ink/80 transition-colors duration-200 ease-house disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {uploading ? `${uploadProgress}%` : "Upload"}
+                  {uploading ? `${uploadProgress}%` : `Upload ${pendingFiles.length}`}
                 </button>
               </div>
             </div>
           ) : (
             <div className="py-12 text-center">
-              <svg className="w-8 h-8 mx-auto text-black/10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              <svg className="w-7 h-7 mx-auto text-ink/15 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                />
               </svg>
-              <p className="text-[10px] text-black/30 uppercase">Click "Add Files" to upload</p>
+              <p className="f-caption text-ink-soft">Click “Add Files” or drop files here</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Delete Confirmation */}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40" onClick={() => setDeleteConfirm(null)}>
-          <div className="bg-white rounded-xl shadow-2xl p-6 w-[340px]" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-sm font-black text-[#111] mb-2">Delete Media</h3>
-            <p className="text-xs text-black/60 mb-5">This will permanently delete this media file. This action cannot be undone.</p>
-            <div className="flex gap-2 justify-end">
-              <button type="button" onClick={() => setDeleteConfirm(null)} className="px-4 py-2 text-[10px] font-bold uppercase rounded-lg bg-black/5 hover:bg-black/10 transition-colors">
-                Cancel
-              </button>
-              <button type="button" onClick={() => handleDeleteMedia(deleteConfirm)} className="px-4 py-2 text-[10px] font-bold uppercase rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors">
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title="Delete media"
+          body="This will permanently delete this media file. This action cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={() => handleDeleteMedia(deleteConfirm)}
+          onCancel={() => setDeleteConfirm(null)}
+        />
       )}
     </div>
   );

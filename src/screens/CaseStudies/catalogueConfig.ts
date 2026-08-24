@@ -18,8 +18,8 @@ export type CatalogueCollectionConfig = {
 export const catalogueCollections: CatalogueCollectionConfig[] = [
   {
     key: "artifacts",
-    title: "Artifact Collection",
-    shortTitle: "Artifacts",
+    title: "Object Collection",
+    shortTitle: "Objects",
     route: "/case-studies/artifacts",
     apiCollection: "artifacts",
     description: "Objects, masks, beadwork, jewelry, and related physical artifacts.",
@@ -29,14 +29,15 @@ export const catalogueCollections: CatalogueCollectionConfig[] = [
   },
   {
     key: "museums",
-    title: "Museums & Monuments",
-    shortTitle: "Museums",
+    title: "Heritage Sites",
+    shortTitle: "Heritage Sites",
     route: "/case-studies/museums",
     apiCollection: "museums",
-    description: "Museums, monuments, forts, castles, and site-based heritage records.",
+    description:
+      "Museums, monuments, shrines, forts, castles, and site-based heritage records.",
     intro:
       "Historic places and institutions grouped together so site records stay practical to browse.",
-    chips: ["Museums", "Monuments", "Forts", "Castles"],
+    chips: ["Museums", "Monuments", "Shrines", "Forts", "Castles"],
   },
   {
     key: "textiles",

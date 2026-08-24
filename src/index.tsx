@@ -1,10 +1,11 @@
-import { StrictMode, lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import {
   createBrowserRouter,
   RouterProvider,
   Outlet,
   ScrollRestoration,
+  Navigate,
 } from "react-router-dom";
 import { ErrorPage } from "./screens/ErrorPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -40,7 +41,6 @@ const MediaAdmin = lazy(() =>
 const Reconstruction = lazy(() =>
   import("./screens/Reconstruction").then((m) => ({ default: m.Reconstruction }))
 );
-const Gallery = lazy(() => import("./screens/Gallery").then((m) => ({ default: m.Gallery })));
 const Research = lazy(() => import("./screens/Research").then((m) => ({ default: m.Research })));
 const Blog = lazy(() => import("./screens/Blog").then((m) => ({ default: m.Blog })));
 const MapScreen = lazy(() => import("./screens/Map/Map").then((m) => ({ default: m.MapScreen })));
@@ -59,12 +59,17 @@ function RootLayout() {
 
 function RouteLoader() {
   return (
-    <div className="min-h-screen w-full bg-white flex items-center justify-center">
-      <div
-        className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin"
-        role="status"
-        aria-label="Loading page"
-      />
+    <div
+      className="min-h-screen w-full bg-paper flex items-center justify-center"
+      role="status"
+      aria-label="Loading page"
+    >
+      <div className="flex items-center gap-3">
+        <span className="w-[7px] h-[7px] rounded-full bg-brand animate-pulse" aria-hidden="true" />
+        <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-ink/45">
+          Opening the archive
+        </span>
+      </div>
     </div>
   );
 }
@@ -86,7 +91,7 @@ const router = createBrowserRouter([
       { path: "/case-studies/documents", element: <Documents /> },
       { path: "/admin/media", element: <MediaAdmin /> },
       { path: "/reconstruction", element: <Reconstruction /> },
-      { path: "/gallery", element: <Gallery /> },
+      { path: "/gallery", element: <Navigate to="/research" replace /> },
       { path: "/research", element: <Research /> },
       { path: "/blog", element: <Blog /> },
       { path: "/map", element: <MapScreen /> },
@@ -95,8 +100,15 @@ const router = createBrowserRouter([
   },
 ]);
 
+/*
+ * Deliberately NOT wrapped in <StrictMode>. StrictMode's development-only
+ * mount → unmount → remount simulation double-invokes ref callbacks, and
+ * react-leaflet@4.2.1's MapContainer re-creates a second Leaflet instance
+ * from its stale `context === null` closure on the re-attached node —
+ * leaving duplicate map containers on the atlas (and the admin geo-picker).
+ * Imperative Leaflet/three lifecycles and StrictMode don't mix until the
+ * react-leaflet v5 line; production builds are unaffected either way.
+ */
 createRoot(document.getElementById("app") as HTMLElement).render(
-  <StrictMode>
-    <RouterProvider router={router} />
-  </StrictMode>,
+  <RouterProvider router={router} />
 );

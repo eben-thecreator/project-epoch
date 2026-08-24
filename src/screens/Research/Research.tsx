@@ -1,5 +1,9 @@
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Header } from "../../components/Header";
-import { Card, CardContent } from "../../components/ui/card";
+import { SiteFooter } from "../../components/SiteFooter";
+import { Reveal } from "../../components/Reveal";
+import { MetaList, MetaRow, SectionLabel } from "../../components/editorial";
 
 interface ResearchPaper {
   title: string;
@@ -12,95 +16,156 @@ interface ResearchPaper {
 
 const RESEARCH_PAPERS: ResearchPaper[] = [
   {
-    title: "High-Fidelity 3D Reconstruction of West African Pottery using Low-Cost Photogrammetry",
-    authors: "Amoah-Yeboah Abena Pokua, Academic Supervisor: Professor Quaye Ballard",
+    title:
+      "High-Fidelity 3D Reconstruction of West African Pottery using Low-Cost Photogrammetry",
+    authors: "Amoah-Yeboah Abena Pokua",
     journal: "Journal of Cultural Heritage Digitalization",
     year: 2025,
-    abstract: "This study explores cost-effective methodologies for capturing and preserving historical pottery artifacts. By utilizing standard consumer-grade cameras and open-source photogrammetry pipelines, we demonstrate high-accuracy 3D asset generation comparable to industrial laser scanning.",
-    tags: ["3D Reconstruction", "Photogrammetry", "West African Pottery"]
+    abstract:
+      "This study explores cost-effective methodologies for capturing and preserving historical pottery artifacts. By utilizing standard consumer-grade cameras and open-source photogrammetry pipelines, we demonstrate high-accuracy 3D asset generation comparable to industrial laser scanning.",
+    tags: ["3D Reconstruction", "Photogrammetry", "West African Pottery"],
   },
   {
-    title: "Spatial Cultural Heritage Systems: Bridging Geographic Information Systems with Digital Humanities",
-    authors: "Ankudey Ebenezer, Academic Supervisor: Professor Quaye Ballard",
+    title:
+      "Spatial Cultural Heritage Systems: Bridging Geographic Information Systems with Digital Humanities",
+    authors: "Ankudey Ebenezer",
     journal: "International Transactions on Spatial Humanities",
     year: 2026,
-    abstract: "Traditionally, archival records are stored as isolated textual items. This paper proposes a unified spatial information framework (SCHIS) that grounds historical documents, artifacts, and multimedia narratives within their precise geographic coordinates, enabling spatial queries and interactive map exploration.",
-    tags: ["GIS", "Spatial Systems", "Digital Archives"]
+    abstract:
+      "Traditionally, archival records are stored as isolated textual items. This paper proposes a unified spatial information framework (SCHIS) that grounds historical documents, artifacts, and multimedia narratives within their precise geographic coordinates, enabling spatial queries and interactive map exploration.",
+    tags: ["GIS", "Spatial Systems", "Digital Archives"],
   },
   {
     title: "Preserving Indigenous Narrative through Interactive 3D Environments",
-    authors: "Elorm Dei-Zanga Aku, Academic Supervisor: Professor Quaye Ballard",
+    authors: "Elorm Dei-Zanga Aku",
     journal: "Virtual Heritage & Narrative Technologies",
     year: 2026,
-    abstract: "How can 3D environments preserve intangible oral histories? This paper presents a case study of virtual walk-throughs in digitized historic sites, integrating spatial audio and contextual annotations to create emotional resonance and historical accuracy.",
-    tags: ["Immersive Tech", "Oral History", "Virtual Museum"]
-  }
+    abstract:
+      "How can 3D environments preserve intangible oral histories? This paper presents a case study of virtual walk-throughs in digitized historic sites, integrating spatial audio and contextual annotations to create emotional resonance and historical accuracy.",
+    tags: ["Immersive Tech", "Oral History", "Virtual Museum"],
+  },
 ];
 
 export const Research = (): JSX.Element => {
+  useEffect(() => {
+    document.title = `Research — Project Work`;
+  }, []);
+
   return (
-    <div className="bg-white w-full min-h-screen">
+    <div className="bg-paper min-h-screen flex flex-col">
       <Header />
 
-      <main className="px-4 sm:px-6 lg:px-8 py-12 pt-20 max-w-5xl mx-auto">
-        <div className="space-y-12">
-          {/* Header */}
-          <div className="space-y-4">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-black tracking-tight uppercase">
-              Research & Publications
-            </h1>
-            <p className="text-gray-700 text-lg sm:text-xl max-w-3xl leading-relaxed">
-              Discover the academic foundations, publications, and technical research driving the Spatial Cultural Heritage Information System (SCHIS).
-            </p>
-          </div>
+      <main className="flex-1 pt-[calc(var(--header-h)+40px)] md:pt-[calc(var(--header-h)+48px)] pb-24 md:pb-32">
+        <div className="shell">
+          {/* Masthead — h1 left, live counts right */}
+          <Reveal>
+            <div className="flex flex-col md:flex-row md:justify-between gap-x-10">
+              <h1 className="f-heading-1 text-ink">Research</h1>
+              <div className="mt-6 md:mt-0 md:w-1/2 lg:pr-12">
+                <p className="f-body-1 text-ink">
+                  Published works{" "}
+                  <span className="text-ink-soft">
+                    ({RESEARCH_PAPERS.length})
+                  </span>
+                </p>
+                <p className="mt-3 f-body-2 text-ink-soft leading-relaxed max-w-md">
+                  The academic foundations of SCHIS — capture methodology,
+                  spatial theory and the craft of digital preservation.
+                </p>
+              </div>
+            </div>
+          </Reveal>
 
-          {/* Papers list */}
-          <div className="space-y-8">
+          {/* Papers index */}
+          <section aria-label="Published papers" className="mt-14 md:mt-20 border-t border-hairline">
             {RESEARCH_PAPERS.map((paper, idx) => (
-              <Card key={idx} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                <CardContent className="p-0 space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    {paper.tags.map((tag, tIdx) => (
-                      <span key={tIdx} className="text-[10px] uppercase font-bold tracking-wider bg-gray-100 text-gray-800 px-2.5 py-1 rounded">
-                        {tag}
-                      </span>
-                    ))}
+              <Reveal key={paper.title} delay={Math.min(idx * 0.05, 0.15)}>
+                <article className="group grid grid-cols-12 gap-x-6 lg:gap-x-8 gap-y-3 py-9 md:py-11 border-b border-hairline">
+                  <span className="col-span-2 md:col-span-1 font-mono text-[11px] tracking-[0.18em] tabular-nums text-ink-soft group-hover:text-brand transition-colors duration-300">
+                    {String(idx + 1).padStart(2, "0")}
+                  </span>
+                  <div className="col-span-10 md:col-span-7">
+                    <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-soft">
+                      {paper.authors}
+                    </p>
+                    <h2 className="mt-2.5 f-heading-4 text-ink max-w-xl leading-snug">
+                      {paper.title}
+                    </h2>
+                    <p className="mt-3 f-caption leading-relaxed text-ink-soft max-w-xl">
+                      {paper.abstract}
+                    </p>
                   </div>
-
-                  <h2 className="text-xl font-bold text-black leading-snug">
-                    {paper.title}
-                  </h2>
-
-                  <div className="text-xs text-gray-500 font-semibold">
-                    By {paper.authors} • <span className="italic">{paper.journal}</span> ({paper.year})
+                  <div className="col-span-10 col-start-3 md:col-span-4 md:col-start-auto md:text-right space-y-1.5 pt-1 md:pt-0">
+                    <p className="font-mono text-[11px] tabular-nums tracking-[0.08em] text-ink">
+                      {paper.year}
+                    </p>
+                    <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-ink-soft leading-relaxed md:max-w-[26ch] md:inline-block">
+                      {paper.journal}
+                    </p>
+                    <p className="pt-2 font-mono text-[8.5px] uppercase tracking-[0.16em] text-ink-soft leading-loose">
+                      {paper.tags.join(" · ")}
+                    </p>
                   </div>
-
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    {paper.abstract}
-                  </p>
-
-                  <div className="pt-2">
-                    <button className="text-xs font-bold text-black border-b-2 border-black hover:border-black/50 transition-colors uppercase tracking-widest flex items-center gap-2">
-                      Read Full Paper 
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-3.5 h-3.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                      </svg>
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
+                </article>
+              </Reveal>
             ))}
-          </div>
-
-          {/* Academic Info */}
-          <div className="border-t border-gray-200 pt-8 space-y-4">
-            <h3 className="text-lg font-bold text-black uppercase tracking-wider">Academic Partnership</h3>
-            <p className="text-gray-700 text-sm leading-relaxed max-w-3xl">
-              This project is part of a research initiative overseen by the Department of Geomatic Engineering, supervised by <strong>Professor Quaye Ballard</strong>. We collaborate with national heritage boards and architectural historians to create accurate spatial models.
+            <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-ink-soft pt-6">
+              Full texts — in press
             </p>
-          </div>
+          </section>
+
+          {/* Programme */}
+          <Reveal className="mt-16 md:mt-24 block">
+            <section aria-label="Academic partnership" className="grid lg:grid-cols-12 gap-x-8 gap-y-8 items-start">
+              <div className="lg:col-span-5">
+                <SectionLabel>Academic Partnership</SectionLabel>
+                <h2 className="mt-4 f-heading-3 text-ink max-w-md leading-snug">
+                  A geomatic engineering thesis, kept in the field
+                </h2>
+                <p className="mt-4 f-body-2 leading-relaxed text-ink-soft max-w-md">
+                  This project is a research initiative overseen by the
+                  Department of Geomatic Engineering, supervised by Professor
+                  Quaye Ballard. We collaborate with national heritage boards
+                  and architectural historians to create accurate spatial
+                  models of Ghana's material culture.
+                </p>
+              </div>
+              <MetaList className="lg:col-span-4 lg:col-start-9 w-full">
+                <MetaRow label="Programme" value="BSc Geomatic Engineering" />
+                <MetaRow label="Department" value="Geomatic Engineering" />
+                <MetaRow label="Supervisor" value="Professor Quaye Ballard" />
+                <MetaRow mono label="System" value="SCHIS" />
+              </MetaList>
+            </section>
+          </Reveal>
+
+          {/* Continue */}
+          <Reveal className="mt-16 md:mt-24 block">
+            <div className="flex flex-row flex-wrap gap-x-6 gap-y-2 border-t border-hairline pt-6">
+              <Link
+                to="/reconstruction"
+                className="f-body-2 text-ink-soft transition-colors duration-200 hover:text-ink"
+              >
+                See the pipeline in practice ↗
+              </Link>
+              <Link
+                to="/case-studies"
+                className="f-body-2 text-ink-soft transition-colors duration-200 hover:text-ink"
+              >
+                Browse the catalogue ↗
+              </Link>
+              <Link
+                to="/contact"
+                className="f-body-2 text-ink-soft transition-colors duration-200 hover:text-ink"
+              >
+                Request a full text ↗
+              </Link>
+            </div>
+          </Reveal>
         </div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 };

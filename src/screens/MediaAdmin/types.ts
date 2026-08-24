@@ -57,6 +57,7 @@ export type HeritageAsset = {
   survey_method: string | null;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
   media: MediaItem[];
 };
 
@@ -70,7 +71,7 @@ export type AssetSummary = {
   newest_updated_at: string | null;
 };
 
-export type AdminTab = "dashboard" | "assets" | "media";
+export type AdminTab = "dashboard" | "assets" | "media" | "trash";
 
 export type ToastType = "success" | "error" | "info";
 

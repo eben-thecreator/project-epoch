@@ -17,9 +17,9 @@ type MediaItem = {
 type Artifact = {
   id: string;
   title: string;
-  location: string;
-  currentLocation: string;
-  type: string;
+  location?: string;
+  currentLocation?: string;
+  type?: string;
   description: string;
   imageUrl: string;
   modelUrl: string;
@@ -32,16 +32,17 @@ type Artifact = {
   height?: string;
 };
 
+/* The house ease, captured from the reference build CSS */
+const HOUSE: [number, number, number, number] = [0.59, 0.01, 0.28, 1];
+
 const stagger = {
   hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.04 },
-  },
+  show: { transition: { staggerChildren: 0.04 } },
 };
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 12 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: HOUSE } },
 };
 
 export const Artifacts = (): JSX.Element => {
@@ -61,10 +62,11 @@ export const Artifacts = (): JSX.Element => {
             id: item.id,
             title: item.name || item.alternative_name || item.id,
             location:
-              [item.region, item.district, item.community].filter(Boolean).join(", ") ||
-              "Unknown",
-            currentLocation: item.current_location || "—",
-            type: item.asset_category || item.asset_type || "Artifact",
+              [item.region, item.district, item.community]
+                .filter(Boolean)
+                .join(", ") || undefined,
+            currentLocation: item.current_location || undefined,
+            type: item.asset_category || item.asset_type || undefined,
             description: item.description || "No description recorded.",
             imageUrl: media.find((m: MediaItem) => m.mediaType === "image")?.filePath
               ? mediaUrl(media.find((m: MediaItem) => m.mediaType === "image")!.filePath)
@@ -112,45 +114,56 @@ export const Artifacts = (): JSX.Element => {
     ? selected.media.filter((m) => m.mediaType === "image")
     : [];
 
+  /** Credits-rail row: gray caption over an ink value */
+  const DetailRow = ({ label, value }: { label: string; value: string }) => (
+    <div>
+      <p className="f-caption text-ink-soft">{label}</p>
+      <p className="f-body-2 text-ink mt-1">{value}</p>
+    </div>
+  );
+
   return (
-    <div className="bg-white w-full h-screen pt-[80px] pb-[40px]">
+    <div className="min-h-screen w-full bg-white pt-[var(--header-h)]">
       <Header />
 
-      <div className="h-full grid grid-cols-1 md:grid-cols-12 gap-4 min-h-0 px-4 sm:px-6 lg:px-8">
-        {/* Left: Artifact gallery grid */}
-        <div className="col-span-1 md:col-span-7 h-full overflow-y-auto py-4 scrollbar-hide">
+      <div className="shell grid grid-cols-1 md:grid-cols-12 gap-x-3 xl:gap-x-4 md:min-h-[calc(100vh-var(--header-h))]">
+        {/* Left: Object gallery grid */}
+        <div className="md:col-span-7 py-6 md:py-8 md:max-h-[calc(100vh-var(--header-h))] md:overflow-y-auto scrollbar-hide md:pr-3 xl:pr-4">
           <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 gap-5"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-12 xl:gap-x-4"
             variants={stagger}
             initial="hidden"
-            animate="visible"
+            animate="show"
           >
             {artifacts.map((artifact) => (
-              <motion.div
+              <motion.button
                 key={artifact.id}
                 variants={fadeUp}
                 onClick={() => handleSelect(artifact.id)}
-                className={`group cursor-pointer ${selectedId === artifact.id ? "opacity-100" : "opacity-90 hover:opacity-100"}`}
+                className="group block cursor-pointer text-left"
               >
-                {/* Image Container without grey background */}
-                <div className="relative overflow-hidden">
+                {/* Picture well */}
+                <div className="relative overflow-hidden bg-hairline">
                   <img
                     src={artifact.imageUrl}
                     alt={artifact.title}
-                    className="w-full aspect-video object-cover"
+                    loading="lazy"
+                    className="w-full aspect-[3/2] object-cover transition-opacity duration-300"
                     onError={(e: any) => {
                       e.currentTarget.src =
-                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f5f5f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23ccc'%3ENo Image%3C/text%3E%3C/svg%3E";
+                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23E3E4E5'/%3E%3C/svg%3E";
                     }}
                   />
                 </div>
 
-                {/* Title & Description */}
-                <div className="mt-2.5">
-                  <h3 className="text-sm font-bold text-black leading-tight">{artifact.title}</h3>
-                  <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{artifact.description}</p>
+                {/* Title & standfirst — work-card anatomy */}
+                <div className="pt-2">
+                  <h3 className="f-body-1 text-ink">{artifact.title}</h3>
+                  <p className="f-body-1 text-ink-soft line-clamp-2">
+                    {artifact.description}
+                  </p>
                 </div>
-              </motion.div>
+              </motion.button>
             ))}
           </motion.div>
         </div>
@@ -158,7 +171,7 @@ export const Artifacts = (): JSX.Element => {
         {/* Right: Model viewer + details + media gallery */}
         <div
           ref={detailsRef}
-          className="col-span-1 md:col-span-5 h-full overflow-y-auto py-4 space-y-5 scrollbar-hide"
+          className="md:col-span-5 py-6 md:py-8 md:max-h-[calc(100vh-var(--header-h))] md:overflow-y-auto space-y-8 scrollbar-hide md:border-l border-hairline md:pl-6 lg:pl-8"
         >
           <AnimatePresence mode="wait">
             {selected ? (
@@ -167,11 +180,11 @@ export const Artifacts = (): JSX.Element => {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className="space-y-5"
+                transition={{ duration: 0.35, ease: HOUSE }}
+                className="space-y-8"
               >
                 {/* Model viewer */}
-                <div className="w-full aspect-[2/1] bg-black/5 overflow-hidden border border-black/5">
+                <div className="w-full aspect-[2/1] bg-paper-deep overflow-hidden border border-hairline">
                   {selected.modelUrl ? (
                     <ModelViewer
                       modelUrl={selected.modelUrl}
@@ -185,122 +198,54 @@ export const Artifacts = (): JSX.Element => {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-[10px] font-bold text-black/20">
-                        No media
-                      </span>
+                      <span className="f-caption text-ink-soft">No media</span>
                     </div>
                   )}
                 </div>
 
-                {/* Artifact details */}
-                <div className="space-y-4">
+                {/* Object details */}
+                <div className="space-y-6">
                   <div>
-                    <h1 className="text-lg font-black uppercase leading-tight text-black">
-                      {selected.title}
-                    </h1>
-                    <p className="text-[10px] uppercase font-bold text-black/40 mt-1">
+                    <h1 className="f-heading-3 text-ink">{selected.title}</h1>
+                    <p className="f-body-2 text-ink-soft mt-2">
                       {[selected.location, selected.type, selected.date]
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
-                        Location
-                      </p>
-                      <p className="text-xs font-bold text-black">
-                        {selected.location}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
-                        Type / Category
-                      </p>
-                      <p className="text-xs font-bold text-black">
-                        {selected.type}
-                      </p>
-                    </div>
-                    {selected.currentLocation && selected.currentLocation !== "—" && (
-                      <div>
-                        <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
-                          Current Location
-                        </p>
-                        <p className="text-xs font-bold text-black">
-                          {selected.currentLocation}
-                        </p>
-                      </div>
-                    )}
-                    {selected.date && (
-                      <div>
-                        <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
-                          Period
-                        </p>
-                        <p className="text-xs font-bold text-black">
-                          {selected.date}
-                        </p>
-                      </div>
-                    )}
-                    {selected.material && (
-                      <div>
-                        <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
-                          Material
-                        </p>
-                        <p className="text-xs font-bold text-black">
-                          {selected.material}
-                        </p>
-                      </div>
-                    )}
-                    {selected.condition && (
-                      <div>
-                        <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
-                          Condition
-                        </p>
-                        <p className="text-xs font-bold text-black">
-                          {selected.condition}
-                        </p>
-                      </div>
-                    )}
-                    {selected.weight && selected.weight !== "Unknown" && (
-                      <div>
-                        <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
-                          Weight
-                        </p>
-                        <p className="text-xs font-bold text-black">
-                          {selected.weight}
-                        </p>
-                      </div>
-                    )}
-                    {selected.height && selected.height !== "Unknown" && (
-                      <div>
-                        <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
-                          Height
-                        </p>
-                        <p className="text-xs font-bold text-black">
-                          {selected.height}
-                        </p>
-                      </div>
-                    )}
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-6">
+                    {(
+                      [
+                        ["Location", selected.location],
+                        ["Type / Category", selected.type],
+                        ["Current Location", selected.currentLocation],
+                        ["Period", selected.date],
+                        ["Material", selected.material],
+                        ["Condition", selected.condition],
+                        ["Weight", selected.weight],
+                        ["Height", selected.height],
+                      ] as [string, string | undefined][]
+                    )
+                      .filter(([, value]) => Boolean(value && value !== "—" && value !== "Unknown"))
+                      .map(([label, value]) => (
+                        <DetailRow key={label} label={label} value={value!} />
+                      ))}
                   </div>
 
                   <div>
-                    <p className="text-[9px] uppercase font-bold text-black/30 mb-2">
-                      Description
-                    </p>
-                    <p className="text-xs text-black/60 leading-relaxed">
-                      {selected.description}
-                    </p>
+                    <p className="f-caption text-ink-soft">Description</p>
+                    <p className="f-body-2 text-ink mt-2">{selected.description}</p>
                   </div>
                 </div>
 
-                {/* Scrollable media gallery -> Redesigned Cinematic Carousel */}
+                {/* Media gallery */}
                 {imageMedia.length > 0 && (
-                  <div className="space-y-2.5 pt-2 border-t border-black/5">
-                    <p className="text-[9px] uppercase font-bold text-black/40">
+                  <div className="space-y-3 pt-8 border-t border-hairline">
+                    <p className="f-caption text-ink-soft">
                       Media Gallery ({imageMedia.length})
                     </p>
-                    <div className="relative aspect-[16/10] bg-black/5 overflow-hidden border border-black/5">
+                    <div className="relative aspect-[16/10] bg-paper-deep overflow-hidden border border-hairline">
                       <AnimatePresence mode="wait">
                         {imageMedia[activeImageIndex] && (
                           <motion.img
@@ -308,7 +253,7 @@ export const Artifacts = (): JSX.Element => {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            transition={{ duration: 0.35, ease: "easeInOut" }}
+                            transition={{ duration: 0.35, ease: HOUSE }}
                             src={mediaUrl(imageMedia[activeImageIndex].filePath)}
                             alt=""
                             className="w-full h-full object-cover"
@@ -316,7 +261,7 @@ export const Artifacts = (): JSX.Element => {
                         )}
                       </AnimatePresence>
 
-                      {/* Carousel Arrow Controls */}
+                      {/* Carousel arrow controls */}
                       {imageMedia.length > 1 && (
                         <>
                           <button
@@ -324,10 +269,10 @@ export const Artifacts = (): JSX.Element => {
                               e.stopPropagation();
                               setActiveImageIndex((prev) => (prev - 1 + imageMedia.length) % imageMedia.length);
                             }}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/75 hover:bg-black text-white w-7 h-7 flex items-center justify-center transition-colors focus:outline-none"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-ink/80 hover:bg-ink text-white w-7 h-7 flex items-center justify-center transition-colors duration-200 focus:outline-none"
                             aria-label="Previous image"
                           >
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                             </svg>
                           </button>
@@ -336,10 +281,10 @@ export const Artifacts = (): JSX.Element => {
                               e.stopPropagation();
                               setActiveImageIndex((prev) => (prev + 1) % imageMedia.length);
                             }}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/75 hover:bg-black text-white w-7 h-7 flex items-center justify-center transition-colors focus:outline-none"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-ink/80 hover:bg-ink text-white w-7 h-7 flex items-center justify-center transition-colors duration-200 focus:outline-none"
                             aria-label="Next image"
                           >
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                             </svg>
                           </button>
@@ -347,17 +292,18 @@ export const Artifacts = (): JSX.Element => {
                       )}
                     </div>
 
-                    {/* Thumbnail Strip */}
+                    {/* Thumbnail strip */}
                     {imageMedia.length > 1 && (
                       <div className="flex gap-2 overflow-x-auto py-1 scrollbar-hide">
                         {imageMedia.map((m, idx) => (
                           <button
                             key={m.id}
                             onClick={() => setActiveImageIndex(idx)}
-                            className={`w-14 h-9 flex-shrink-0 border bg-black/5 overflow-hidden transition-all duration-200 ${activeImageIndex === idx
-                              ? "border-black opacity-100"
-                              : "border-transparent opacity-50 hover:opacity-100"
-                              }`}
+                            className={`w-14 h-9 flex-shrink-0 border overflow-hidden transition-all duration-200 ${
+                              activeImageIndex === idx
+                                ? "border-ink opacity-100"
+                                : "border-hairline opacity-50 hover:opacity-100"
+                            }`}
                           >
                             <img
                               src={mediaUrl(m.filePath)}
@@ -375,11 +321,10 @@ export const Artifacts = (): JSX.Element => {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
+                transition={{ duration: 0.35, ease: HOUSE }}
                 className="h-full flex items-center justify-center"
               >
-                <p className="text-[10px] uppercase font-bold text-black/30">
-                  Select an artifact
-                </p>
+                <p className="f-body-1 text-ink-soft">Select an object</p>
               </motion.div>
             )}
           </AnimatePresence>

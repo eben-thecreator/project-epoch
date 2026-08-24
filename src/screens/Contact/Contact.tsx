@@ -1,5 +1,8 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Header } from "../../components/Header";
+import { SiteFooter } from "../../components/SiteFooter";
+import { Reveal } from "../../components/Reveal";
+import { SectionLabel, MetaList } from "../../components/editorial";
 
 const CONTACT_EMAIL = "ebenezer.ankudey@gmail.com";
 
@@ -13,111 +16,116 @@ export const Contact = (): JSX.Element => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const subject = encodeURIComponent(form.subject || `Enquiry from ${form.name}`);
-    const body = encodeURIComponent(`${form.message}\n\n— ${form.name} (${form.email})`);
+    const body = encodeURIComponent(`${form.message}\n\n- ${form.name} (${form.email})`);
     window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
     setSent(true);
   };
 
-  const inputClass =
-    "w-full px-3 py-2.5 text-sm bg-black/[0.03] rounded-lg border border-black/10 outline-none focus:border-brand transition-colors";
-  const labelClass = "block text-[10px] font-bold uppercase tracking-wider text-black/50 mb-1.5";
+  const fieldClass =
+    "w-full bg-transparent border-b border-ink/20 focus:border-ink outline-none py-2.5 text-[14px] text-ink placeholder:text-ink/30 transition-colors duration-200 rounded-none";
+  const labelClass = "block font-mono text-[9px] uppercase tracking-[0.22em] text-ink/45 mb-1";
 
   return (
-    <div className="bg-white w-full min-h-screen">
+    <div className="bg-paper min-h-screen flex flex-col">
       <Header />
 
-      <main className="pt-20 pb-16">
-        <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-brand mb-2">
-            Get in Touch
-          </p>
-          <h1 className="text-3xl sm:text-4xl font-bold text-black tracking-tight">
-            Contact the Project Team
+      <main className="flex-1 pt-[calc(var(--header-h)+56px)] pb-24 px-5 sm:px-8 lg:px-14">
+        <Reveal>
+          <SectionLabel>Correspondence</SectionLabel>
+          <h1 className="mt-4 font-display font-light tracking-[-0.015em] leading-[1.02] text-ink text-[clamp(38px,5.4vw,76px)] max-w-2xl">
+            Write to the <em className="italic">archive</em>
           </h1>
-          <p className="mt-4 text-gray-700 leading-relaxed max-w-2xl">
-            Questions about the platform, heritage data contributions, collaboration proposals, or
-            institutional partnerships — we would love to hear from you.
+          <p className="mt-6 text-[15px] leading-relaxed text-ink/60 max-w-xl">
+            Questions about the platform, heritage data contributions,
+            collaboration proposals or institutional partnerships.
           </p>
+        </Reveal>
 
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 mt-10">
-            {/* Form */}
-            <div className="lg:col-span-3">
-              {sent ? (
-                <div className="rounded-xl border border-black/10 bg-black/[0.02] p-8 text-center">
-                  <svg className="w-10 h-10 mx-auto text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  <h2 className="text-lg font-bold text-black mt-4">Your email client is opening</h2>
-                  <p className="text-sm text-gray-600 mt-2">
-                    If nothing happened, write to us directly at{" "}
-                    <a href={`mailto:${CONTACT_EMAIL}`} className="text-brand font-semibold hover:underline">
-                      {CONTACT_EMAIL}
-                    </a>
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="contact-name" className={labelClass}>Name</label>
-                      <input id="contact-name" required value={form.name} onChange={set("name")} className={inputClass} placeholder="Your name" />
-                    </div>
-                    <div>
-                      <label htmlFor="contact-email" className={labelClass}>Email</label>
-                      <input id="contact-email" type="email" required value={form.email} onChange={set("email")} className={inputClass} placeholder="you@example.com" />
-                    </div>
-                  </div>
-                  <div>
-                    <label htmlFor="contact-subject" className={labelClass}>Subject</label>
-                    <input id="contact-subject" value={form.subject} onChange={set("subject")} className={inputClass} placeholder="What is this about?" />
-                  </div>
-                  <div>
-                    <label htmlFor="contact-message" className={labelClass}>Message</label>
-                    <textarea id="contact-message" required rows={6} value={form.message} onChange={set("message")} className={`${inputClass} resize-none`} placeholder="Tell us more…" />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full sm:w-auto px-6 py-3 bg-brand hover:bg-brand-dark text-white text-[11px] uppercase font-mono font-bold tracking-wider transition-colors"
-                  >
-                    Send Message
-                  </button>
-                </form>
-              )}
-            </div>
-
-            {/* Sidebar */}
-            <aside className="lg:col-span-2 space-y-6">
-              <div className="rounded-xl border border-black/10 p-6">
-                <h3 className="text-sm font-bold text-black">Project Epoch — SCHIS</h3>
-                <p className="text-xs text-gray-600 mt-2 leading-relaxed">
-                  A Spatial Cultural Heritage Information System documenting Ghana's museums,
-                  monuments and material culture through geomatics technology.
+        <div className="grid lg:grid-cols-12 gap-x-12 gap-y-12 mt-14">
+          {/* Form */}
+          <Reveal delay={0.06} className="lg:col-span-7">
+            {sent ? (
+              <div className="border border-ink/15 p-8">
+                <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-brand">
+                  Message composed
                 </p>
-              </div>
-              <div className="rounded-xl border border-black/10 p-6 space-y-4">
-                <div>
-                  <p className="text-[9px] uppercase font-mono tracking-wider text-gray-400">Email</p>
-                  <a href={`mailto:${CONTACT_EMAIL}`} className="text-sm text-brand font-semibold hover:underline">
+                <h2 className="mt-3 font-display font-light text-[24px] text-ink">
+                  Your email client is opening
+                </h2>
+                <p className="mt-2 text-[13px] leading-relaxed text-ink/60">
+                  If nothing happened, write directly to{" "}
+                  <a href={`mailto:${CONTACT_EMAIL}`} className="text-brand hover:underline underline-offset-2">
                     {CONTACT_EMAIL}
                   </a>
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-7">
+                <div className="grid sm:grid-cols-2 gap-x-8 gap-y-7">
+                  <div>
+                    <label htmlFor="contact-name" className={labelClass}>Name</label>
+                    <input id="contact-name" required value={form.name} onChange={set("name")} className={fieldClass} placeholder="Your name" />
+                  </div>
+                  <div>
+                    <label htmlFor="contact-email" className={labelClass}>Email</label>
+                    <input id="contact-email" type="email" required value={form.email} onChange={set("email")} className={fieldClass} placeholder="you@example.com" />
+                  </div>
                 </div>
                 <div>
-                  <p className="text-[9px] uppercase font-mono tracking-wider text-gray-400">Research Team</p>
-                  <p className="text-sm text-gray-800 mt-0.5">
+                  <label htmlFor="contact-subject" className={labelClass}>Subject</label>
+                  <input id="contact-subject" value={form.subject} onChange={set("subject")} className={fieldClass} placeholder="What is this about?" />
+                </div>
+                <div>
+                  <label htmlFor="contact-message" className={labelClass}>Message</label>
+                  <textarea id="contact-message" required rows={6} value={form.message} onChange={set("message")} className={`${fieldClass} resize-none`} placeholder="Tell us more…" />
+                </div>
+                <button
+                  type="submit"
+                  className="group inline-flex items-center gap-2 bg-ink text-paper px-7 py-3.5 font-mono text-[10px] uppercase tracking-[0.22em] hover:bg-brand transition-colors duration-300"
+                >
+                  Send message
+                  <span className="transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden="true">→</span>
+                </button>
+              </form>
+            )}
+          </Reveal>
+
+          {/* Directory */}
+          <Reveal delay={0.12} className="lg:col-span-4 lg:col-start-9">
+            <SectionLabel>Directory</SectionLabel>
+            <div>
+              <MetaList className="border-t border-ink/10">
+                <div className="flex items-baseline justify-between gap-6 py-2.5 border-b border-ink/10">
+                  <dt className="shrink-0 font-mono text-[9px] uppercase tracking-[0.22em] text-ink/45">Email</dt>
+                  <dd className="text-right min-w-0 break-all">
+                    <a href={`mailto:${CONTACT_EMAIL}`} className="text-[12px] text-brand hover:underline underline-offset-2 break-all">
+                      {CONTACT_EMAIL}
+                    </a>
+                  </dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-6 py-2.5 border-b border-ink/10">
+                  <dt className="shrink-0 font-mono text-[9px] uppercase tracking-[0.22em] text-ink/45">Research team</dt>
+                  <dd className="text-right text-[12px] text-ink/85 leading-relaxed">
                     Amoah-Yeboah Abena Pokua<br />
                     Ankudey Ebenezer<br />
                     Elorm Dei-Zanga Aku
-                  </p>
+                  </dd>
                 </div>
-                <div>
-                  <p className="text-[9px] uppercase font-mono tracking-wider text-gray-400">Supervisor</p>
-                  <p className="text-sm text-gray-800 mt-0.5">Professor Quaye Ballard</p>
+                <div className="flex items-baseline justify-between gap-6 py-2.5 border-b border-ink/10">
+                  <dt className="shrink-0 font-mono text-[9px] uppercase tracking-[0.22em] text-ink/45">Supervisor</dt>
+                  <dd className="text-right text-[12px] text-ink/85">Professor Quaye Ballard</dd>
                 </div>
-              </div>
-            </aside>
-          </div>
-        </section>
+                <div className="flex items-baseline justify-between gap-6 py-2.5">
+                  <dt className="shrink-0 font-mono text-[9px] uppercase tracking-[0.22em] text-ink/45">System</dt>
+                  <dd className="text-right text-[12px] text-ink/85">Project Work · PostGIS</dd>
+                </div>
+              </MetaList>
+            </div>
+          </Reveal>
+        </div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 };

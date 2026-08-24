@@ -1,70 +1,128 @@
+import { cn } from "../../lib/utils";
 import type { AdminTab } from "./types";
+
+interface SidebarNavItem {
+  tab: AdminTab;
+  label: string;
+  countKey?: "assets" | "trash";
+}
+
+const navItems: SidebarNavItem[] = [
+  { tab: "dashboard", label: "Dashboard" },
+  { tab: "assets", label: "Assets", countKey: "assets" },
+  { tab: "media", label: "Media" },
+  { tab: "trash", label: "Trash", countKey: "trash" },
+];
 
 interface AdminSidebarProps {
   activeTab: AdminTab;
   onTabChange: (tab: AdminTab) => void;
+  counts?: { assets: number; trash: number };
 }
 
-const navItems: { tab: AdminTab; label: string; icon: JSX.Element }[] = [
-  {
-    tab: "dashboard",
-    label: "Dashboard",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-      </svg>
-    ),
-  },
-  {
-    tab: "assets",
-    label: "Assets",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-      </svg>
-    ),
-  },
-  {
-    tab: "media",
-    label: "Media",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
-];
-
-export const AdminSidebar = ({ activeTab, onTabChange }: AdminSidebarProps): JSX.Element => {
+export const AdminSidebar = ({ activeTab, onTabChange, counts }: AdminSidebarProps): JSX.Element => {
   return (
-    <aside className="w-56 bg-[#111111] h-full flex flex-col border-r border-white/5">
-      <div className="flex-1 py-4">
-        <p className="px-5 mb-3 text-[9px] font-bold uppercase tracking-widest text-white/30">Navigation</p>
-        <nav className="flex flex-col gap-0.5 px-2">
-          {navItems.map((item) => {
-            const isActive = activeTab === item.tab;
-            return (
-              <button
-                key={item.tab}
-                type="button"
-                onClick={() => onTabChange(item.tab)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all ${
-                  isActive
-                    ? "bg-brand text-white"
-                    : "text-white/50 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                {item.icon}
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
+    <aside className="hidden lg:flex w-56 bg-white h-full flex-col border-r border-hairline">
+      <nav aria-label="Admin sections" className="flex-1 py-5 flex flex-col gap-0.5">
+        {navItems.map((item) => {
+          const isActive = activeTab === item.tab;
+          const count = item.countKey ? counts?.[item.countKey] : undefined;
+          return (
+            <button
+              key={item.tab}
+              type="button"
+              onClick={() => onTabChange(item.tab)}
+              aria-current={isActive ? "page" : undefined}
+              className={cn(
+                "group relative flex items-center gap-2.5 px-6 py-[7px] text-left f-body-2",
+                "transition-colors duration-200 ease-house",
+                isActive ? "text-ink font-medium" : "text-ink-soft hover:text-ink"
+              )}
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[3px] transition-opacity duration-200 ease-house",
+                  isActive ? "bg-brand opacity-100" : "opacity-0"
+                )}
+              />
+              <span className="truncate">{item.label}</span>
+              {typeof count === "number" && count > 0 && (
+                <span
+                  className={cn(
+                    "ml-auto text-[12px] tabular-nums transition-colors duration-200 ease-house",
+                    isActive ? "text-brand" : "text-ink/35 group-hover:text-ink"
+                  )}
+                >
+                  {count.toLocaleString()}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
 
-      <div className="px-5 py-4 border-t border-white/5">
-        <p className="text-[9px] font-bold uppercase tracking-widest text-white/20">SCHIS Admin v1.0</p>
+      <div className="px-6 py-4 border-t border-hairline">
+        <p className="text-[12px] text-ink/40 leading-none">SCHIS Admin v1.0</p>
       </div>
     </aside>
+  );
+};
+
+interface AdminTabBarProps {
+  activeTab: AdminTab;
+  onTabChange: (tab: AdminTab) => void;
+  counts?: { assets: number; trash: number };
+  className?: string;
+}
+
+export const AdminTabBar = ({ activeTab, onTabChange, counts, className }: AdminTabBarProps): JSX.Element => {
+  return (
+    <div
+      className={cn(
+        "lg:hidden sticky top-0 z-30 bg-white border-b border-hairline overflow-x-auto scrollbar-hide",
+        className
+      )}
+    >
+      <nav aria-label="Admin sections" className="flex min-w-max px-2">
+        {navItems.map((item) => {
+          const isActive = activeTab === item.tab;
+          const count = item.countKey ? counts?.[item.countKey] : undefined;
+          return (
+            <button
+              key={item.tab}
+              type="button"
+              onClick={() => onTabChange(item.tab)}
+              aria-current={isActive ? "page" : undefined}
+              className={cn(
+                "relative px-3.5 py-3.5 f-caption whitespace-nowrap transition-colors duration-200 ease-house",
+                isActive ? "text-ink font-medium" : "text-ink-soft hover:text-ink"
+              )}
+            >
+              <span className="inline-flex items-baseline gap-1.5">
+                {item.label}
+                {typeof count === "number" && count > 0 && (
+                  <span
+                    className={cn(
+                      "text-[11px] tabular-nums",
+                      isActive ? "text-brand" : "text-ink/35"
+                    )}
+                  >
+                    {count.toLocaleString()}
+                  </span>
+                )}
+              </span>
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute inset-x-3 bottom-0 h-[2px] transition-opacity duration-200 ease-house",
+                  isActive ? "bg-brand opacity-100" : "opacity-0"
+                )}
+              />
+            </button>
+          );
+        })}
+      </nav>
+    </div>
   );
 };

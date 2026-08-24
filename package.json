@@ -12,6 +12,7 @@
     "migrate": "node-pg-migrate up",
     "migrate:down": "node-pg-migrate down",
     "migrate:create": "node-pg-migrate create",
+    "backup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/backup-db.ps1",
     "typecheck": "tsc -p tsconfig.app.json --noEmit"
   },
   "dependencies": {

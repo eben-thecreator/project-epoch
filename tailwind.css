@@ -2,164 +2,308 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom Animations */
-@layer utilities {
-  .animate-roll {
-    display: inline-block;
-    animation: roll 15s linear infinite;
-    animation-delay: 0s;
-  }
-  
-  @keyframes roll {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      transform: translateX(-50%);
-    }
-  }
+/* ------------------------------------------------------------------ */
+/*  House typeface — Inter Tight (OFL), variable 100–900.              */
+/*  Pentagram-system discipline: one grotesque, weight ≤ 500.          */
+/* ------------------------------------------------------------------ */
+
+@font-face {
+  font-family: "Inter Tight";
+  src: url("/fonts/intertight-variable.ttf") format("truetype-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
 }
+
+/* ------------------------------------------------------------------ */
+/*  SCHIS design tokens — "ground & ink"                               */
+/*  White ground, near-black type, gray secondary, one red signal.     */
+/* ------------------------------------------------------------------ */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 47.4% 11.2%;
+    /* Chrome metric shared by every screen so offsets never drift.
+       Pentagram fixes the bar at 60px at every breakpoint. */
+    --header-h: 60px;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --background: 0 0% 100%;         /* ground #FFFFFF */
+    --foreground: 0 0% 10%;          /* ink    #1A1A1A */
+
+    --muted: 210 4% 96%;             /* well   #F5F5F5 */
+    --muted-foreground: 0 0% 46%;    /* secondary #767676 */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 47.4% 11.2%;
+    --popover-foreground: 0 0% 10%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 210 4% 89%;            /* hairline #E3E4E5 */
+    --input: 210 4% 89%;
 
     --card: transparent;
-    --card-foreground: 222.2 47.4% 11.2%;
+    --card-foreground: 0 0% 10%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 0 0% 10%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 210 4% 96%;
+    --secondary-foreground: 0 0% 10%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 210 4% 96%;
+    --accent-foreground: 0 0% 10%;
 
-    --destructive: 0 100% 50%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 354 100% 45%;
+    --destructive-foreground: 0 0% 100%;
 
-    --ring: 215 20.2% 65.1%;
+    --ring: 0 0% 10%;
 
-    --radius: 0.5rem;
+    /* The archive is printed sharp — no rounded corners anywhere */
+    --radius: 0rem;
   }
 
   .dark {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
+    --background: 0 0% 0%;           /* true black */
+    --foreground: 0 0% 100%;
 
-    --muted: 223 47% 11%;
-    --muted-foreground: 215.4 16.3% 56.9%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 40%;
 
-    --accent: 216 34% 17%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 100%;
 
-    --popover: 224 71% 4%;
-    --popover-foreground: 215 20.2% 65.1%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 100%;
 
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
 
     --card: transparent;
-    --card-foreground: 213 31% 91%;
+    --card-foreground: 44 30% 93%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 1.2%;
+    --primary: 44 30% 93%;
+    --primary-foreground: 30 14% 9%;
 
-    --secondary: 222.2 47.4% 11.2%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 30 10% 12%;
+    --secondary-foreground: 44 30% 93%;
 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 354 70% 55%;
+    --destructive-foreground: 0 0% 10%;
 
-    --ring: 216 34% 17%;
+    --ring: 0 0% 100%;
 
-    --radius: 0.5rem;
+    --radius: 0rem;
   }
-  
+
   html {
-    /* Ensure consistent scrollbar behavior to prevent layout shifts */
+    /* Consistent scrollbar behaviour prevents layout shifts between pages */
     overflow-y: scroll;
+    scrollbar-gutter: stable;
   }
-  
+
   * {
     @apply border-border;
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1, "case" on;
     position: relative;
-    font-family: Inter, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
+
+  ::selection {
+    background: #1a1a1a;
+    color: #ffffff;
+  }
+  .dark ::selection {
+    background: #ffffff;
+    color: #1a1a1a;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--foreground));
+    outline-offset: 2px;
+  }
+
+  /* Thin warm instrument scrollbars everywhere */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(26, 26, 26, 0.18);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(228, 0, 43, 0.45);
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16);
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 77, 77, 0.5);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
-/* Ensure consistent scrollbar behavior to prevent layout shifts */
-html {
-  scrollbar-gutter: stable;
+/* ------------------------------------------------------------------ */
+/*  Type scale — f-* utilities, values verbatim from the reference     */
+/*  build CSS (see docs/pentagram-design-reference.md §2).             */
+/*  One family, weight ≤ 400 (display leans lighter); hierarchy is     */
+/*  size + negative tracking only. Three steps: base → md → xl.        */
+/* ------------------------------------------------------------------ */
+
+@layer utilities {
+  .f-display-1 {
+    font-size: 3.625rem;      /* 58px */
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    font-weight: 375;
+  }
+  .f-heading-1 {
+    font-size: 2.25rem;       /* 36px */
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    font-weight: 400;
+  }
+  .f-heading-2 {
+    font-size: 2rem;          /* 32px */
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 400;
+  }
+  .f-heading-3 {
+    font-size: 1.75rem;       /* 28px */
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 400;
+  }
+  .f-heading-4 {
+    font-size: 1.5rem;        /* 24px */
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    font-weight: 400;
+  }
+  .f-heading-5 {
+    font-size: 1rem;          /* 16px */
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 400;
+  }
+  .f-body-1 {
+    font-size: 1rem;          /* 16px */
+    line-height: 1.25;
+    font-weight: 400;
+  }
+  .f-body-2,
+  .f-caption {
+    font-size: 0.8125rem;     /* 13px */
+    line-height: 1.25;
+    font-weight: 400;
+  }
+  .f-number {
+    font-size: 0.8125rem;     /* 13px */
+    line-height: 1;
+    font-weight: 400;
+  }
+
+  @media (min-width: 768px) {
+    .f-display-1 { font-size: 5.75rem; line-height: 1.05; }              /* 92px */
+    .f-heading-1 { font-size: 2.875rem; }                                /* 46px */
+    .f-heading-2 { font-size: 2.875rem; line-height: 1.1; font-weight: 375; }
+    .f-heading-3 { font-size: 2.25rem; }                                 /* 36px */
+    .f-heading-4 { font-size: 1.75rem; }                                 /* 28px */
+    .f-heading-5 { font-size: 1.25rem; }                                 /* 20px */
+  }
+
+  @media (min-width: 1280px) {
+    .f-display-1 { font-size: 8.1875rem; line-height: 1; letter-spacing: -0.04em; font-weight: 350; } /* 131px */
+    .f-heading-1 { font-size: 3.25rem; letter-spacing: -0.02em; }        /* 52px */
+    .f-heading-2 { font-size: 4.0625rem; line-height: 1.05; }            /* 65px */
+    .f-heading-3 { font-size: 2.5625rem; }                               /* 41px */
+    .f-heading-4 { font-size: 2rem; }                                    /* 32px */
+    .f-heading-5 { font-size: 1.5rem; }                                  /* 24px */
+    .f-body-2 { font-size: 1rem; }
+  }
 }
 
-/* Custom styles for UI components */
-.bg-dotted-pattern {
-  background-image: radial-gradient(circle, #000 1px, transparent 1px);
-  background-size: 24px 24px;
-}
+/* ------------------------------------------------------------------ */
+/*  Motion primitives                                                  */
+/* ------------------------------------------------------------------ */
 
-@layer components {
-  .all-unset {
-    all: unset;
+/* ------------------------------------------------------------------ */
+/*  Page shell — the reference container formula:                      */
+/*  width = min(100%, 1792px) − 2 × outer-gutter, centered.            */
+/*  The gutter ramp mirrors the fixed header's inline padding exactly, */
+/*  so every screen's content extent aligns with the chrome above.     */
+/* ------------------------------------------------------------------ */
+
+@layer utilities {
+  .shell {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 1792px;
+    padding-inline: 0.75rem; /* 12px */
+  }
+  @media (min-width: 640px) {
+    .shell { padding-inline: 1rem; }      /* 16px */
+  }
+  @media (min-width: 1024px) {
+    .shell { padding-inline: 1.5rem; }    /* 24px */
+  }
+  @media (min-width: 1280px) {
+    .shell { padding-inline: 2rem; }      /* 32px */
   }
 }
 
 @layer utilities {
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  .animate-fadeIn {
-    animation: fadeIn 0.2s ease-in-out forwards;
+  /* Horizontal ticker used by the exhibitions strip */
+  @keyframes roll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
   }
 
-  /* Hide scrollbar for Chrome, Safari and Opera */
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-  /* Hide scrollbar for IE, Edge and Firefox */
   .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
-  /* Custom horizontal scrollbar for big.dk style rows */
-  .custom-scrollbar::-webkit-scrollbar {
-    height: 4px;
+  .no-spinner::-webkit-outer-spin-button,
+  .no-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.02);
+  .no-spinner {
+    -moz-appearance: textfield;
+    appearance: textfield;
   }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.15);
-    border-radius: 2px;
+
+  /* Hairline horizontal rail scrollbar (collection rails) */
+  .rail-scrollbar::-webkit-scrollbar {
+    height: 3px;
   }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #E4002B;
+  .rail-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
   }
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.02);
+  .rail-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(25, 22, 19, 0.18);
+  }
+  .rail-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #e4002b;
   }
 }

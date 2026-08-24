@@ -1,3 +1,4 @@
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
     "./src/**/*.{html,js,ts,jsx,tsx}",
@@ -5,9 +6,29 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        /*
+         * The studio palette, Pentagram-system edition: white ground,
+         * near-black ink (#1A1A1A), gray secondary voice (#767676),
+         * and a single heritage-red signal (Ghana flag red) that is
+         * never a surface colour — it marks live/selected states.
+         * `paper` is kept as an alias so existing screens resolve.
+         */
+        paper: {
+          DEFAULT: "#FFFFFF",
+          deep: "#F5F5F5",
+        },
+        ground: {
+          DEFAULT: "#FFFFFF",
+          deep: "#F5F5F5",
+        },
+        ink: {
+          DEFAULT: "#1A1A1A",
+          soft: "#767676",
+        },
+        hairline: "#E3E4E5",
         brand: {
           DEFAULT: "#E4002B",
-          dark: "#CC0026",
+          dark: "#B80023",
           light: "#FF4D4D",
         },
         border: "hsl(var(--border))",
@@ -59,28 +80,53 @@ module.exports = {
       },
       fontFamily: {
         sans: [
+          "Inter Tight",
           "Inter",
-          "Helvetica",
+          "Helvetica Neue",
           "Arial",
           "sans-serif",
         ],
+        display: [
+          "Inter Tight",
+          "Inter",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif",
+        ],
+        mono: [
+          "IBM Plex Mono",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "monospace",
+        ],
       },
-      keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
+      transitionDuration: {
+        250: "250ms",
+        1200: "1200ms",
       },
-      animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+      transitionTimingFunction: {
+        /* The single house easing for entrances and reveals */
+        out: "cubic-bezier(0.22, 1, 0.36, 1)",
+        /* The Pentagram signature ease, captured from their build CSS */
+        house: "cubic-bezier(0.59, 0.01, 0.28, 1)",
       },
     },
-    container: { center: true, padding: "2rem", screens: { "2xl": "1400px" } },
+    container: {
+      center: true,
+      padding: {
+        DEFAULT: "0.75rem",
+        sm: "1rem",
+        md: "1rem",
+        lg: "1.5rem",
+        xl: "2rem",
+      },
+      screens: { "2xl": "1792px" },
+    },
+  },
+  future: {
+    /* Hover styles only for true pointers, matching Pentagram's media guard */
+    hoverOnlyWhenSupported: true,
   },
   plugins: [require("tailwindcss-animate")],
   darkMode: "class",

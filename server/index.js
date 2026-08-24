@@ -317,10 +317,19 @@ app.get("/api/status", async (req, res) => {
 });
 
 // GET /api/heritage-assets - Queries the actual heritage_assets table and returns GeoJSON geometries
+// Pass ?deleted=true (admin token required) to list soft-deleted assets instead.
 app.get("/api/heritage-assets", async (req, res) => {
   try {
+    const showDeleted = req.query.deleted === "true";
+    if (showDeleted) {
+      const header = req.headers.authorization || "";
+      const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+      if (!isValidAdminToken(token)) {
+        return res.status(401).json({ error: "Unauthorized. Admin authentication required." });
+      }
+    }
     const collection = typeof req.query.collection === "string" ? req.query.collection : "";
-    const conditions = ["ha.deleted_at IS NULL"];
+    const conditions = [showDeleted ? "ha.deleted_at IS NOT NULL" : "ha.deleted_at IS NULL"];
     const values = [];
     let paramIndex = 1;
 
@@ -435,6 +444,7 @@ app.get("/api/heritage-assets", async (req, res) => {
         ha.survey_method,
         ha.created_at,
         ha.updated_at,
+        ha.deleted_at,
         COALESCE(media.media, '[]'::json) AS media
       FROM heritage_assets ha
       LEFT JOIN LATERAL (
@@ -523,6 +533,7 @@ app.get("/api/catalogue/summary", async (req, res) => {
         COUNT(*) FILTER (WHERE ${collectionFilters.documents})::int AS documents,
         COUNT(*) FILTER (WHERE ${collectionFilters.needs_review})::int AS needs_review
       FROM heritage_assets ha
+      WHERE ha.deleted_at IS NULL
     `);
 
     res.json({
@@ -713,6 +724,7 @@ app.get("/api/heritage-assets/summary", async (req, res) => {
         MAX(created_at) AS newest_created_at,
         MAX(updated_at) AS newest_updated_at
       FROM heritage_assets
+      WHERE deleted_at IS NULL
     `);
 
     res.json(result.rows[0]);

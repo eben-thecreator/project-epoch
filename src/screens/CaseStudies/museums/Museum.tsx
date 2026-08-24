@@ -130,8 +130,8 @@ export const Museum = (): JSX.Element => {
 
                 {/* Title & Description */}
                 <div className="mt-2.5">
-                  <h3 className="text-sm font-bold text-black leading-tight">{museum.title}</h3>
-                  <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{museum.description}</p>
+                  <h3 className="f-heading-5 text-ink">{museum.title}</h3>
+                  <p className="f-body-1 text-ink-soft mt-1 line-clamp-2">{museum.description}</p>
                 </div>
               </motion.div>
             ))}
@@ -168,7 +168,7 @@ export const Museum = (): JSX.Element => {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-[10px] font-bold text-black/20">
+                      <span className="f-caption text-ink-soft">
                         No media
                       </span>
                     </div>
@@ -178,40 +178,34 @@ export const Museum = (): JSX.Element => {
                 {/* Museum details */}
                 <div className="space-y-4">
                   <div>
-                    <h1 className="text-lg font-black uppercase leading-tight text-black">
+                    <h1 className="f-heading-3 text-ink">
                       {selected.title}
                     </h1>
-                    <p className="text-[10px] uppercase font-bold text-black/40 mt-1">
+                    <p className="f-body-2 text-ink-soft mt-2">
                       {[selected.location, selected.type]
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-6">
                     <div>
-                      <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
-                        Location
-                      </p>
-                      <p className="text-xs font-bold text-black">
+                      <p className="f-caption text-ink-soft">Location</p>
+                      <p className="f-body-2 text-ink mt-1">
                         {selected.location}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[9px] uppercase font-bold text-black/40 mb-0.5">
-                        Type
-                      </p>
-                      <p className="text-xs font-bold text-black">
+                      <p className="f-caption text-ink-soft">Type</p>
+                      <p className="f-body-2 text-ink mt-1">
                         {selected.type}
                       </p>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-[9px] uppercase font-bold text-black/30 mb-2">
-                      Description
-                    </p>
-                    <p className="text-xs text-black/60 leading-relaxed">
+                    <p className="f-caption text-ink-soft">Description</p>
+                    <p className="f-body-2 text-ink mt-2 leading-relaxed">
                       {selected.description}
                     </p>
                   </div>
@@ -220,7 +214,7 @@ export const Museum = (): JSX.Element => {
                 {/* Scrollable media gallery -> Redesigned Cinematic Carousel */}
                 {imageMedia.length > 0 && (
                   <div className="space-y-2.5 pt-2 border-t border-black/5">
-                    <p className="text-[9px] uppercase font-bold text-black/40">
+                    <p className="f-caption text-ink-soft">
                       Media Gallery ({imageMedia.length})
                     </p>
                     <div className="relative aspect-[16/10] bg-black/5 overflow-hidden border border-black/5">
@@ -300,7 +294,7 @@ export const Museum = (): JSX.Element => {
                 animate={{ opacity: 1 }}
                 className="h-full flex items-center justify-center"
               >
-                <p className="text-[10px] uppercase font-bold text-black/30">
+                <p className="f-body-1 text-ink-soft">
                   Select a museum
                 </p>
               </motion.div>

@@ -1,8 +1,13 @@
-import { Header } from "../../components/Header";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { apiUrl } from "../../lib/api";
 import { motion } from "framer-motion";
+import { Header } from "../../components/Header";
+import {
+  CatalogueCard,
+  buildCatalogueGroups,
+} from "../../components/CatalogueCard";
+import { catalogueCollections } from "./catalogueConfig";
 
 interface CatalogueSummary {
   total?: number;
@@ -13,8 +18,29 @@ interface CatalogueSummary {
   needs_review?: number;
 }
 
+/* The house ease, captured from the reference build CSS */
+const HOUSE: [number, number, number, number] = [0.59, 0.01, 0.28, 1];
+
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.05 } },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: HOUSE } },
+};
+
+type CollectionCard = {
+  key: string;
+  title: string;
+  route: string;
+  image: string;
+  count: number | null;
+  chips: string[];
+};
+
 export const CaseStudies = (): JSX.Element => {
-  const navigate = useNavigate();
   const [summary, setSummary] = useState<CatalogueSummary | null>(null);
 
   useEffect(() => {
@@ -36,162 +62,128 @@ export const CaseStudies = (): JSX.Element => {
   }, []);
 
   const countOf = (key: keyof CatalogueSummary) =>
-    summary ? summary[key] ?? 0 : null;
+    summary ? summary[key] ?? null : null;
 
-  const collections = [
-    {
-      id: "artifacts",
-      title: "Objects / Artefacts",
-      image: "/images/core/objects.jpg",
-      route: "/case-studies/artifacts",
-      aspectRatio: "aspect-square",
-      flexGrow: 1,
-      count: countOf("artifacts"),
-    },
-    {
-      id: "museums",
-      title: "Heritage Sites / Monuments",
-      image: "/images/core/museum.jpg",
-      route: "/case-studies/museums",
-      aspectRatio: "aspect-[4/3]",
-      flexGrow: 1.333,
-      count: countOf("museums"),
-    },
-    {
-      id: "textiles",
-      title: "Materials / Textiles",
-      image: "/images/core/textile.jpg",
-      route: "/case-studies/textiles",
-      aspectRatio: "aspect-square",
-      flexGrow: 1,
-      count: countOf("textiles"),
-    },
-    {
-      id: "documents",
-      title: "Document Archive / Photography",
-      image: "/images/core/documents.jpg",
-      route: "/case-studies/documents",
-      aspectRatio: "aspect-square",
-      flexGrow: 1,
-      count: countOf("documents"),
-    },
+  const images: Record<string, string> = {
+    artifacts: "/images/core/objects.jpg",
+    museums: "/images/core/museum.jpg",
+    textiles: "/images/core/textile.jpg",
+    documents: "/images/core/documents.jpg",
+  };
+
+  const cards: CollectionCard[] = catalogueCollections.map((collection) => ({
+    key: collection.key,
+    title: collection.title,
+    route: collection.route,
+    image: images[collection.key],
+    count: countOf(collection.key),
+    chips: collection.chips.slice(0, 5),
+  }));
+
+  /* The reference rhythm: featured pair (⅓ + ⅔), then a trio of thirds.
+     With four collections this yields one pair group and one partial trio. */
+  const groups = buildCatalogueGroups(cards);
+
+  const stats = [
+    { label: "Heritage Assets", value: countOf("total") },
+    { label: "Awaiting Classification", value: countOf("needs_review") },
   ];
-
-  const sidebarStats = [
-    { label: "Heritage Assets", count: countOf("total") },
-    { label: "Awaiting Classification", count: countOf("needs_review") },
-  ];
-
-  // Framer Motion Variants
-  const pageContainerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.12,
-        delayChildren: 0.1,
-      }
-    }
-  };
-
-  const statItemVariants = {
-    hidden: { opacity: 0, x: -14 },
-    show: {
-      opacity: 1,
-      x: 0,
-      transition: { type: "spring", stiffness: 120, damping: 18 }
-    }
-  };
-
-  const cardItemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    show: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 80,
-        damping: 18
-      }
-    }
-  };
 
   return (
-    <div className="bg-white w-full h-screen overflow-hidden relative flex flex-col">
+    <div className="min-h-screen w-full bg-white">
       <Header />
 
-      <motion.main
-        variants={pageContainerVariants}
-        initial="hidden"
-        animate="show"
-        className="flex-1 pt-32 md:pt-36 px-4 sm:px-6 lg:px-8 pb-6 flex flex-col justify-start overflow-hidden"
-      >
-        {/* Live catalogue statistics */}
-        <motion.div className="mb-10 shrink-0" variants={pageContainerVariants}>
-          <div className="flex flex-col space-y-0.5">
-            <p className="text-[9px] uppercase font-mono tracking-[0.25em] text-gray-400 mb-2">
-              Live Catalogue
-            </p>
-            {sidebarStats.map((stat) => (
-              <motion.p
-                key={stat.label}
-                variants={statItemVariants}
-                className="text-[13px] font-bold text-black"
-              >
+      <main className="pb-24 pt-[calc(var(--header-h)+40px)] md:pb-32 md:pt-[calc(var(--header-h)+48px)] lg:pt-[calc(var(--header-h)+64px)]">
+        {/* Title row — h1 with live counts beneath, as on the reference index */}
+        <div className="shell">
+          <h1 className="f-heading-1 text-ink">Catalogue</h1>
+          <motion.div
+            className="mt-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.15, ease: HOUSE }}
+          >
+            {stats.map((stat) => (
+              <p key={stat.label} className="f-body-1 text-ink">
                 {stat.label}
-                <span className="text-[#a0a0a0] font-normal ml-1.5">
-                  ({stat.count ?? "—"})
-                </span>
-              </motion.p>
+                <span className="text-ink-soft"> ({stat.value ?? "—"})</span>
+              </p>
             ))}
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
 
-        {/* Collection Cards Row */}
-        <motion.div
-          className="flex-1 min-h-0 flex flex-row items-stretch justify-between gap-4 w-full pb-4"
-          variants={pageContainerVariants}
-        >
-          {collections.map((collection) => (
-            <motion.div
-              key={collection.id}
-              variants={cardItemVariants}
-              whileHover={{ y: -6 }}
-              transition={{ type: "spring", stiffness: 300, damping: 22 }}
-              className="cursor-pointer group flex flex-col h-full min-w-0"
-              style={{ flex: `${collection.flexGrow} 1 0%` }}
-              onClick={() => navigate(collection.route)}
+        {/* Index count line */}
+        <div className="shell mt-1 md:mt-16 lg:mt-24">
+          <span className="f-body-1 block text-ink-soft">
+            Showing the latest{" "}
+            {summary?.total != null ? summary.total : "—"} records across four
+            collections
+          </span>
+        </div>
+
+        {/* Collection grid */}
+        <div className="shell mt-6" data-catalogue-grid>
+          <h2 className="sr-only">Collections</h2>
+          <motion.ul
+            className="flex flex-col gap-y-12 md:gap-y-16 lg:gap-y-24"
+            variants={stagger}
+            initial="hidden"
+            animate="show"
+          >
+            {groups.map((group, gi) => (
+              <motion.li key={gi} variants={fadeUp}>
+                <ul
+                  className={
+                    group.kind === "pair"
+                      ? "grid grid-cols-1 gap-y-12 md:grid-cols-3 md:gap-x-3 xl:gap-x-4"
+                      : "grid grid-cols-1 gap-x-3 gap-y-12 sm:grid-cols-2 md:grid-cols-3 xl:gap-x-4"
+                  }
+                >
+                  {group.items.map((card, ci) => (
+                    <li
+                      key={card.key}
+                      className={
+                        group.kind === "pair" && ci === 1 ? "md:col-span-2" : undefined
+                      }
+                    >
+                      <CatalogueCard
+                        to={card.route}
+                        title={card.title}
+                        tagline={`${card.count ?? "—"} documented records`}
+                        imageUrl={card.image}
+                        alt={card.title}
+                        wide={group.kind === "pair" && ci === 1}
+                        tags={card.chips.map((chip) => ({ label: chip }))}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </motion.li>
+            ))}
+          </motion.ul>
+        </div>
+
+        {/* Pointer to the deepest scopes, in the voice of the reference footer */}
+        <div className="shell mt-16 md:mt-24">
+          <div className="flex flex-row flex-wrap gap-x-6 gap-y-2 border-t border-hairline pt-6">
+            {catalogueCollections.map((collection) => (
+              <Link
+                key={collection.key}
+                to={collection.route}
+                className="f-body-2 text-ink-soft transition-colors duration-200 hover:text-ink"
+              >
+                {collection.shortTitle}
+              </Link>
+            ))}
+            <Link
+              to="/research"
+              className="f-body-2 text-ink-soft transition-colors duration-200 hover:text-ink"
             >
-              {/* Image Container */}
-              <div className={`relative ${collection.aspectRatio} w-full flex-1 min-h-0 overflow-hidden mb-1.5 bg-gray-100 outline outline-2 outline-transparent group-hover:outline-brand group-hover:outline-offset-4 transition-all duration-500 ease-out`}>
-                <motion.img
-                  initial={{ scale: 1.08, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                  src={collection.image}
-                  alt={collection.title}
-                  className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out"
-                />
-              </div>
-
-              {/* Title */}
-              <h3 className="text-[13px] font-bold text-black mb-2 transition-colors duration-300 group-hover:text-brand shrink-0">
-                {collection.title}
-              </h3>
-
-              {/* Count */}
-              <div className="w-full text-[10px] tracking-tight leading-normal shrink-0">
-                <div className="flex justify-between w-full text-black py-0.5 border-b border-black/5 last:border-b-0">
-                  <span className="text-[#555555] font-normal pr-2 truncate group-hover:text-black transition-colors duration-300">Documented Assets</span>
-                  <span className="font-mono font-semibold text-right shrink-0 group-hover:text-brand transition-colors duration-300">
-                    {collection.count ?? "—"}
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-      </motion.main>
+              Research
+            </Link>
+          </div>
+        </div>
+      </main>
     </div>
   );
 };

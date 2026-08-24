@@ -1,77 +1,110 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiUrl } from "../../lib/api";
 import { adminFetch } from "../../lib/adminAuth";
 import type { AssetSummary } from "./types";
+
+const pct = (part: number, whole: number): number =>
+  whole > 0 ? Math.round((part / whole) * 100) : 0;
 
 export const StatsDashboard = (): JSX.Element => {
   const [summary, setSummary] = useState<AssetSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await adminFetch(apiUrl("/api/heritage-assets/summary"));
-        if (cancelled) return;
-        if (res.ok) setSummary(await res.json());
-        else setFailed(true);
-      } catch {
-        if (!cancelled) setFailed(true);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
+  const load = useCallback(async () => {
+    setLoading(true);
+    setFailed(false);
+    try {
+      const res = await adminFetch(apiUrl("/api/heritage-assets/summary"));
+      if (res.ok) setSummary(await res.json());
+      else setFailed(true);
+    } catch {
+      setFailed(true);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const cards = summary
     ? [
-        { label: "Total Assets", value: summary.total_assets, color: "text-brand" },
-        { label: "With Geometry", value: summary.assets_with_geometry, color: "text-emerald-500" },
-        { label: "Point Features", value: summary.point_assets, color: "text-blue-400" },
-        { label: "Line Features", value: summary.line_assets, color: "text-amber-400" },
-        { label: "Polygon Features", value: summary.polygon_assets, color: "text-purple-400" },
+        {
+          label: "Total assets",
+          value: summary.total_assets.toLocaleString(),
+          note: "Catalogue records",
+        },
+        {
+          label: "With geometry",
+          value: summary.assets_with_geometry.toLocaleString(),
+          note: `${pct(summary.assets_with_geometry, summary.total_assets)}% georeferenced`,
+        },
+        {
+          label: "Point features",
+          value: summary.point_assets.toLocaleString(),
+          note: `${pct(summary.point_assets, summary.assets_with_geometry)}% of located`,
+        },
+        {
+          label: "Line features",
+          value: summary.line_assets.toLocaleString(),
+          note: `${pct(summary.line_assets, summary.assets_with_geometry)}% of located`,
+        },
+        {
+          label: "Polygon features",
+          value: summary.polygon_assets.toLocaleString(),
+          note: `${pct(summary.polygon_assets, summary.assets_with_geometry)}% of located`,
+        },
       ]
     : [];
 
   return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-5">
+    <div className="mb-10">
+      <div className="flex items-end justify-between mb-6">
         <div>
-          <h2 className="text-lg font-black text-[#111]">Dashboard</h2>
-          <p className="text-xs text-black/50 mt-0.5">Overview of heritage asset records</p>
+          <p className="text-[13px] text-ink-soft">Overview</p>
+          <h2 className="f-heading-4 text-ink mt-0.5">Dashboard</h2>
         </div>
         {summary?.newest_updated_at && (
-          <p className="text-[10px] uppercase font-bold text-black/40">
-            Last updated {new Date(summary.newest_updated_at).toLocaleDateString()}
+          <p className="text-[13px] text-ink-soft tabular-nums">
+            Updated {new Date(summary.newest_updated_at).toLocaleDateString()}
           </p>
         )}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-px bg-hairline border border-hairline">
         {loading
           ? Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-xl border border-black/5 p-5 animate-pulse">
-                <div className="h-3 w-16 bg-black/5 rounded mb-3" />
-                <div className="h-7 w-12 bg-black/5 rounded" />
+              <div key={i} className="bg-white p-5 animate-pulse">
+                <div className="h-2.5 w-16 bg-paper-deep mb-4" />
+                <div className="h-7 w-12 bg-paper-deep" />
               </div>
             ))
           : failed
             ? (
-              <div className="col-span-full bg-white rounded-xl border border-black/5 p-5 text-xs text-black/50">
-                Statistics are unavailable right now — the summary endpoint could not be reached.
+              <div className="col-span-full bg-white p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <p className="text-[13px] text-ink-soft leading-relaxed">
+                  Statistics are unavailable — the summary endpoint could not be reached.
+                </p>
+                <button
+                  type="button"
+                  onClick={load}
+                  className="shrink-0 f-caption px-4 py-2 border border-ink/15 hover:border-ink text-ink transition-colors duration-200 ease-house disabled:cursor-not-allowed"
+                >
+                  Retry
+                </button>
               </div>
             )
             : cards.map((card) => (
-              <div key={card.label} className="bg-white rounded-xl border border-black/5 p-5 hover:shadow-md transition-shadow">
-                <p className="text-[10px] uppercase font-bold text-black/40 mb-2">{card.label}</p>
-                <p className={`text-3xl font-black ${card.color}`}>{card.value.toLocaleString()}</p>
-              </div>
-            ))}
+                <div key={card.label} className="bg-white p-5 min-w-0">
+                  <p className="text-[13px] text-ink-soft mb-3 truncate">{card.label}</p>
+                  <p className="font-display font-light text-[34px] leading-none tracking-[-0.01em] text-ink tabular-nums">
+                    {card.value}
+                  </p>
+                  <p className="mt-2.5 text-[12px] text-ink/40 tabular-nums truncate">{card.note}</p>
+                </div>
+              ))}
       </div>
     </div>
   );

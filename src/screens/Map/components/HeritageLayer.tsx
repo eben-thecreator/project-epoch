@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { GeoJSON, Marker, Tooltip, useMap } from "react-leaflet";
+import { GeoJSON, Marker, Tooltip, CircleMarker, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet.markercluster";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { apiUrl } from "../../../lib/api";
-import { createMarkerIcon } from "./AssetMarker";
+import { createMarkerIcon, createClusterIcon, isWorldHeritage } from "./AssetMarker";
 import { categoryColor } from "../../../lib/categories";
+import { geometryCenter } from "../../../lib/geometry";
 
 export type HeritageAsset = {
   id: string | number;
@@ -18,7 +19,7 @@ export type HeritageAsset = {
   cultural_group?: string;
   geometry?: {
     type: string;
-    coordinates: number[] | number[][] | number[][][] | number[][][][];
+    coordinates: number[] | number[][] | number[][][] | number[][][];
   };
   region?: string;
   district?: string;
@@ -50,8 +51,6 @@ export type HeritageAsset = {
   }>;
 };
 
-
-
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")
@@ -64,10 +63,10 @@ function getPolygonStyle(category?: string, dark = false): L.PathOptions {
   const color = categoryColor(category, dark);
   return {
     color,
-    weight: 2,
-    opacity: 0.9,
+    weight: dark ? 2.5 : 2,
+    opacity: dark ? 1 : 0.9,
     fillColor: color,
-    fillOpacity: dark ? 0.2 : 0.15,
+    fillOpacity: dark ? 0.35 : 0.15,
   };
 }
 
@@ -75,10 +74,12 @@ function ClusteredPointLayer({
   assets,
   darkMode,
   onSelectAsset,
+  skipId,
 }: {
   assets: HeritageAsset[];
   darkMode: boolean;
   onSelectAsset: (asset: HeritageAsset) => void;
+  skipId?: string | null;
 }) {
   const map = useMap();
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
@@ -99,18 +100,20 @@ function ClusteredPointLayer({
       disableClusteringAtZoom: 16,
       chunkedLoading: true,
       iconCreateFunction: (cl: any) => {
-        const count = cl.getChildCount();
-        let size = 32;
-        if (count >= 50) {
-          size = 48;
-        } else if (count >= 10) {
-          size = 40;
-        }
-        return L.divIcon({
-          html: `<span>${count}</span>`,
-          className: "custom-cluster",
-          iconSize: L.point(size, size),
+        // Tally the category mix beneath the cluster so each head can wear
+        // a donut of its children's colours
+        const tally: Record<string, number> = {};
+        let count = 0;
+        cl.getAllChildMarkers().forEach((m: any) => {
+          const cat: string | undefined = m._assetCategory;
+          tally[cat || "__"] = (tally[cat || "__"] || 0) + 1;
+          count += 1;
         });
+        const mix = Object.entries(tally).map(([cat, n]) => ({
+          color: categoryColor(cat === "__" ? null : cat, darkMode),
+          count: n,
+        }));
+        return createClusterIcon(count, mix, darkMode);
       },
     });
     clusterRef.current = cluster;
@@ -119,7 +122,7 @@ function ClusteredPointLayer({
       map.removeLayer(cluster);
       clusterRef.current = null;
     };
-  }, [map]);
+  }, [map, darkMode]);
 
   useEffect(() => {
     const cluster = clusterRef.current;
@@ -128,29 +131,22 @@ function ClusteredPointLayer({
     cluster.clearLayers();
 
     assets.forEach((asset) => {
+      // The selected asset is lifted out of the cluster and drawn as a
+      // standalone marker so its reticle is never swallowed by a bubble
+      if (skipId != null && String(asset.id) === String(skipId)) return;
       const coords = asset.geometry?.coordinates as number[];
       if (!coords || coords.length < 2) return;
-      const icon = createMarkerIcon(
-        asset.asset_category,
-        asset.name || "",
-        false,
-        darkMode,
-        26
-      );
+      const unesco = isWorldHeritage(asset.conservation_status);
+      const icon = createMarkerIcon(asset.asset_category, asset.name || "", false, darkMode, {
+        size: 26,
+        unesco,
+      });
       const marker = L.marker([coords[1], coords[0]], { icon });
       (marker as any)._assetId = asset.id;
+      (marker as any)._assetCategory = asset.asset_category;
       marker.on("click", () => onSelectAsset(asset));
 
-      const catColor = categoryColor(asset.asset_category, darkMode);
-
-      const tooltipContent = `
-        <div style="display:flex;align-items:center;gap:6px;">
-          <span style="width:7px;height:7px;border-radius:50%;background-color:${catColor};display:inline-block;flex-shrink:0;"></span>
-          <span style="font-weight:700;font-size:11px;">${escapeHtml(asset.name || "")}</span>
-          ${asset.asset_category ? `<span style="font-size:10px;opacity:0.65;">(${escapeHtml(asset.asset_category)})</span>` : ""}
-        </div>
-      `;
-      marker.bindTooltip(tooltipContent, {
+      marker.bindTooltip(buildTooltipHtml(asset, darkMode), {
         direction: "top",
         offset: L.point(0, -14),
         className: "custom-map-tooltip",
@@ -158,55 +154,33 @@ function ClusteredPointLayer({
 
       cluster.addLayer(marker);
     });
-  }, [assets, darkMode, onSelectAsset]);
+  }, [assets, darkMode, onSelectAsset, skipId]);
 
   return null;
 }
 
-const getPolygonCentroid = (
-  geometry: { type: string; coordinates: any }
-): [number, number] | null => {
-  try {
-    let ring: number[][];
-    if (geometry.type === "Polygon") {
-      ring = geometry.coordinates[0];
-    } else if (geometry.type === "MultiPolygon") {
-      ring = geometry.coordinates[0][0];
-    } else {
-      return null;
-    }
-    if (!ring || ring.length === 0) return null;
-    let lngSum = 0,
-      latSum = 0;
-    ring.forEach((c: number[]) => {
-      lngSum += c[0];
-      latSum += c[1];
-    });
-    return [latSum / ring.length, lngSum / ring.length];
-  } catch {
-    return null;
-  }
-};
-
-const getLineMidpoint = (
-  geometry: { type: string; coordinates: any }
-): [number, number] | null => {
-  try {
-    let coords: number[][];
-    if (geometry.type === "LineString") {
-      coords = geometry.coordinates;
-    } else if (geometry.type === "MultiLineString") {
-      coords = geometry.coordinates[0];
-    } else {
-      return null;
-    }
-    if (!coords || coords.length === 0) return null;
-    const mid = Math.floor(coords.length / 2);
-    return [coords[mid][1], coords[mid][0]];
-  } catch {
-    return null;
-  }
-};
+/** Shared tooltip markup: stamp icon, name, category, UNESCO citation. */
+function buildTooltipHtml(asset: HeritageAsset, dark: boolean): string {
+  const catColor = categoryColor(asset.asset_category, dark);
+  const unescoLine = isWorldHeritage(asset.conservation_status)
+    ? `<div style="margin-top:3px;padding-top:3px;border-top:1px solid rgba(128,120,105,0.35);font-size:8px;letter-spacing:0.14em;">&#9733; ${escapeHtml(
+        asset.conservation_status || ""
+      )}</div>`
+    : "";
+  return `
+    <div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <svg width="12" height="12" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+          <rect x="1" y="1" width="22" height="22" fill="#1A1A1A"/>
+          <rect x="2" y="2" width="20" height="20" fill="none" stroke="${catColor}" stroke-width="2"/>
+        </svg>
+        <span style="font-weight:700;font-size:11px;">${escapeHtml(asset.name || "")}</span>
+        ${asset.asset_category ? `<span style="font-size:10px;opacity:0.65;">(${escapeHtml(asset.asset_category)})</span>` : ""}
+      </div>
+      ${unescoLine}
+    </div>
+  `;
+}
 
 interface HeritageLayerProps {
   onSelectAsset: (asset: HeritageAsset) => void;
@@ -214,6 +188,12 @@ interface HeritageLayerProps {
   yearRange: [number, number];
   visible: boolean;
   darkMode?: boolean;
+  /** Categories switched off from the legend; rows persist, markers vanish. */
+  hiddenCategories?: string[];
+  /** Render site polygons & route lines as boundary outlines. */
+  showBoundaries?: boolean;
+  /** Currently open profile -- lifted out of clusters, wearing a reticle. */
+  selectedId?: string | null;
   onVisibleCategoriesChange: (categories: string[]) => void;
   onCategoryCountsChange?: (counts: Record<string, number>) => void;
   onAssetCountChange?: (count: number) => void;
@@ -226,6 +206,9 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
   yearRange,
   visible,
   darkMode = false,
+  hiddenCategories = [],
+  showBoundaries = true,
+  selectedId = null,
   onVisibleCategoriesChange,
   onCategoryCountsChange,
   onAssetCountChange,
@@ -234,6 +217,7 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
   const [assets, setAssets] = useState<HeritageAsset[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!visible) return;
@@ -268,7 +252,7 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
       })
       .finally(() => setLoading(false));
     return () => controller.abort();
-  }, [visible, filters, onAssetsLoaded]);
+  }, [visible, filters, attempt, onAssetsLoaded]);
 
   const filteredAssets = useMemo(() => {
     return assets.filter((a) => {
@@ -279,29 +263,37 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
     });
   }, [assets, yearRange]);
 
+  // Legend toggles remove categories from the canvas without touching the
+  // server-side filter query — the key keeps every row it has ever shown.
+  const shownAssets = useMemo(() => {
+    if (hiddenCategories.length === 0) return filteredAssets;
+    const hidden = new Set(hiddenCategories);
+    return filteredAssets.filter((a) => !hidden.has(a.asset_category || ""));
+  }, [filteredAssets, hiddenCategories]);
+
   const pointAssets = useMemo(
-    () => filteredAssets.filter((a) => a.geometry?.type === "Point"),
-    [filteredAssets]
+    () => shownAssets.filter((a) => a.geometry?.type === "Point"),
+    [shownAssets]
   );
 
   const polygonAssets = useMemo(
     () =>
-      filteredAssets.filter(
+      shownAssets.filter(
         (a) =>
           a.geometry?.type === "Polygon" ||
           a.geometry?.type === "MultiPolygon"
       ),
-    [filteredAssets]
+    [shownAssets]
   );
 
   const lineAssets = useMemo(
     () =>
-      filteredAssets.filter(
+      shownAssets.filter(
         (a) =>
           a.geometry?.type === "LineString" ||
           a.geometry?.type === "MultiLineString"
       ),
-    [filteredAssets]
+    [shownAssets]
   );
 
   // Stable GeoJSON feature objects: react-leaflet tears down and rebuilds a
@@ -346,9 +338,11 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
     });
     onVisibleCategoriesChange(Array.from(cats));
     onCategoryCountsChange?.(counts);
-    onAssetCountChange?.(filteredAssets.length);
+    // The matched-assets readout reflects what is actually on the canvas
+    onAssetCountChange?.(shownAssets.length);
   }, [
     filteredAssets,
+    shownAssets,
     onVisibleCategoriesChange,
     onCategoryCountsChange,
     onAssetCountChange,
@@ -356,48 +350,124 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
 
   const showLabels = false;
 
+  /** The standalone selected marker (point geometry only). */
+  const selectedPointAsset = useMemo(() => {
+    if (!selectedId) return null;
+    return (
+      pointAssets.find((a) => String(a.id) === String(selectedId)) ??
+      assets.find(
+        (a) =>
+          String(a.id) === String(selectedId) &&
+          a.geometry?.type === "Point" &&
+          !hiddenCategories.includes(a.asset_category || "")
+      ) ??
+      null
+    );
+  }, [selectedId, pointAssets, assets, hiddenCategories]);
+
   if (!visible) return null;
 
   return (
     <>
       {loading && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1002] pointer-events-none">
-          <div className="bg-white/90 dark:bg-[#0d0d0d]/90 backdrop-blur-sm px-4 py-2.5 shadow-lg border border-black/10 dark:border-white/10 flex items-center gap-2.5">
-            <div className="w-3.5 h-3.5 border-2 border-black/15 dark:border-white/15 border-t-[#E4002B] rounded-full animate-spin" />
-            <span className="text-[10px] uppercase tracking-wider font-bold text-black/60 dark:text-white/60">
-              Loading assets...
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1001] pointer-events-none">
+          <div className={`flex items-center gap-2.5 border px-4 py-2 backdrop-blur-sm ${
+            darkMode
+              ? "bg-[#131110]/95 border-paper/15 text-paper/70"
+              : "bg-paper/95 border-ink/15 text-ink/70"
+          }`}>
+            <div
+              className={`w-3 h-3 rounded-full border-2 animate-spin ${
+                darkMode ? "border-paper/20 border-t-paper" : "border-ink/20 border-t-ink"
+              }`}
+            />
+            <span className="f-caption uppercase tracking-[0.16em]">
+              Plotting the collection…
             </span>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1002] pointer-events-none">
-          <div className="bg-white/90 dark:bg-[#0d0d0d]/90 backdrop-blur-sm px-4 py-2.5 shadow-lg border border-red-200 dark:border-red-800">
-            <span className="text-[10px] uppercase tracking-wider font-bold text-red-600 dark:text-red-400">
-              Failed to load assets. Check API connection.
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1001]">
+          <div className={`flex items-center gap-3 border px-4 py-2 backdrop-blur-sm ${
+            darkMode
+              ? "bg-[#131110]/95 border-paper/15 text-paper/80"
+              : "bg-paper/95 border-ink/15 text-ink/80"
+          }`}>
+            <span className="f-caption uppercase tracking-[0.16em] text-brand dark:text-[#FF7061]">
+              Survey failed to load
             </span>
+            <button
+              onClick={() => setAttempt((n) => n + 1)}
+              className="f-caption uppercase tracking-[0.16em] underline underline-offset-2 hover:opacity-70 transition-opacity"
+            >
+              Retry
+            </button>
           </div>
         </div>
       )}
 
-      {pointAssets.length > 0 && (
-        <ClusteredPointLayer
-          assets={pointAssets}
-          darkMode={darkMode}
-          onSelectAsset={onSelectAsset}
+      {selectedPointAsset && selectedPointAsset.geometry && (
+        <SelectedReticle
+          position={[
+            (selectedPointAsset.geometry.coordinates as number[])[1],
+            (selectedPointAsset.geometry.coordinates as number[])[0],
+          ]}
+          dark={darkMode}
         />
       )}
 
-      {polygonFeatures.map(({ asset, feature }) => {
-        const centroid = getPolygonCentroid(asset.geometry!);
-        const catColor = categoryColor(asset.asset_category, darkMode);
+      <ClusteredPointLayer
+        assets={pointAssets}
+        darkMode={darkMode}
+        onSelectAsset={onSelectAsset}
+        skipId={selectedId}
+      />
+
+      {/* The profile's point asset, redrawn above the cluster field */}
+      {selectedPointAsset && (
+        <Marker
+          key={`selected-point-${selectedPointAsset.id}`}
+          position={[
+            (selectedPointAsset.geometry!.coordinates as number[])[1],
+            (selectedPointAsset.geometry!.coordinates as number[])[0],
+          ]}
+          zIndexOffset={1000}
+          icon={createMarkerIcon(
+            selectedPointAsset.asset_category,
+            selectedPointAsset.name || "",
+            showLabels,
+            darkMode,
+            {
+              size: 28,
+              selected: true,
+              unesco: isWorldHeritage(selectedPointAsset.conservation_status),
+            }
+          )}
+          eventHandlers={{ click: () => onSelectAsset(selectedPointAsset) }}
+        >
+          <Tooltip direction="top" offset={[0, -14]} className="custom-map-tooltip" content={buildTooltipHtml(selectedPointAsset, darkMode)} />
+        </Marker>
+      )}
+
+      {showBoundaries && polygonFeatures.map(({ asset, feature }) => {
+        // Area-weighted centroid (shoelace) — the same centre fly-to uses,
+        // so the icon always sits where the camera lands. For MultiPolygon
+        // assets it resolves to the largest part's centroid.
+        const centroid = geometryCenter(asset.geometry);
+        const isSelected = selectedId != null && String(asset.id) === String(selectedId);
         return (
           <React.Fragment key={`poly-group-${asset.id}`}>
             <GeoJSON
-              key={`poly-${asset.id}`}
+              key={`poly-${asset.id}-${isSelected ? "sel" : "base"}`}
               data={feature}
-              style={() => getPolygonStyle(asset.asset_category, darkMode)}
+              style={() => {
+                const base = getPolygonStyle(asset.asset_category, darkMode);
+                return isSelected
+                  ? { ...base, weight: 3.5, fillOpacity: darkMode ? 0.38 : 0.3 }
+                  : base;
+              }}
               eventHandlers={{
                 click: () => onSelectAsset(asset),
                 mouseover: (e) => {
@@ -413,16 +483,22 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
                 },
               }}
             />
+            {centroid && isSelected && <SelectedReticle position={centroid} dark={darkMode} />}
             {centroid && (
               <Marker
                 key={`poly-marker-${asset.id}`}
                 position={centroid}
+                zIndexOffset={isSelected ? 1000 : 0}
                 icon={createMarkerIcon(
                   asset.asset_category,
                   asset.name || "",
                   showLabels,
                   darkMode,
-                  26
+                  {
+                    size: 26,
+                    selected: isSelected,
+                    unesco: isWorldHeritage(asset.conservation_status),
+                  }
                 )}
                 eventHandlers={{
                   click: () => onSelectAsset(asset),
@@ -432,39 +508,29 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
                   direction="top"
                   offset={[0, -14]}
                   className="custom-map-tooltip"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: catColor }}
-                    />
-                    <span className="font-bold text-[11px]">{asset.name}</span>
-                    {asset.asset_category && (
-                      <span className="text-[10px] opacity-60">
-                        ({asset.asset_category})
-                      </span>
-                    )}
-                  </div>
-                </Tooltip>
+                  content={buildTooltipHtml(asset, darkMode)}
+                />
               </Marker>
             )}
           </React.Fragment>
         );
       })}
 
-      {lineFeatures.map(({ asset, feature }) => {
-        const midpoint = getLineMidpoint(asset.geometry!);
+      {showBoundaries && lineFeatures.map(({ asset, feature }) => {
+        // Length-weighted midpoint along the line, shared with fly-to
+        const midpoint = geometryCenter(asset.geometry);
+        const isSelected = selectedId != null && String(asset.id) === String(selectedId);
         const catColor = categoryColor(asset.asset_category, darkMode);
         return (
           <React.Fragment key={`line-group-${asset.id}`}>
             <GeoJSON
-              key={`line-${asset.id}`}
+              key={`line-${asset.id}-${isSelected ? "sel" : "base"}`}
               data={feature}
-              style={{
-                color: catColor,
-                weight: 2.5,
-                opacity: 0.85,
-              }}
+              style={
+                isSelected
+                  ? { color: catColor, weight: 5, opacity: 1 }
+                  : { color: catColor, weight: 2.5, opacity: 0.85 }
+              }
               eventHandlers={{
                 click: () => onSelectAsset(asset),
                 mouseover: (e) => {
@@ -475,25 +541,26 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
                   });
                 },
                 mouseout: (e) => {
-                  const layer = e.target;
-                  layer.setStyle({
-                    color: catColor,
-                    weight: 2.5,
-                    opacity: 0.85,
-                  });
+                  layerReset(e, asset.asset_category, darkMode);
                 },
               }}
             />
+            {midpoint && isSelected && <SelectedReticle position={midpoint} dark={darkMode} />}
             {midpoint && (
               <Marker
                 key={`line-marker-${asset.id}`}
                 position={midpoint}
+                zIndexOffset={isSelected ? 1000 : 0}
                 icon={createMarkerIcon(
                   asset.asset_category,
                   asset.name || "",
                   showLabels,
                   darkMode,
-                  26
+                  {
+                    size: 26,
+                    selected: isSelected,
+                    unesco: isWorldHeritage(asset.conservation_status),
+                  }
                 )}
                 eventHandlers={{
                   click: () => onSelectAsset(asset),
@@ -503,20 +570,8 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
                   direction="top"
                   offset={[0, -14]}
                   className="custom-map-tooltip"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: catColor }}
-                    />
-                    <span className="font-bold text-[11px]">{asset.name}</span>
-                    {asset.asset_category && (
-                      <span className="text-[10px] opacity-60">
-                        ({asset.asset_category})
-                      </span>
-                    )}
-                  </div>
-                </Tooltip>
+                  content={buildTooltipHtml(asset, darkMode)}
+                />
               </Marker>
             )}
           </React.Fragment>
@@ -526,5 +581,40 @@ export const HeritageLayer: React.FC<HeritageLayerProps> = ({
   );
 };
 
-HeritageLayer.displayName = "HeritageLayer";
+function layerReset(
+  e: L.LeafletMouseEvent,
+  category: string | undefined,
+  darkMode: boolean
+) {
+  const layer = e.target;
+  layer.setStyle({
+    color: categoryColor(category, darkMode),
+    weight: 2.5,
+    opacity: 0.85,
+  });
+}
 
+/**
+ * Survey reticle: a fixed brand-red target that marks the selected asset's
+ * anchor point regardless of marker symbology. Purely decorative — pointer
+ * events pass through to the map.
+ */
+const SelectedReticle: React.FC<{ position: [number, number]; dark: boolean }> = ({
+  position,
+  dark,
+}) => (
+  <CircleMarker
+    center={position}
+    radius={17}
+    pathOptions={{
+      color: dark ? "#FF7061" : "#E4002B",
+      weight: 1.25,
+      dashArray: "4 4",
+      fillColor: dark ? "#FF7061" : "#E4002B",
+      fillOpacity: 0.06,
+    }}
+    interactive={false}
+  />
+);
+
+HeritageLayer.displayName = "HeritageLayer";

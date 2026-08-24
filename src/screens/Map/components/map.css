@@ -1,157 +1,359 @@
 @import "leaflet/dist/leaflet.css";
 
+/* ------------------------------------------------------------------ */
+/*  The Atlas canvas — grey cartography under a white chrome           */
+/* ------------------------------------------------------------------ */
+
 .leaflet-container {
   width: 100%;
   height: 100%;
-  background: #f5f5f5;
-  font-family: Helvetica, Arial, sans-serif;
+  background: #e9e9e9;
+  font-family: "Inter Tight", Inter, Arial, sans-serif;
   position: relative;
 }
 
-.dark .leaflet-container {
-  background: #0d0d0d;
+/*
+ * Raster basemaps sit back so data and chrome lead; satellite imagery
+ * is exempt — photographs are evidence, not chrome.
+ * Grey basemap: a strict monochrome plate. Brightness steps the whole
+ * range down first — deepening water, blocks and roads against land —
+ * then a modest contrast expansion separates paper-white land from the
+ * darker greys without lifting the midtones back out.
+ */
+.atlas-grade .leaflet-tile {
+  filter: grayscale(1) brightness(0.92) contrast(1.09);
 }
 
-/* Subtle Vignette Overlay for Canvas Atmosphere */
-.leaflet-container::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 400;
-  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.12);
-  transition: box-shadow 0.3s ease;
+/* ------------------------------ controls ------------------------------ */
+
+/* Native zoom control, restyled to the house grammar */
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: none !important;
+  margin-right: 12px !important;
+  margin-bottom: 12px !important;
 }
 
-.dark .leaflet-container::after {
-  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.65);
-}
-
-/* Visible, restyled zoom control (touch-friendly) */
 .leaflet-control-zoom a {
-  background: #fff !important;
-  color: #111 !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
-  width: 34px !important;
-  height: 34px !important;
-  line-height: 34px !important;
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  background: #ffffff !important;
+  color: #767676 !important;
+  border: 1px solid #e3e4e5 !important;
+  border-radius: 0 !important;
+  font-weight: 400 !important;
   font-size: 16px !important;
+  box-shadow: none !important;
 }
 
-.dark .leaflet-control-zoom a {
-  background: #141414 !important;
-  color: #fff !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+.leaflet-control-zoom a:hover {
+  background: #f5f5f5 !important;
+  color: #1a1a1a !important;
+}
+
+.leaflet-control-zoom-in {
+  margin-bottom: -1px;
 }
 
 .leaflet-control-attribution {
-  font-size: 9px !important;
-  background: rgba(255, 255, 255, 0.85) !important;
-  color: #999 !important;
+  font-family: "Inter Tight", Inter, Arial, sans-serif !important;
+  font-size: 10px !important;
+  letter-spacing: 0.02em;
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #767676 !important;
   padding: 2px 6px !important;
-  backdrop-filter: blur(4px);
-  border-radius: 4px;
-}
-
-.dark .leaflet-control-attribution {
-  background: rgba(13, 13, 13, 0.85) !important;
-  color: #666 !important;
+  border-radius: 0 !important;
 }
 
 .leaflet-control-attribution a {
-  color: #666 !important;
+  color: #767676 !important;
 }
 
-.dark .leaflet-control-attribution a {
-  color: #888 !important;
-}
-
-.leaflet-popup-content-wrapper {
-  display: none !important;
-}
-
-.leaflet-popup {
-  display: none !important;
-}
-
-.leaflet-scale {
-  border-color: rgba(0, 0, 0, 0.2) !important;
-}
-
-.dark .leaflet-scale {
-  border-color: rgba(255, 255, 255, 0.2) !important;
-}
-
-.dark .leaflet-scale-line {
-  color: rgba(255, 255, 255, 0.4) !important;
+@media (max-width: 640px) {
+  .leaflet-bottom.leaflet-right .leaflet-control-attribution {
+    max-width: 62vw;
+  }
 }
 
 .leaflet-interactive {
-  transition: fill-opacity 0.2s ease, opacity 0.2s ease, stroke-width 0.2s ease;
+  /* No opacity here: marker icons carry this class too, and a transitioned
+     opacity lets them flash translucent during style recalcs */
+  transition: fill-opacity 0.25s cubic-bezier(0.59, 0.01, 0.28, 1),
+    stroke-width 0.25s cubic-bezier(0.59, 0.01, 0.28, 1);
 }
 
 .leaflet-interactive:hover {
   cursor: pointer;
 }
 
-/* Solid Crisp Marker Clusters (No Glassmorphism) */
+/* Markers always render at full strength; receding is reserved for the
+   explicit .dim-others grammar when a profile is open */
+.leaflet-marker-pane .leaflet-marker-icon {
+  opacity: 1;
+}
+
+/* Popups are suppressed -- the profile speaks instead */
+.leaflet-popup-content-wrapper,
+.leaflet-popup {
+  display: none !important;
+}
+
+/* --------------------------- clusters --------------------------- */
+
+/*
+ * Cluster heads are Leaflet-positioned icons: the root element owns the
+ * inline translate3d, so any transform here would fling them off their
+ * true coordinates. The hover scale therefore lives on the inner SVG.
+ */
 .custom-cluster {
-  background: #ffffff !important;
-  border: 1.5px solid #E4002B !important;
+  background: transparent !important;
+  border: none !important;
   border-radius: 50% !important;
-  color: #111111 !important;
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif !important;
-  font-weight: 800 !important;
+  color: #1a1a1a !important;
+  font-family: "Inter Tight", Inter, Arial, sans-serif !important;
+  font-weight: 400 !important;
   font-size: 12px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: none !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease !important;
 }
 
-.custom-cluster:hover {
-  transform: scale(1.12) !important;
-  box-shadow: 0 6px 18px rgba(228, 0, 43, 0.3) !important;
+.custom-cluster svg {
+  transition: transform 0.25s cubic-bezier(0.59, 0.01, 0.28, 1);
 }
 
-.dark .custom-cluster {
-  background: #0d0d0d !important;
-  border-color: #FF6B6B !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8) !important;
+.custom-cluster:hover svg {
+  transform: scale(1.1);
 }
 
-.dark .custom-cluster:hover {
-  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4) !important;
-}
+/* ---------------------------- tooltips ---------------------------- */
 
-/* Solid Map Hover Tooltips */
 .custom-map-tooltip {
-  background: #ffffff !important;
-  border: 1px solid rgba(0, 0, 0, 0.15) !important;
-  border-radius: 4px !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
-  padding: 5px 10px !important;
-  color: #111111 !important;
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif !important;
-  font-weight: 600 !important;
-  font-size: 11px !important;
-  letter-spacing: 0.05em !important;
-  text-transform: uppercase !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 4px 8px !important;
+  color: #1a1a1a !important;
+  font-family: "Inter Tight", Inter, Arial, sans-serif !important;
+  font-weight: 400 !important;
+  font-size: 13px !important;
+  letter-spacing: -0.005em !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
 }
 
 .custom-map-tooltip::before {
-  border-top-color: #ffffff !important;
+  display: none !important;
 }
 
-.dark .custom-map-tooltip {
-  background: #0d0d0d !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7) !important;
-  color: #ffffff !important;
+/* ------------------------------ density ------------------------------ */
+
+.atlas-density-canvas {
+  pointer-events: none;
+  will-change: transform;
+  z-index: 350; /* above tile panes, below markers */
 }
 
-.dark .custom-map-tooltip::before {
-  border-top-color: #0d0d0d !important;
+/* ------------------------------ search ------------------------------ */
+
+/* Remove red outline and black underline from search input */
+#atlas-search-input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Search dropdown polish */
+#atlas-search-input + div,
+[role="listbox"] {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(26, 26, 26, 0.18) transparent;
+}
+
+[role="listbox"]::-webkit-scrollbar {
+  width: 4px;
+}
+
+[role="listbox"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[role="listbox"]::-webkit-scrollbar-thumb {
+  background: rgba(26, 26, 26, 0.18);
+}
+
+[role="listbox"]::-webkit-scrollbar-thumb:hover {
+  background: rgba(228, 0, 43, 0.45);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Chrome, motion, and selection grammar                              */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Keyboard focus is never invisible inside atlas chrome: a brand-red ring,
+ * offset so it reads against both white and ink.
+ */
+.map-chrome :focus-visible {
+  outline: 2px solid #e4002b;
+  outline-offset: 2px;
+}
+
+/* Horizontal chip rails scroll without a visible track */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Thin neutral scrollbars for panel interiors */
+.map-chrome ::-webkit-scrollbar,
+.leaflet-container ::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.map-chrome ::-webkit-scrollbar-thumb,
+.leaflet-container ::-webkit-scrollbar-thumb {
+  background: rgba(26, 26, 26, 0.25);
+}
+
+/* --------------------------- dual-range slider --------------------------- */
+
+.atlas-range {
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+.atlas-range:focus-visible {
+  outline: none;
+}
+.atlas-range::-webkit-slider-runnable-track {
+  background: transparent;
+}
+.atlas-range::-webkit-slider-thumb {
+  pointer-events: auto;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 13px;
+  width: 13px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1.5px solid #1a1a1a;
+  cursor: grab;
+  margin-top: 0;
+}
+.atlas-range::-webkit-slider-thumb:hover {
+  border-color: #e4002b;
+}
+.atlas-range::-moz-range-track {
+  background: transparent;
+}
+.atlas-range::-moz-range-thumb {
+  pointer-events: auto;
+  height: 13px;
+  width: 13px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1.5px solid #1a1a1a;
+  cursor: grab;
+}
+.atlas-range-upper::-webkit-slider-thumb {
+  background: #1a1a1a;
+  border-color: #1a1a1a;
+}
+.atlas-range-upper::-moz-range-thumb {
+  background: #1a1a1a;
+  border-color: #1a1a1a;
+}
+.atlas-range:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid #e4002b;
+  outline-offset: 2px;
+}
+
+/* --------------------------- selection --------------------------- */
+
+/*
+ * The chosen asset is announced by its survey reticle alone. No CSS
+ * transform touches .is-selected here: Leaflet positions marker icons
+ * with an inline translate3d, and any transform override on that same
+ * element would fling the marker away from its true coordinates.
+ */
+
+@keyframes atlas-reticle-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.custom-marker.is-selected .reticle-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: atlas-reticle-orbit 16s linear infinite;
+}
+
+/* When a profile is open, every other marker recedes a step */
+.dim-others .leaflet-marker-icon.custom-marker:not(.is-selected) {
+  opacity: 0.28;
+  transition: opacity 0.35s cubic-bezier(0.59, 0.01, 0.28, 1);
+}
+
+.dim-others path.leaflet-interactive {
+  transition: opacity 0.35s cubic-bezier(0.59, 0.01, 0.28, 1);
+}
+
+/* ------------------------------ motion care ------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .custom-marker.is-selected .reticle-ring {
+    animation: none;
+  }
+  .dim-others .leaflet-marker-icon.custom-marker:not(.is-selected) {
+    opacity: 1;
+  }
+}
+
+/* ------------------------------ asset profile panel ------------------------------ */
+
+/* Pentagram theme: no border radius, no shadows, hairline structure */
+[role="complementary"] {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Section labels in profile */
+[role="complementary"] .f-caption {
+  letter-spacing: 0.16em;
+}
+
+/* Meta rows in profile */
+[role="complementary"] dl {
+  border: none;
+}
+
+[role="complementary"] dl > div {
+  border-bottom: 1px solid #e3e4e5;
+}
+
+[role="complementary"] dl > div:last-child {
+  border-bottom: none;
+}
+
+/* Action buttons in profile */
+[role="complementary"] button {
+  border-radius: 0;
+}
+
+/* Profile image carousel */
+[role="complementary"] img {
+  border-radius: 0;
+}
+
+/* View more button hover state */
+[role="complementary"] button:hover {
+  transition: background-color 0.2s cubic-bezier(0.59, 0.01, 0.28, 1);
 }

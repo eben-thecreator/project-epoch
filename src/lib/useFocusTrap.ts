@@ -25,9 +25,9 @@ export const useFocusTrap = (
         (el) => el.offsetParent !== null
       );
 
-    // Move focus into the container
+    // Move focus into the container without scroll side effects
     const first = focusables()[0];
-    first?.focus();
+    first?.focus({ preventScroll: true });
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -52,7 +52,7 @@ export const useFocusTrap = (
     container.addEventListener("keydown", handleKeyDown);
     return () => {
       container.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus?.();
+      previouslyFocused?.focus?.({ preventScroll: true });
     };
   }, [containerRef, active, onEscape]);
 };

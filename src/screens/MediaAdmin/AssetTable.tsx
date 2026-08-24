@@ -1,31 +1,51 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { cn } from "../../lib/utils";
 import { mediaUrl } from "../../lib/api";
+import { ConfirmModal } from "./ConfirmModal";
 import type { HeritageAsset } from "./types";
 
 interface AssetTableProps {
   assets: HeritageAsset[];
   loading: boolean;
   selectedAssetId: string | null;
+  mode?: "active" | "trash";
   onSelectAsset: (id: string) => void;
   onEditAsset: (asset: HeritageAsset) => void;
   onDeleteAsset: (id: string) => void;
   onBulkDelete: (ids: string[]) => void;
   onCreateAsset: () => void;
+  onRestoreAsset?: (id: string) => void;
+  onPermanentDeleteAsset?: (id: string) => void;
 }
 
 type SortField = "name" | "asset_type" | "asset_category" | "region" | "created_at";
 type SortDir = "asc" | "desc";
 
+const TrashGlyph = ({ className }: { className?: string }): JSX.Element => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.25}
+      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+    />
+  </svg>
+);
+
 export const AssetTable = ({
   assets,
   loading,
   selectedAssetId,
+  mode = "active",
   onSelectAsset,
   onEditAsset,
   onDeleteAsset,
   onBulkDelete,
   onCreateAsset,
+  onRestoreAsset,
+  onPermanentDeleteAsset,
 }: AssetTableProps): JSX.Element => {
+  const isTrash = mode === "trash";
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState("All");
@@ -34,6 +54,14 @@ export const AssetTable = ({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [showPurgeConfirm, setShowPurgeConfirm] = useState<string | null>(null);
+
+  const sortValue = (asset: HeritageAsset, field: SortField): string => {
+    if (field === "created_at") {
+      return String((isTrash ? asset.deleted_at ?? asset.created_at : asset.created_at) ?? "");
+    }
+    return String(asset[field] ?? "");
+  };
 
   const typeOptions = useMemo(
     () => ["All", ...Array.from(new Set(assets.map((a) => a.asset_type).filter(Boolean) as string[]))],
@@ -59,12 +87,27 @@ export const AssetTable = ({
         return matchesSearch && matchesType && matchesCat;
       })
       .sort((a, b) => {
-        const av = (a[sortField] ?? "") as string;
-        const bv = (b[sortField] ?? "") as string;
-        const cmp = av.localeCompare(bv);
+        const cmp = sortValue(a, sortField).localeCompare(sortValue(b, sortField));
         return sortDir === "asc" ? cmp : -cmp;
       });
-  }, [assets, search, typeFilter, categoryFilter, sortField, sortDir]);
+  }, [assets, search, typeFilter, categoryFilter, sortField, sortDir, isTrash]);
+
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === 0) return prev;
+      const live = new Set(assets.map((a) => a.id));
+      const next = new Set([...prev].filter((id) => live.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [assets]);
+
+  const visibleSelected = useMemo(
+    () => filtered.filter((a) => selectedIds.has(a.id)),
+    [filtered, selectedIds]
+  );
+
+  const allChecked = filtered.length > 0 && visibleSelected.length === filtered.length;
+  const hasQuery = Boolean(search.trim()) || typeFilter !== "All" || categoryFilter !== "All";
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -85,127 +128,256 @@ export const AssetTable = ({
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === filtered.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filtered.map((a) => a.id)));
-    }
+    setSelectedIds((prev) => {
+      if (filtered.length > 0 && visibleSelected.length === filtered.length) {
+        const next = new Set(prev);
+        filtered.forEach((a) => next.delete(a.id));
+        return next;
+      }
+      const next = new Set(prev);
+      filtered.forEach((a) => next.add(a.id));
+      return next;
+    });
   };
 
-  const SortIcon = ({ field }: { field: SortField }) => (
-    <svg className={`w-3 h-3 inline-block ml-1 ${sortField === field ? "text-brand" : "text-black/20"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={sortField === field && sortDir === "desc" ? "M19 9l-7 7-7-7" : "M5 15l7-7 7 7"} />
-    </svg>
+  const clearFilters = () => {
+    setSearch("");
+    setTypeFilter("All");
+    setCategoryFilter("All");
+  };
+
+  const columns: { field: SortField; label: string }[] = [
+    { field: "name", label: "Name" },
+    { field: "asset_type", label: "Type" },
+    { field: "asset_category", label: "Category" },
+    { field: "region", label: "Region" },
+    { field: "created_at", label: isTrash ? "Deleted" : "Created" },
+  ];
+
+  const filterSelectClass =
+    "w-full appearance-none f-caption bg-transparent pl-3 pr-8 py-2 rounded-none outline-none focus:border-ink transition-colors duration-200 cursor-pointer text-ink";
+
+  const FilterSelect = ({
+    value,
+    onChange,
+    options,
+    label,
+  }: {
+    value: string;
+    onChange: (v: string) => void;
+    options: string[];
+    label: string;
+  }) => (
+    <div className="relative w-full sm:w-auto">
+      <select value={value} onChange={(e) => onChange(e.target.value)} className={filterSelectClass} aria-label={label}>
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o === "All" ? `All ${label}s` : o}
+          </option>
+        ))}
+      </select>
+      <svg
+        aria-hidden="true"
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-ink/40 pointer-events-none"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+      </svg>
+    </div>
   );
 
-  return (
-    <div className="bg-white rounded-xl border border-black/5 overflow-hidden">
-      {/* Toolbar */}
-      <div className="p-4 border-b border-black/5">
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <div className="flex items-center gap-3 flex-1 w-full sm:w-auto">
-            <div className="relative flex-1 max-w-xs">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search assets..."
-                className="w-full pl-9 pr-3 py-2 text-xs bg-black/5 rounded-lg border-0 outline-none focus:ring-2 focus:ring-brand/30 transition-all"
-              />
-            </div>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="text-[11px] font-bold uppercase bg-black/5 rounded-lg px-3 py-2 border-0 outline-none cursor-pointer"
-            >
-              {typeOptions.map((o) => (
-                <option key={o} value={o}>{o === "All" ? "All Types" : o}</option>
-              ))}
-            </select>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="text-[11px] font-bold uppercase bg-black/5 rounded-lg px-3 py-2 border-0 outline-none cursor-pointer"
-            >
-              {categoryOptions.map((o) => (
-                <option key={o} value={o}>{o === "All" ? "All Categories" : o}</option>
-              ))}
-            </select>
-          </div>
+  const colCount = isTrash ? 6 : 7;
 
-          <div className="flex items-center gap-2">
-            {selectedIds.size > 0 && (
+  return (
+    <div className="bg-white border border-hairline">
+      <div className="p-4 border-b border-hairline flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between">
+        <div className="flex items-center gap-3 w-full lg:w-auto">
+          <div className="relative flex-1 sm:flex-none sm:w-64">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink/35 pointer-events-none"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <circle cx="11" cy="11" r="6.5" strokeWidth={1.25} />
+              <path strokeLinecap="round" d="M16 16l4.5 4.5" strokeWidth={1.25} />
+            </svg>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search assets…"
+              className="w-full pl-9 pr-8 py-2 f-caption bg-transparent border border-ink/15 rounded-none outline-none focus:border-ink transition-colors duration-200 placeholder:text-ink/40 text-ink"
+            />
+            {search && (
               <button
                 type="button"
-                onClick={() => setShowBulkDeleteConfirm(true)}
-                className="text-[10px] font-bold uppercase px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                onClick={() => setSearch("")}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-ink/35 hover:text-ink transition-colors duration-200 ease-house"
               >
-                Delete ({selectedIds.size})
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             )}
-            <button
-              type="button"
-              onClick={onCreateAsset}
-              className="text-[10px] font-bold uppercase px-4 py-2 bg-brand text-white rounded-lg hover:bg-[#C40025] transition-colors flex items-center gap-1.5"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-              </svg>
-              New Asset
-            </button>
           </div>
+          <div className="hidden sm:block w-36">
+            <FilterSelect value={typeFilter} onChange={setTypeFilter} options={typeOptions} label="Type" />
+          </div>
+          <div className="hidden md:block w-40">
+            <FilterSelect value={categoryFilter} onChange={setCategoryFilter} options={categoryOptions} label="Category" />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {isTrash ? (
+            <p className="text-[12px] text-ink-soft">Soft-deleted assets — restore or remove permanently</p>
+          ) : (
+            <>
+              {visibleSelected.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowBulkDeleteConfirm(true)}
+                  className="f-caption px-3 py-2 border border-brand/40 text-brand hover:border-brand hover:bg-brand/5 transition-colors duration-200 ease-house disabled:cursor-not-allowed"
+                >
+                  Delete ({visibleSelected.length})
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onCreateAsset}
+                className="f-caption px-4 py-2 bg-ink text-white hover:bg-ink/80 transition-colors duration-200 ease-house flex items-center gap-2 disabled:cursor-not-allowed"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeWidth={1.5} d="M12 5v14M5 12h14" />
+                </svg>
+                New Asset
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[720px]">
           <thead>
-            <tr className="border-b border-black/5">
-              <th className="w-10 px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={selectedIds.size === filtered.length && filtered.length > 0}
-                  onChange={toggleSelectAll}
-                  className="w-3.5 h-3.5 rounded border-black/20 text-brand focus:ring-brand/30 cursor-pointer"
-                />
-              </th>
-              {[
-                { field: "name" as SortField, label: "Name" },
-                { field: "asset_type" as SortField, label: "Type" },
-                { field: "asset_category" as SortField, label: "Category" },
-                { field: "region" as SortField, label: "Region" },
-                { field: "created_at" as SortField, label: "Created" },
-              ].map((col) => (
-                <th
-                  key={col.field}
-                  onClick={() => toggleSort(col.field)}
-                  className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-black/40 cursor-pointer hover:text-black/70 transition-colors select-none"
-                >
-                  {col.label}
-                  <SortIcon field={col.field} />
+            <tr className="border-b border-hairline">
+              {!isTrash && (
+                <th scope="col" className="w-10 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    ref={(el) => {
+                      if (el) el.indeterminate = visibleSelected.length > 0 && !allChecked;
+                    }}
+                    checked={allChecked}
+                    onChange={toggleSelectAll}
+                    aria-label="Select all visible assets"
+                    className="w-3.5 h-3.5 accent-brand cursor-pointer align-middle"
+                  />
                 </th>
-              ))}
-              <th className="w-20 px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-black/40">Actions</th>
+              )}
+              {columns.map((col) => {
+                const isActive = sortField === col.field;
+                return (
+                  <th
+                    key={col.field}
+                    scope="col"
+                    aria-sort={isActive ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
+                    className="px-4 py-3 text-left"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleSort(col.field)}
+                      className={cn(
+                        "inline-flex items-center gap-1 text-[12px] leading-none select-none transition-colors duration-200 ease-house",
+                        isActive ? "text-ink font-medium" : "text-ink-soft hover:text-ink font-normal"
+                      )}
+                    >
+                      {col.label}
+                      <svg
+                        aria-hidden="true"
+                        className={cn(
+                          "w-2.5 h-2.5 transition-transform duration-200 ease-house",
+                          isActive ? (sortDir === "asc" ? "rotate-180 text-ink" : "text-ink") : "text-ink/25"
+                        )}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  </th>
+                );
+              })}
+              <th scope="col" className="w-24 px-4 py-3 text-right">
+                <span className="text-[12px] leading-none font-normal text-ink-soft">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               Array.from({ length: 8 }).map((_, i) => (
-                <tr key={i} className="border-b border-black/5">
-                  <td className="px-4 py-3"><div className="w-3.5 h-3.5 bg-black/5 rounded" /></td>
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <td key={j} className="px-4 py-3"><div className="h-3 bg-black/5 rounded w-3/4" /></td>
+                <tr key={i} className="border-b border-hairline last:border-0">
+                  {!isTrash && (
+                    <td className="px-4 py-3">
+                      <div className="w-3.5 h-3.5 bg-paper-deep" />
+                    </td>
+                  )}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-paper-deep shrink-0" />
+                      <div className="h-3 w-36 bg-paper-deep" />
+                    </div>
+                  </td>
+                  {Array.from({ length: 3 }).map((_, j) => (
+                    <td key={j} className="px-4 py-3">
+                      <div className="h-3 w-20 bg-paper-deep" />
+                    </td>
                   ))}
-                  <td className="px-4 py-3"><div className="h-3 bg-black/5 rounded w-1/2 ml-auto" /></td>
+                  <td className="px-4 py-3">
+                    <div className="h-3 w-14 bg-paper-deep ml-auto" />
+                  </td>
                 </tr>
               ))
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-16 text-center">
-                  <p className="text-xs text-black/40 uppercase">No assets found</p>
+                <td colSpan={colCount} className="px-4 py-20 text-center">
+                  <div className="max-w-xs mx-auto">
+                    <TrashGlyph className="w-8 h-8 mx-auto text-ink/15 mb-4" />
+                    <p className="f-body-2 text-ink">
+                      {hasQuery ? "No matching assets" : isTrash ? "Trash is empty" : "No assets yet"}
+                    </p>
+                    <p className="mt-1.5 text-[13px] text-ink-soft leading-relaxed">
+                      {hasQuery
+                        ? "Nothing in the current collection matches your filters."
+                        : isTrash
+                          ? "Deleted assets will rest here until they are restored or permanently removed."
+                          : "Create your first heritage asset to begin building the catalogue."}
+                    </p>
+                    <div className="mt-5 flex items-center justify-center gap-2">
+                      {hasQuery && (
+                        <button
+                          type="button"
+                          onClick={clearFilters}
+                          className="f-caption px-4 py-2 border border-ink/15 hover:border-ink text-ink transition-colors duration-200 ease-house"
+                        >
+                          Clear filters
+                        </button>
+                      )}
+                      {!isTrash && !hasQuery && (
+                        <button
+                          type="button"
+                          onClick={onCreateAsset}
+                          className="f-caption px-4 py-2 bg-ink text-white hover:bg-ink/80 transition-colors duration-200 ease-house"
+                        >
+                          New Asset
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -216,73 +388,122 @@ export const AssetTable = ({
                 return (
                   <tr
                     key={asset.id}
-                    onClick={() => onSelectAsset(asset.id)}
-                    className={`border-b border-black/5 cursor-pointer transition-colors ${
-                      isSelected ? "bg-brand/5" : "hover:bg-black/[0.02]"
-                    }`}
+                    onClick={() => {
+                      if (!isTrash) onSelectAsset(asset.id);
+                    }}
+                    title={!isTrash ? "Open in Media" : undefined}
+                    className={cn(
+                      "group border-b border-hairline last:border-0 transition-colors duration-200 ease-house",
+                      !isTrash && "cursor-pointer",
+                      isSelected ? "bg-paper-deep" : "[@media(hover:hover)]:hover:bg-paper-deep/60"
+                    )}
                   >
-                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => toggleSelect(asset.id)}
-                        className="w-3.5 h-3.5 rounded border-black/20 text-brand focus:ring-brand/30 cursor-pointer"
-                      />
-                    </td>
+                    {!isTrash && (
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleSelect(asset.id)}
+                          aria-label={`Select ${asset.name || asset.id}`}
+                          className="w-3.5 h-3.5 accent-brand cursor-pointer align-middle"
+                        />
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-black/5 overflow-hidden flex-shrink-0">
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "block w-1.5 h-1.5 rounded-full shrink-0 transition-colors duration-200 ease-house",
+                            isSelected ? "bg-brand" : "bg-transparent"
+                          )}
+                        />
+                        <div className="w-8 h-8 bg-paper-deep overflow-hidden shrink-0 flex items-center justify-center">
                           {imageMedia ? (
-                            <img src={mediaUrl(imageMedia.filePath)} alt="" className="w-full h-full object-cover" />
+                            <img
+                              src={mediaUrl(imageMedia.filePath)}
+                              alt=""
+                              loading="lazy"
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <svg className="w-3.5 h-3.5 text-black/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                              </svg>
-                            </div>
+                            <TrashGlyph className="w-3.5 h-3.5 text-ink/25" />
                           )}
                         </div>
-                        <span className="text-xs font-bold text-[#111] truncate max-w-[200px]">
+                        <span className="f-body-2 font-medium text-ink truncate max-w-[220px] group-hover:underline decoration-ink/30 underline-offset-4">
                           {asset.name || asset.alternative_name || "Untitled"}
                         </span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-[10px] font-bold uppercase text-black/50">{asset.asset_type || "—"}</span>
+                      <span className="text-[13px] text-ink-soft">{asset.asset_type || "—"}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-[10px] font-bold uppercase text-black/50">{asset.asset_category || "—"}</span>
+                      <span className="text-[13px] text-ink-soft">{asset.asset_category || "—"}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-[10px] font-bold uppercase text-black/50">{asset.region || "—"}</span>
+                      <span className="text-[13px] text-ink-soft">{asset.region || "—"}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-[10px] font-bold text-black/40">
-                        {new Date(asset.created_at).toLocaleDateString()}
+                      <span className="text-[13px] tabular-nums text-ink-soft">
+                        {new Date(sortValue(asset, "created_at")).toLocaleDateString()}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          onClick={() => onEditAsset(asset)}
-                          className="p-1.5 rounded-md hover:bg-black/5 transition-colors"
-                          title="Edit"
-                        >
-                          <svg className="w-3.5 h-3.5 text-black/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowDeleteConfirm(asset.id)}
-                          className="p-1.5 rounded-md hover:bg-red-50 transition-colors"
-                          title="Delete"
-                        >
-                          <svg className="w-3.5 h-3.5 text-black/40 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
+                        {isTrash ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => onRestoreAsset?.(asset.id)}
+                              className="p-1.5 text-ink/35 hover:text-ink transition-colors duration-200 ease-house"
+                              title="Restore"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M3 10h10a8 8 0 018 8v2M3 10l6-6m-6 6l6 6"
+                                />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowPurgeConfirm(asset.id)}
+                              className="p-1.5 text-ink/35 hover:text-brand transition-colors duration-200 ease-house"
+                              title="Delete permanently"
+                            >
+                              <TrashGlyph className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => onEditAsset(asset)}
+                              className="p-1.5 text-ink/35 hover:text-ink transition-colors duration-200 ease-house"
+                              title="Edit"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowDeleteConfirm(asset.id)}
+                              className="p-1.5 text-ink/35 hover:text-brand transition-colors duration-200 ease-house"
+                              title="Delete"
+                            >
+                              <TrashGlyph className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -293,75 +514,62 @@ export const AssetTable = ({
         </table>
       </div>
 
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-black/5 flex items-center justify-between">
-        <p className="text-[10px] font-bold uppercase text-black/40">
-          {filtered.length} of {assets.length} assets
+      <div className="px-4 py-3 border-t border-hairline flex items-center justify-between gap-4">
+        <p className="text-[12px] tabular-nums text-ink-soft">
+          Showing {filtered.length.toLocaleString()} of {assets.length.toLocaleString()} assets
         </p>
-        {selectedIds.size > 0 && (
-          <p className="text-[10px] font-bold uppercase text-brand">
-            {selectedIds.size} selected
-          </p>
+        {visibleSelected.length > 0 && (
+          <div className="flex items-center gap-3">
+            <span className="text-[12px] tabular-nums text-brand">{visibleSelected.length} selected</span>
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              className="text-[12px] text-ink-soft underline underline-offset-2 hover:text-ink transition-colors duration-200 ease-house"
+            >
+              Clear
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Single Delete Confirmation */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40" onClick={() => setShowDeleteConfirm(null)}>
-          <div className="bg-white rounded-xl shadow-2xl p-6 w-[360px]" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-sm font-black text-[#111] mb-2">Delete Asset</h3>
-            <p className="text-xs text-black/60 mb-5">This will permanently delete the asset and all its media files. This action cannot be undone.</p>
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(null)}
-                className="px-4 py-2 text-[10px] font-bold uppercase rounded-lg bg-black/5 hover:bg-black/10 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onDeleteAsset(showDeleteConfirm);
-                  setShowDeleteConfirm(null);
-                }}
-                className="px-4 py-2 text-[10px] font-bold uppercase rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title="Delete asset"
+          body="This will move the asset to Trash, hiding it from the site and admin lists. You can restore it from the Trash section."
+          confirmLabel="Delete"
+          onConfirm={() => {
+            onDeleteAsset(showDeleteConfirm);
+            setShowDeleteConfirm(null);
+          }}
+          onCancel={() => setShowDeleteConfirm(null)}
+        />
       )}
 
-      {/* Bulk Delete Confirmation */}
       {showBulkDeleteConfirm && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40" onClick={() => setShowBulkDeleteConfirm(false)}>
-          <div className="bg-white rounded-xl shadow-2xl p-6 w-[360px]" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-sm font-black text-[#111] mb-2">Delete {selectedIds.size} Assets</h3>
-            <p className="text-xs text-black/60 mb-5">This will permanently delete {selectedIds.size} assets and all their media files. This action cannot be undone.</p>
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => setShowBulkDeleteConfirm(false)}
-                className="px-4 py-2 text-[10px] font-bold uppercase rounded-lg bg-black/5 hover:bg-black/10 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onBulkDelete(Array.from(selectedIds));
-                  setSelectedIds(new Set());
-                  setShowBulkDeleteConfirm(false);
-                }}
-                className="px-4 py-2 text-[10px] font-bold uppercase rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
-              >
-                Delete All
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title={`Delete ${visibleSelected.length} assets`}
+          body={`This will move ${visibleSelected.length} assets to Trash, hiding them from the site and admin lists. You can restore them from the Trash section.`}
+          confirmLabel="Delete all"
+          onConfirm={() => {
+            onBulkDelete(visibleSelected.map((a) => a.id));
+            setSelectedIds(new Set());
+            setShowBulkDeleteConfirm(false);
+          }}
+          onCancel={() => setShowBulkDeleteConfirm(false)}
+        />
+      )}
+
+      {showPurgeConfirm && (
+        <ConfirmModal
+          title="Delete permanently"
+          body="This will permanently delete the asset and all its media files. This action cannot be undone."
+          confirmLabel="Delete forever"
+          onConfirm={() => {
+            onPermanentDeleteAsset?.(showPurgeConfirm);
+            setShowPurgeConfirm(null);
+          }}
+          onCancel={() => setShowPurgeConfirm(null)}
+        />
       )}
     </div>
   );

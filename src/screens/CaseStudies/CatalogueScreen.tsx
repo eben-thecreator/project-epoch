@@ -125,13 +125,7 @@ export const CatalogueScreen = ({
   }, [collectionKey]);
 
   const getMetadataTags = (item: CatalogueRecord): string[] => {
-    return [
-      item.asset_category,
-      item.period,
-      item.condition,
-      item.material,
-      item.location,
-    ].filter(Boolean) as string[];
+    return [item.material, item.period].filter(Boolean) as string[];
   };
 
   return (
@@ -141,17 +135,17 @@ export const CatalogueScreen = ({
       <div className="py-4 px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-black">{title}</h1>
-          <p className="text-sm text-gray-500 mt-2 max-w-2xl">{subtitle}</p>
+          <h1 className="f-heading-2 text-ink">{title}</h1>
+          <p className="f-body-1 text-ink-soft mt-3 max-w-[52ch]">{subtitle}</p>
         </div>
 
         {/* Loading State */}
         {isLoading ? (
-          <div className="text-[11px] tracking-widest text-black/45 py-20 text-center">
+          <div className="f-caption text-ink-soft py-20 text-center">
             {loadingLabel}
           </div>
         ) : records.length === 0 ? (
-          <div className="border border-dashed border-black/15 p-8 text-sm text-black/55 text-center mx-6">
+          <div className="border border-dashed border-hairline p-8 f-body-1 text-ink-soft text-center mx-6">
             {emptyLabel}
           </div>
         ) : (
@@ -180,7 +174,7 @@ export const CatalogueScreen = ({
                         className="max-w-full max-h-full object-contain"
                       />
                     ) : (
-                      <div className="text-[10px] tracking-widest font-bold text-black/25">
+                      <div className="f-caption text-ink-soft">
                         No Media
                       </div>
                     )}
@@ -188,11 +182,11 @@ export const CatalogueScreen = ({
 
                   {/* Title & Description */}
                   <div className="mt-3">
-                    <h3 className="text-sm font-bold text-black leading-tight">
+                    <h3 className="f-heading-5 text-ink">
                       {record.name}
                     </h3>
                     {record.description && (
-                      <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                      <p className="f-body-1 text-ink-soft mt-1.5 line-clamp-2">
                         {record.description}
                       </p>
                     )}
@@ -200,9 +194,12 @@ export const CatalogueScreen = ({
 
                   {/* Metadata Footer */}
                   {metadataTags.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap gap-x-2 gap-y-1">
                       {metadataTags.map((tag, index) => (
-                        <span key={`${tag}-${index}`} className="text-[10px] uppercase tracking-wider text-black/50">
+                        <span
+                          key={`${tag}-${index}`}
+                          className="font-mono text-[9px] uppercase tracking-[0.22em] text-ink-soft"
+                        >
                           {tag}
                           {index < metadataTags.length - 1 && (
                             <span className="ml-2">·</span>
