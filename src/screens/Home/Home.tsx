@@ -248,9 +248,8 @@ export const Home = (): JSX.Element => {
               >
                 <Link to={collection.route} className="flex flex-col">
                   <div
-                    className={`relative h-[220px] w-full overflow-hidden bg-black/5 md:h-[300px] ${
-                      collection.id === "museums" ? "" : "aspect-[3/4]"
-                    }`}
+                    className={`relative h-[220px] w-full overflow-hidden bg-black/5 md:h-[300px] ${collection.id === "museums" ? "" : "aspect-[3/4]"
+                      }`}
                   >
                     <img
                       src={collection.image}

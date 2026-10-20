@@ -2,6 +2,8 @@
 
 This document contains the complete **Chen Entity Relationship Diagram (ERD)** for the **Project Epoch** database, provided in both **Interactive Mermaid Diagrams** and **Markdown Visual ASCII/Unicode Illustrations**.
 
+![Database Entity Relationship Diagram](./database_erd.jpg)
+
 ---
 
 ## 🔑 ERD Symbol Legend (Chen Notation)

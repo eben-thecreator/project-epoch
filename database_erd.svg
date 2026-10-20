@@ -1,0 +1,550 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="2800" height="2000" viewBox="0 0 2800 2000" xmlns="http://www.w3.org/2000/svg" style="background-color: #ffffff;">
+  <style>
+    text {
+      font-family: 'Times New Roman', Times, serif;
+      fill: #000000;
+    }
+    .entity-title {
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+    .rel-title {
+      font-size: 12.5px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+    .card-label {
+      font-size: 15px;
+      font-weight: bold;
+      font-style: italic;
+    }
+    .attr-text {
+      font-size: 13px;
+    }
+    .attr-pk {
+      font-size: 13px;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+    .attr-fk {
+      font-size: 13px;
+      font-style: italic;
+    }
+    .line-solid {
+      stroke: #000000;
+      stroke-width: 1.4;
+      fill: none;
+    }
+    .shape-rect {
+      fill: #ffffff;
+      stroke: #000000;
+      stroke-width: 2;
+    }
+    .shape-rect-double {
+      fill: #ffffff;
+      stroke: #000000;
+      stroke-width: 1.5;
+    }
+    .shape-diamond {
+      fill: #ffffff;
+      stroke: #000000;
+      stroke-width: 1.6;
+    }
+    .shape-oval {
+      fill: #ffffff;
+      stroke: #000000;
+      stroke-width: 1.3;
+    }
+    .shape-oval-dashed {
+      fill: #ffffff;
+      stroke: #000000;
+      stroke-width: 1.3;
+      stroke-dasharray: 4, 3;
+    }
+    .legend-title {
+      font-size: 15px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+    .legend-text {
+      font-size: 13.5px;
+    }
+  </style>
+
+  <!-- Solid white background -->
+  <rect width="2800" height="2000" fill="#ffffff" />
+
+  <!-- ================================================================= -->
+  <!-- 1. RELATIONSHIP CONNECTORS                                        -->
+  <!-- ================================================================= -->
+  <g id="relationship-lines">
+    <!-- R1: HERITAGE_ASSETS to HAS_MEDIA to HERITAGE_ASSET_MEDIA -->
+    <line x1="920" y1="940" x2="920" y2="1080" class="line-solid" />
+    <line x1="920" y1="1200" x2="920" y2="1340" class="line-solid" />
+
+    <!-- R2: MAP_REGIONS to CONTAINS_DISTRICT to MAP_DISTRICTS -->
+    <line x1="2020" y1="460" x2="2020" y2="520" class="line-solid" />
+    <line x1="2020" y1="620" x2="2020" y2="680" class="line-solid" />
+
+    <!-- R3: HERITAGE_ASSETS to LOCATED_IN_REGION to MAP_REGIONS -->
+    <line x1="1080" y1="780" x2="1430" y2="420" class="line-solid" />
+    <line x1="1630" y1="420" x2="1900" y2="420" class="line-solid" />
+
+    <!-- R4: HERITAGE_ASSETS to LOCATED_IN_DISTRICT to MAP_DISTRICTS -->
+    <line x1="1080" y1="840" x2="1430" y2="720" class="line-solid" />
+    <line x1="1630" y1="720" x2="1900" y2="720" class="line-solid" />
+
+    <!-- R5: HERITAGE_ASSETS to WITHIN_PROTECTED_AREA to MAP_PROTECTED_AREAS -->
+    <line x1="1080" y1="880" x2="1420" y2="1020" class="line-solid" />
+    <line x1="1640" y1="1020" x2="1900" y2="1020" class="line-solid" />
+
+    <!-- R6: HERITAGE_ASSETS to NEAR_RIVER to MAP_RIVERS -->
+    <line x1="1060" y1="940" x2="1440" y2="1280" class="line-solid" />
+    <line x1="1620" y1="1280" x2="1900" y2="1280" class="line-solid" />
+
+    <!-- R7: HERITAGE_ASSETS to ACCESSIBLE_BY_ROAD to MAP_ROADS -->
+    <line x1="1010" y1="940" x2="1430" y2="1540" class="line-solid" />
+    <line x1="1630" y1="1540" x2="1900" y2="1540" class="line-solid" />
+  </g>
+
+  <!-- Cardinalities -->
+  <g id="cardinality-labels">
+    <!-- R1: HERITAGE_ASSETS to HAS_MEDIA to HERITAGE_ASSET_MEDIA -->
+    <text x="935" y="975" class="card-label">1</text>
+    <text x="935" y="1310" class="card-label">N</text>
+
+    <!-- R2: MAP_REGIONS to CONTAINS_DISTRICT to MAP_DISTRICTS -->
+    <text x="2035" y="490" class="card-label">1</text>
+    <text x="2035" y="655" class="card-label">N</text>
+
+    <!-- R3: HERITAGE_ASSETS to LOCATED_IN_REGION to MAP_REGIONS -->
+    <text x="1115" y="775" class="card-label">N</text>
+    <text x="1870" y="410" class="card-label">1</text>
+
+    <!-- R4: HERITAGE_ASSETS to LOCATED_IN_DISTRICT to MAP_DISTRICTS -->
+    <text x="1115" y="845" class="card-label">N</text>
+    <text x="1870" y="710" class="card-label">1</text>
+
+    <!-- R5: HERITAGE_ASSETS to WITHIN_PROTECTED_AREA to MAP_PROTECTED_AREAS -->
+    <text x="1115" y="905" class="card-label">M</text>
+    <text x="1870" y="1010" class="card-label">N</text>
+
+    <!-- R6: HERITAGE_ASSETS to NEAR_RIVER to MAP_RIVERS -->
+    <text x="1090" y="985" class="card-label">M</text>
+    <text x="1870" y="1270" class="card-label">N</text>
+
+    <!-- R7: HERITAGE_ASSETS to ACCESSIBLE_BY_ROAD to MAP_ROADS -->
+    <text x="1040" y="1025" class="card-label">M</text>
+    <text x="1870" y="1530" class="card-label">N</text>
+  </g>
+
+  <!-- ================================================================= -->
+  <!-- 2. RELATIONSHIP DIAMONDS                                          -->
+  <!-- ================================================================= -->
+  <g id="relationship-diamonds">
+    <!-- R1: HAS_MEDIA -->
+    <polygon points="920,1105 1005,1140 920,1175 835,1140" class="shape-diamond" />
+    <text x="920" y="1145" text-anchor="middle" class="rel-title">HAS_MEDIA</text>
+
+    <!-- R2: CONTAINS_DISTRICT -->
+    <polygon points="2020,538 2115,570 2020,602 1925,570" class="shape-diamond" />
+    <text x="2020" y="575" text-anchor="middle" class="rel-title">CONTAINS_DISTRICT</text>
+
+    <!-- R3: LOCATED_IN_REGION -->
+    <polygon points="1530,387 1630,420 1530,453 1430,420" class="shape-diamond" />
+    <text x="1530" y="425" text-anchor="middle" class="rel-title">LOCATED_IN_REGION</text>
+
+    <!-- R4: LOCATED_IN_DISTRICT -->
+    <polygon points="1530,687 1630,720 1530,753 1430,720" class="shape-diamond" />
+    <text x="1530" y="725" text-anchor="middle" class="rel-title">LOCATED_IN_DISTRICT</text>
+
+    <!-- R5: WITHIN_PROTECTED_AREA -->
+    <polygon points="1530,987 1640,1020 1530,1053 1420,1020" class="shape-diamond" />
+    <text x="1530" y="1025" text-anchor="middle" class="rel-title">WITHIN_PROTECTED_AREA</text>
+
+    <!-- R6: NEAR_RIVER -->
+    <polygon points="1530,1247 1620,1280 1530,1313 1440,1280" class="shape-diamond" />
+    <text x="1530" y="1285" text-anchor="middle" class="rel-title">NEAR_RIVER</text>
+
+    <!-- R7: ACCESSIBLE_BY_ROAD -->
+    <polygon points="1530,1507 1630,1540 1530,1573 1430,1540" class="shape-diamond" />
+    <text x="1530" y="1545" text-anchor="middle" class="rel-title">ACCESSIBLE_BY_ROAD</text>
+  </g>
+
+  <!-- ================================================================= -->
+  <!-- 3. ENTITY: HERITAGE_ASSETS (Main Entity)                          -->
+  <!-- Box: x=760, y=740, w=320, h=200                                   -->
+  <!-- ================================================================= -->
+  <g id="entity-heritage-assets">
+    <!-- Attribute Lines -->
+    <!-- Top Attributes: name, id, geom -->
+    <line x1="820" y1="740" x2="780" y2="675" class="line-solid" />
+    <line x1="920" y1="740" x2="920" y2="655" class="line-solid" />
+    <line x1="1020" y1="740" x2="1060" y2="675" class="line-solid" />
+
+    <!-- Left Column 1 lines from box left edge (x=760) to cx=580 -->
+    <line x1="760" y1="755" x2="650" y2="520" class="line-solid" />
+    <line x1="760" y1="770" x2="650" y2="570" class="line-solid" />
+    <line x1="760" y1="785" x2="650" y2="620" class="line-solid" />
+    <line x1="760" y1="800" x2="650" y2="670" class="line-solid" />
+    <line x1="760" y1="815" x2="650" y2="720" class="line-solid" />
+    <line x1="760" y1="830" x2="650" y2="770" class="line-solid" />
+    <line x1="760" y1="845" x2="650" y2="820" class="line-solid" />
+    <line x1="760" y1="860" x2="650" y2="870" class="line-solid" />
+    <line x1="760" y1="875" x2="650" y2="920" class="line-solid" />
+    <line x1="760" y1="890" x2="650" y2="970" class="line-solid" />
+    <line x1="760" y1="905" x2="650" y2="1020" class="line-solid" />
+    <line x1="760" y1="920" x2="650" y2="1070" class="line-solid" />
+
+    <!-- Left Column 2 lines from cx=580 left edge (x=510) to cx=320 -->
+    <line x1="510" y1="520" x2="395" y2="520" class="line-solid" />
+    <line x1="510" y1="570" x2="395" y2="570" class="line-solid" />
+    <line x1="510" y1="620" x2="395" y2="620" class="line-solid" />
+    <line x1="510" y1="670" x2="395" y2="670" class="line-solid" />
+    <line x1="510" y1="720" x2="395" y2="720" class="line-solid" />
+    <line x1="510" y1="770" x2="395" y2="770" class="line-solid" />
+    <line x1="510" y1="820" x2="395" y2="820" class="line-solid" />
+    <line x1="510" y1="870" x2="395" y2="870" class="line-solid" />
+    <line x1="510" y1="920" x2="395" y2="920" class="line-solid" />
+    <line x1="510" y1="970" x2="395" y2="970" class="line-solid" />
+    <line x1="510" y1="1020" x2="395" y2="1020" class="line-solid" />
+    <line x1="510" y1="1070" x2="395" y2="1070" class="line-solid" />
+
+    <!-- Far Left Column 3 lines from cx=320 left edge (x=245) to cx=100 -->
+    <line x1="245" y1="670" x2="160" y2="670" class="line-solid" />
+    <line x1="245" y1="720" x2="160" y2="720" class="line-solid" />
+    <line x1="245" y1="770" x2="160" y2="770" class="line-solid" />
+    <line x1="245" y1="820" x2="160" y2="820" class="line-solid" />
+    <line x1="245" y1="870" x2="160" y2="870" class="line-solid" />
+    <line x1="245" y1="920" x2="160" y2="920" class="line-solid" />
+
+    <!-- Entity Rectangle -->
+    <rect x="760" y="740" width="320" height="200" class="shape-rect" />
+    <text x="920" y="845" text-anchor="middle" class="entity-title">HERITAGE_ASSETS</text>
+
+    <!-- Top Ovals -->
+    <ellipse cx="780" cy="660" rx="55" ry="17" class="shape-oval" />
+    <text x="780" y="664" text-anchor="middle" class="attr-text">name</text>
+
+    <ellipse cx="920" cy="638" rx="55" ry="17" class="shape-oval" />
+    <text x="920" y="642" text-anchor="middle" class="attr-pk">id</text>
+
+    <ellipse cx="1060" cy="660" rx="55" ry="17" class="shape-oval" />
+    <text x="1060" y="664" text-anchor="middle" class="attr-text">geom</text>
+
+    <!-- Column 1 (cx=580) -->
+    <g>
+      <ellipse cx="580" cy="520" rx="68" ry="16" class="shape-oval" />
+      <text x="580" y="524" text-anchor="middle" class="attr-text">alternative_name</text>
+
+      <ellipse cx="580" cy="570" rx="68" ry="16" class="shape-oval" />
+      <text x="580" y="574" text-anchor="middle" class="attr-text">description</text>
+
+      <ellipse cx="580" cy="620" rx="68" ry="16" class="shape-oval" />
+      <text x="580" y="624" text-anchor="middle" class="attr-text">asset_type</text>
+
+      <ellipse cx="580" cy="670" rx="68" ry="16" class="shape-oval" />
+      <text x="580" y="674" text-anchor="middle" class="attr-text">asset_category</text>
+
+      <ellipse cx="580" cy="720" rx="68" ry="16" class="shape-oval" />
+      <text x="580" y="724" text-anchor="middle" class="attr-text">cultural_group</text>
+
+      <ellipse cx="580" cy="770" rx="68" ry="16" class="shape-oval" />
+      <text x="580" y="774" text-anchor="middle" class="attr-text">location_accuracy</text>
+
+      <ellipse cx="580" cy="820" rx="68" ry="16" class="shape-oval" />
+      <text x="580" y="824" text-anchor="middle" class="attr-text">elevation_m</text>
+
+      <ellipse cx="580" cy="870" rx="68" ry="16" class="shape-oval" />
+      <text x="580" y="874" text-anchor="middle" class="attr-text">gps_accuracy_m</text>
+
+      <ellipse cx="580" cy="920" rx="68" ry="16" class="shape-oval" />
+      <text x="580" y="924" text-anchor="middle" class="attr-text">region</text>
+
+      <ellipse cx="580" cy="970" rx="68" ry="16" class="shape-oval" />
+      <text x="580" y="974" text-anchor="middle" class="attr-text">district</text>
+
+      <ellipse cx="580" cy="1020" rx="68" ry="16" class="shape-oval" />
+      <text x="580" y="1024" text-anchor="middle" class="attr-text">community</text>
+
+      <ellipse cx="580" cy="1070" rx="68" ry="16" class="shape-oval" />
+      <text x="580" y="1074" text-anchor="middle" class="attr-text">location_description</text>
+    </g>
+
+    <!-- Column 2 (cx=320) -->
+    <g>
+      <ellipse cx="320" cy="520" rx="72" ry="16" class="shape-oval" />
+      <text x="320" y="524" text-anchor="middle" class="attr-text">height_m</text>
+
+      <ellipse cx="320" cy="570" rx="72" ry="16" class="shape-oval" />
+      <text x="320" y="574" text-anchor="middle" class="attr-text">width_m</text>
+
+      <ellipse cx="320" cy="620" rx="72" ry="16" class="shape-oval" />
+      <text x="320" y="624" text-anchor="middle" class="attr-text">length_m</text>
+
+      <ellipse cx="320" cy="670" rx="72" ry="16" class="shape-oval" />
+      <text x="320" y="674" text-anchor="middle" class="attr-text">material</text>
+
+      <ellipse cx="320" cy="720" rx="72" ry="16" class="shape-oval" />
+      <text x="320" y="724" text-anchor="middle" class="attr-text">secondary_material</text>
+
+      <ellipse cx="320" cy="770" rx="72" ry="16" class="shape-oval" />
+      <text x="320" y="774" text-anchor="middle" class="attr-text">technique</text>
+
+      <ellipse cx="320" cy="820" rx="72" ry="16" class="shape-oval" />
+      <text x="320" y="824" text-anchor="middle" class="attr-text">condition</text>
+
+      <ellipse cx="320" cy="870" rx="72" ry="16" class="shape-oval" />
+      <text x="320" y="874" text-anchor="middle" class="attr-text">damage_type</text>
+
+      <ellipse cx="320" cy="920" rx="72" ry="16" class="shape-oval" />
+      <text x="320" y="924" text-anchor="middle" class="attr-text">conservation_status</text>
+
+      <ellipse cx="320" cy="970" rx="72" ry="16" class="shape-oval" />
+      <text x="320" y="974" text-anchor="middle" class="attr-text">period</text>
+
+      <ellipse cx="320" cy="1020" rx="72" ry="16" class="shape-oval" />
+      <text x="320" y="1024" text-anchor="middle" class="attr-text">period_start</text>
+
+      <ellipse cx="320" cy="1070" rx="72" ry="16" class="shape-oval" />
+      <text x="320" y="1074" text-anchor="middle" class="attr-text">period_end</text>
+    </g>
+
+    <!-- Column 3 (cx=100) -->
+    <g>
+      <ellipse cx="100" cy="670" rx="60" ry="16" class="shape-oval" />
+      <text x="100" y="674" text-anchor="middle" class="attr-text">origin_location</text>
+
+      <ellipse cx="100" cy="720" rx="60" ry="16" class="shape-oval" />
+      <text x="100" y="724" text-anchor="middle" class="attr-text">ownership</text>
+
+      <ellipse cx="100" cy="770" rx="60" ry="16" class="shape-oval" />
+      <text x="100" y="774" text-anchor="middle" class="attr-text">verification_status</text>
+
+      <ellipse cx="100" cy="820" rx="60" ry="16" class="shape-oval" />
+      <text x="100" y="824" text-anchor="middle" class="attr-text">data_source</text>
+
+      <ellipse cx="100" cy="870" rx="60" ry="16" class="shape-oval" />
+      <text x="100" y="874" text-anchor="middle" class="attr-text">observer</text>
+
+      <ellipse cx="100" cy="920" rx="60" ry="16" class="shape-oval" />
+      <text x="100" y="924" text-anchor="middle" class="attr-text">survey_method</text>
+    </g>
+  </g>
+
+  <!-- ================================================================= -->
+  <!-- 4. ENTITY: HERITAGE_ASSET_MEDIA (Weak Entity)                     -->
+  <!-- Box: x=760, y=1340, w=320, h=150                                  -->
+  <!-- ================================================================= -->
+  <g id="entity-heritage-asset-media">
+    <!-- Attribute Lines -->
+    <line x1="760" y1="1360" x2="630" y2="1280" class="line-solid" />
+    <line x1="760" y1="1380" x2="630" y2="1325" class="line-solid" />
+    <line x1="760" y1="1400" x2="630" y2="1370" class="line-solid" />
+    <line x1="760" y1="1420" x2="630" y2="1415" class="line-solid" />
+    <line x1="760" y1="1440" x2="630" y2="1460" class="line-solid" />
+    <line x1="760" y1="1460" x2="630" y2="1505" class="line-solid" />
+    <line x1="760" y1="1475" x2="630" y2="1550" class="line-solid" />
+    <line x1="760" y1="1485" x2="630" y2="1595" class="line-solid" />
+
+    <!-- Double border rectangle for Weak Entity -->
+    <rect x="754" y="1334" width="332" height="162" class="shape-rect-double" />
+    <rect x="760" y="1340" width="320" height="150" class="shape-rect-double" />
+    <text x="920" y="1420" text-anchor="middle" class="entity-title">HERITAGE_ASSET_MEDIA</text>
+
+    <!-- Ovals (cx=570) -->
+    <g>
+      <ellipse cx="570" cy="1280" rx="55" ry="16" class="shape-oval" />
+      <text x="570" y="1284" text-anchor="middle" class="attr-pk">id</text>
+
+      <ellipse cx="570" cy="1325" rx="55" ry="16" class="shape-oval-dashed" />
+      <text x="570" y="1329" text-anchor="middle" class="attr-fk">asset_id</text>
+
+      <ellipse cx="570" cy="1370" rx="55" ry="16" class="shape-oval" />
+      <text x="570" y="1374" text-anchor="middle" class="attr-text">media_type</text>
+
+      <ellipse cx="570" cy="1415" rx="55" ry="16" class="shape-oval" />
+      <text x="570" y="1419" text-anchor="middle" class="attr-text">file_path</text>
+
+      <ellipse cx="570" cy="1460" rx="55" ry="16" class="shape-oval" />
+      <text x="570" y="1464" text-anchor="middle" class="attr-text">file_name</text>
+
+      <ellipse cx="570" cy="1505" rx="55" ry="16" class="shape-oval" />
+      <text x="570" y="1509" text-anchor="middle" class="attr-text">caption</text>
+
+      <ellipse cx="570" cy="1550" rx="55" ry="16" class="shape-oval" />
+      <text x="570" y="1554" text-anchor="middle" class="attr-text">alt_text</text>
+
+      <ellipse cx="570" cy="1595" rx="55" ry="16" class="shape-oval" />
+      <text x="570" y="1599" text-anchor="middle" class="attr-text">is_primary</text>
+    </g>
+  </g>
+
+  <!-- ================================================================= -->
+  <!-- 5. SPATIAL ENTITIES (Right Side)                                  -->
+  <!-- ================================================================= -->
+  <!-- MAP_REGIONS (x=1900, y=380, w=240, h=80) -->
+  <g id="entity-map-regions">
+    <line x1="2140" y1="395" x2="2255" y2="340" class="line-solid" />
+    <line x1="2140" y1="410" x2="2255" y2="385" class="line-solid" />
+    <line x1="2140" y1="430" x2="2255" y2="430" class="line-solid" />
+    <line x1="2140" y1="450" x2="2255" y2="475" class="line-solid" />
+
+    <rect x="1900" y="380" width="240" height="80" class="shape-rect" />
+    <text x="2020" y="426" text-anchor="middle" class="entity-title">MAP_REGIONS</text>
+
+    <ellipse cx="2305" cy="340" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="344" text-anchor="middle" class="attr-pk">id</text>
+
+    <ellipse cx="2305" cy="385" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="389" text-anchor="middle" class="attr-text">name</text>
+
+    <ellipse cx="2305" cy="430" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="434" text-anchor="middle" class="attr-text">name_en</text>
+
+    <ellipse cx="2305" cy="475" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="479" text-anchor="middle" class="attr-text">geom</text>
+  </g>
+
+  <!-- MAP_DISTRICTS (x=1900, y=680, w=240, h=80) -->
+  <g id="entity-map-districts">
+    <line x1="2140" y1="695" x2="2255" y2="640" class="line-solid" />
+    <line x1="2140" y1="710" x2="2255" y2="685" class="line-solid" />
+    <line x1="2140" y1="730" x2="2255" y2="730" class="line-solid" />
+    <line x1="2140" y1="750" x2="2255" y2="775" class="line-solid" />
+
+    <rect x="1900" y="680" width="240" height="80" class="shape-rect" />
+    <text x="2020" y="726" text-anchor="middle" class="entity-title">MAP_DISTRICTS</text>
+
+    <ellipse cx="2305" cy="640" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="644" text-anchor="middle" class="attr-pk">id</text>
+
+    <ellipse cx="2305" cy="685" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="689" text-anchor="middle" class="attr-text">name</text>
+
+    <ellipse cx="2305" cy="730" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="734" text-anchor="middle" class="attr-text">label</text>
+
+    <ellipse cx="2305" cy="775" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="779" text-anchor="middle" class="attr-text">geom</text>
+  </g>
+
+  <!-- MAP_PROTECTED_AREAS (x=1900, y=980, w=240, h=80) -->
+  <g id="entity-map-protected-areas">
+    <line x1="2140" y1="1000" x2="2255" y2="960" class="line-solid" />
+    <line x1="2140" y1="1020" x2="2255" y2="1020" class="line-solid" />
+    <line x1="2140" y1="1040" x2="2255" y2="1080" class="line-solid" />
+
+    <rect x="1900" y="980" width="240" height="80" class="shape-rect" />
+    <text x="2020" y="1026" text-anchor="middle" class="entity-title">MAP_PROTECTED_AREAS</text>
+
+    <ellipse cx="2305" cy="960" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="964" text-anchor="middle" class="attr-pk">id</text>
+
+    <ellipse cx="2305" cy="1020" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="1024" text-anchor="middle" class="attr-text">name</text>
+
+    <ellipse cx="2305" cy="1080" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="1084" text-anchor="middle" class="attr-text">geom</text>
+  </g>
+
+  <!-- MAP_RIVERS (x=1900, y=1240, w=240, h=80) -->
+  <g id="entity-map-rivers">
+    <line x1="2140" y1="1260" x2="2255" y2="1220" class="line-solid" />
+    <line x1="2140" y1="1280" x2="2255" y2="1280" class="line-solid" />
+    <line x1="2140" y1="1300" x2="2255" y2="1340" class="line-solid" />
+
+    <rect x="1900" y="1240" width="240" height="80" class="shape-rect" />
+    <text x="2020" y="1286" text-anchor="middle" class="entity-title">MAP_RIVERS</text>
+
+    <ellipse cx="2305" cy="1220" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="1224" text-anchor="middle" class="attr-pk">id</text>
+
+    <ellipse cx="2305" cy="1280" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="1284" text-anchor="middle" class="attr-text">name</text>
+
+    <ellipse cx="2305" cy="1340" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="1344" text-anchor="middle" class="attr-text">geom</text>
+  </g>
+
+  <!-- MAP_ROADS (x=1900, y=1500, w=240, h=80) -->
+  <g id="entity-map-roads">
+    <line x1="2140" y1="1520" x2="2255" y2="1480" class="line-solid" />
+    <line x1="2140" y1="1540" x2="2255" y2="1540" class="line-solid" />
+    <line x1="2140" y1="1560" x2="2255" y2="1600" class="line-solid" />
+
+    <rect x="1900" y="1500" width="240" height="80" class="shape-rect" />
+    <text x="2020" y="1546" text-anchor="middle" class="entity-title">MAP_ROADS</text>
+
+    <ellipse cx="2305" cy="1480" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="1484" text-anchor="middle" class="attr-pk">id</text>
+
+    <ellipse cx="2305" cy="1540" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="1544" text-anchor="middle" class="attr-text">name</text>
+
+    <ellipse cx="2305" cy="1600" rx="50" ry="16" class="shape-oval" />
+    <text x="2305" y="1604" text-anchor="middle" class="attr-text">geom</text>
+  </g>
+
+  <!-- ================================================================= -->
+  <!-- 6. LEGEND (BOTTOM)                                                -->
+  <!-- ================================================================= -->
+  <g id="legend" transform="translate(140, 1820)">
+    <rect x="0" y="0" width="2520" height="120" class="shape-rect" stroke-width="1.2" />
+    <text x="30" y="32" class="legend-title">LEGEND</text>
+
+    <!-- Item 1: Entity -->
+    <g transform="translate(180, 20)">
+      <rect x="0" y="25" width="80" height="34" class="shape-rect" stroke-width="1.5" />
+      <text x="40" y="47" text-anchor="middle" class="attr-text" font-weight="bold">Entity</text>
+      <text x="40" y="80" text-anchor="middle" class="legend-text">Entity</text>
+    </g>
+
+    <!-- Item 2: Weak Entity -->
+    <g transform="translate(380, 20)">
+      <rect x="-3" y="22" width="86" height="40" class="shape-rect-double" />
+      <rect x="0" y="25" width="80" height="34" class="shape-rect-double" />
+      <text x="40" y="47" text-anchor="middle" class="attr-text" font-weight="bold">Weak</text>
+      <text x="40" y="80" text-anchor="middle" class="legend-text">Weak Entity</text>
+    </g>
+
+    <!-- Item 3: Relationship -->
+    <g transform="translate(580, 20)">
+      <polygon points="50,22 100,42 50,62 0,42" class="shape-diamond" stroke-width="1.5" />
+      <text x="50" y="46" text-anchor="middle" class="attr-text" font-weight="bold">Rel</text>
+      <text x="50" y="80" text-anchor="middle" class="legend-text">Relationship</text>
+    </g>
+
+    <!-- Item 4: Attribute -->
+    <g transform="translate(790, 20)">
+      <ellipse cx="50" cy="42" rx="45" ry="16" class="shape-oval" />
+      <text x="50" y="46" text-anchor="middle" class="attr-text">attribute</text>
+      <text x="50" y="80" text-anchor="middle" class="legend-text">Attribute</text>
+    </g>
+
+    <!-- Item 5: Primary Key -->
+    <g transform="translate(980, 20)">
+      <ellipse cx="50" cy="42" rx="45" ry="16" class="shape-oval" />
+      <text x="50" y="46" text-anchor="middle" class="attr-pk">id</text>
+      <text x="50" y="80" text-anchor="middle" class="legend-text">Primary Key</text>
+    </g>
+
+    <!-- Item 6: Foreign Key -->
+    <g transform="translate(1170, 20)">
+      <ellipse cx="50" cy="42" rx="45" ry="16" class="shape-oval-dashed" />
+      <text x="50" y="46" text-anchor="middle" class="attr-fk">ref_id</text>
+      <text x="50" y="80" text-anchor="middle" class="legend-text">Foreign Key</text>
+    </g>
+
+    <!-- Item 7: Cardinality -->
+    <g transform="translate(1360, 20)">
+      <line x1="0" y1="42" x2="100" y2="42" class="line-solid" />
+      <text x="15" y="35" class="card-label">1</text>
+      <text x="80" y="35" class="card-label">N</text>
+      <text x="50" y="80" text-anchor="middle" class="legend-text">Cardinality (1:N, M:N)</text>
+    </g>
+  </g>
+
+</svg>
